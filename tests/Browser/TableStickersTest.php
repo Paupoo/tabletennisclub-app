@@ -54,6 +54,17 @@ it('keeps the code, the number and the club name inside each square', function (
     expect($spill)->toBe([]);
 })->group('tables');
 
+it('writes the number and the club name in the club blue, like the code', function (): void {
+    Table::factory()->create(['room_id' => Room::factory()->create()->id]);
+
+    $this->actingAs(User::factory()->isAdmin()->isCommitteeMember()->create());
+
+    $colours = visit(route('admin.tables.stickers'))
+        ->script("[...document.querySelectorAll('[data-sticker] p')].map((p) => getComputedStyle(p).color)");
+
+    expect(array_unique($colours))->toBe(['rgb(30, 64, 175)']);
+})->group('tables');
+
 it('opens the table form on a phone without sideways scrolling', function (): void {
     $table = Table::factory()->create(['room_id' => Room::factory()->create()->id]);
 

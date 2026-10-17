@@ -4,8 +4,9 @@
 
     Le QR porte l'adresse permanente de la table, jamais celle d'un tournoi ni
     d'une salle. Le numéro est imprimé en clair dessous : un QR abîmé laisse
-    encore savoir de quelle table il s'agit. Noir sur blanc, pour être lu dans
-    une salle mal éclairée.
+    encore savoir de quelle table il s'agit. Sur fond blanc, pour être lu dans
+    une salle mal éclairée — en bleu du club, assez sombre
+    sur le blanc pour qu'un téléphone le lise.
 --}}
 @extends('print.layout')
 
@@ -27,7 +28,8 @@
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         break-inside: avoid;
     }
-    .sticker p { margin: 0; }
+    /* Le bleu du club, celui du QR (--color-primary, #1e40af). */
+    .sticker p { margin: 0; color: #1e40af; }
     .sticker img { width: 36mm; height: 36mm; display: block; flex-shrink: 0; }
     .sticker__number { margin-top: 1.5mm !important; font-size: 12pt; font-weight: 800; line-height: 1.05; }
     .sticker__club { margin-top: 1mm !important; font-size: 5.5pt; font-weight: 700; letter-spacing: .08em; line-height: 1; text-transform: uppercase; }

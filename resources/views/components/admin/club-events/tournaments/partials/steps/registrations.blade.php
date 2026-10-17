@@ -101,8 +101,7 @@
                                 <x-button :label="__('Excused absence')" icon="o-no-symbol" class="btn-outline btn-xs"
                                     wire:click="markAbsent({{ $row['id'] }}, true)" />
                                 <x-button :label="__('Unexcused absence')" icon="o-exclamation-triangle" class="btn-outline btn-xs text-warning-content"
-                                    wire:click="markAbsent({{ $row['id'] }}, false)"
-                                    wire:confirm="{{ __('The entry fee stays due and the player receives a mail explaining why. Continue?') }}" />
+                                    x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __('The entry fee stays due and the player receives a mail explaining why. Continue?'), 'method' => 'markAbsent', 'params' => [$row['id'], false], 'danger' => false]) }}, id: $wire.$id })" />
                             @else
                                 <x-button :label="__('No show')" icon="o-no-symbol" class="btn-outline btn-xs"
                                     wire:click="markAbsent({{ $row['id'] }}, true)" />
@@ -150,8 +149,7 @@
                                     icon="o-exclamation-triangle"
                                     class="btn-ghost btn-xs text-warning-content"
                                     :tooltip="__('Unexcused absence')"
-                                    wire:click="markAbsent({{ $row['id'] }}, false)"
-                                    wire:confirm="{{ __('The entry fee stays due and the player receives a mail explaining why. Continue?') }}"
+                                    x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __('The entry fee stays due and the player receives a mail explaining why. Continue?'), 'method' => 'markAbsent', 'params' => [$row['id'], false], 'danger' => false]) }}, id: $wire.$id })"
                                     :aria-label="__('Unexcused absence')" />
                             @else
                                 <x-button
@@ -313,8 +311,14 @@
             selected: null,
             drawn: @js($this->poolsGenerated),
             move(player, target) {
-                if (this.drawn && ! confirm(@js(__('The pools are drawn: this change erases the pools and their matches, and you will have to draw them again. Continue?')))) { return; }
-                $wire.movePlayer(player, target);
+                if (! this.drawn) { $wire.movePlayer(player, target); return; }
+                this.$dispatch('app-confirm', {
+                    message: @js(__('The pools are drawn: this change erases the pools and their matches, and you will have to draw them again. Continue?')),
+                    method: 'movePlayer',
+                    params: [player, target],
+                    danger: true,
+                    id: $wire.$id,
+                });
             },
             pick(id) {
                 if (this.selected === null) { this.selected = id; return; }
@@ -351,13 +355,11 @@
                     <x-button :label="__('Propose pairs')" icon="o-sparkles" class="btn-primary btn-sm"
                         wire:click="proposePairs" spinner="proposePairs" :disabled="$benchCount < 2" />
                     <x-button :label="__('Send everyone back to the bench')" icon="o-arrow-uturn-left" class="btn-ghost btn-sm"
-                        wire:click="resetPairs" spinner="resetPairs"
-                        wire:confirm="{{ $this->poolsGenerated ? __('Break every pair, send everyone back to the bench, and erase the pools and their matches?') : __('Break every pair and send everyone back to the bench?') }}"
+                        x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => $this->poolsGenerated ? __('Break every pair, send everyone back to the bench, and erase the pools and their matches?') : __('Break every pair and send everyone back to the bench?'), 'method' => 'resetPairs', 'params' => [], 'danger' => true]) }}, id: $wire.$id })" spinner="resetPairs"
                         :disabled="$board['pairs'] === []" />
                     @if ($this->currentTournament->pairs_published_at === null)
                         <x-button :label="__('Publish the pairs')" icon="o-paper-airplane" class="btn-outline btn-sm"
-                            wire:click="publishPairs" spinner="publishPairs"
-                            wire:confirm="{{ __('Each paired player will receive an email naming their partner. After that, any change is emailed to the players it concerns. Publish?') }}"
+                            x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __('Each paired player will receive an email naming their partner. After that, any change is emailed to the players it concerns. Publish?'), 'method' => 'publishPairs', 'params' => [], 'danger' => false]) }}, id: $wire.$id })" spinner="publishPairs"
                             :disabled="$board['pairs'] === []" />
                     @else
                         <x-badge icon="o-check" class="badge-success badge-soft"

@@ -172,8 +172,7 @@
                                     @endif
                                     @if ($this->canManageTournament)
                                         <x-button :label="__('Cash')" icon="o-currency-euro" class="btn-outline btn-xs text-success"
-                                            wire:click="recordCashPayment({{ $entry['user']->id }})" spinner="recordCashPayment({{ $entry['user']->id }})"
-                                            wire:confirm="{{ __('Record a cash payment for :name?', ['name' => $entry['user']->full_name]) }}" />
+                                            x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __('Record a cash payment for :name?', ['name' => $entry['user']->full_name]), 'method' => 'recordCashPayment', 'params' => [$entry['user']->id], 'danger' => false]) }}, id: $wire.$id })" spinner="recordCashPayment({{ $entry['user']->id }})" />
                                         <x-button icon="o-qr-code" class="btn-outline btn-xs" :aria-label="__('QR / bank transfer')"
                                             wire:click="openQrPayment({{ $entry['user']->id }})" spinner="openQrPayment({{ $entry['user']->id }})" />
                                     @endif

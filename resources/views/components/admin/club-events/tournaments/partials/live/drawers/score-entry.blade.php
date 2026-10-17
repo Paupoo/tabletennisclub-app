@@ -111,16 +111,13 @@
                 <p class="text-xs font-semibold uppercase tracking-wide text-base-content/60">{{ __('Walkover') }}</p>
                 <div class="flex flex-wrap gap-2">
                     <x-button :label="__(':side absent', ['side' => $side1Name])" icon="o-flag" class="btn-outline btn-xs"
-                        wire:click="forfeit({{ $match->id }}, 1)"
-                        wire:confirm="{{ __(':winner wins by walkover. Continue?', ['winner' => $side2Name]) }}" />
+                        x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __(':winner wins by walkover. Continue?', ['winner' => $side2Name]), 'method' => 'forfeit', 'params' => [$match->id, 1], 'danger' => false]) }}, id: $wire.$id })" />
                     <x-button :label="__(':side absent', ['side' => $side2Name])" icon="o-flag" class="btn-outline btn-xs"
-                        wire:click="forfeit({{ $match->id }}, 2)"
-                        wire:confirm="{{ __(':winner wins by walkover. Continue?', ['winner' => $side1Name]) }}" />
+                        x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __(':winner wins by walkover. Continue?', ['winner' => $side1Name]), 'method' => 'forfeit', 'params' => [$match->id, 2], 'danger' => false]) }}, id: $wire.$id })" />
                 </div>
                 @if ($match->isInProgress())
                     <x-button :label="__('Launched by mistake: back to the queue')" icon="o-arrow-uturn-left" class="btn-ghost btn-xs"
-                        wire:click="cancelLaunch({{ $match->id }})"
-                        wire:confirm="{{ __('Put this match back in the queue and free the table?') }}" />
+                        x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __('Put this match back in the queue and free the table?'), 'method' => 'cancelLaunch', 'params' => [$match->id], 'danger' => false]) }}, id: $wire.$id })" />
                 @endif
             </div>
         @endif

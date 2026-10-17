@@ -48,8 +48,7 @@
                                         <x-badge :value="__('FREE')" class="badge-success badge-xs font-bold" />
                                         <x-button icon="o-x-mark" class="btn-ghost btn-xs btn-square text-base-content/40"
                                             :tooltip="__('Close this table for the day')" :aria-label="__('Close this table for the day')"
-                                            wire:click="removeTable({{ $table['id'] }})"
-                                            wire:confirm="{{ __('Close table :name for the rest of the day?', ['name' => $table['name']]) }}" />
+                                            x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __('Close table :name for the rest of the day?', ['name' => $table['name']]), 'method' => 'removeTable', 'params' => [$table['id']], 'danger' => false]) }}, id: $wire.$id })" />
                                     </div>
                                 @else
                                     <x-badge value="{{ $minutesElapsed }}′"

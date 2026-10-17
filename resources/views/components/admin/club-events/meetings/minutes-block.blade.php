@@ -42,8 +42,7 @@
                                     <x-icon x-show="editing" x-cloak name="o-check" class="h-4 w-4" />
                                 </button>
                                 <button type="button" class="btn btn-ghost btn-xs btn-square text-error"
-                                    wire:click="removeDecision({{ $decision->id }})"
-                                    wire:confirm="{{ __('Delete this decision?') }}"
+                                    x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __('Delete this decision?'), 'method' => 'removeDecision', 'params' => [$decision->id], 'danger' => true]) }}, id: $wire.$id })"
                                     aria-label="{{ __('Delete') }}" title="{{ __('Delete') }}">
                                     <x-icon name="o-trash" class="h-4 w-4" />
                                 </button>
@@ -116,8 +115,7 @@
                                     <x-icon name="o-bars-3-bottom-left" @class(['h-4 w-4', 'text-primary' => filled($action->description)]) />
                                 </button>
                                 <button type="button" class="btn btn-ghost btn-xs btn-square text-error"
-                                    wire:click="removeAction({{ $action->id }})"
-                                    wire:confirm="{{ __('Delete this action?') }}"
+                                    x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __('Delete this action?'), 'method' => 'removeAction', 'params' => [$action->id], 'danger' => true]) }}, id: $wire.$id })"
                                     aria-label="{{ __('Delete') }}" title="{{ __('Delete') }}">
                                     <x-icon name="o-trash" class="h-4 w-4" />
                                 </button>

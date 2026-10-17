@@ -83,8 +83,7 @@
                                     @if (($manage ?? false) && ! $entry['no_show'] && $entryUserId !== null && $tournament->status === \App\Domains\Shared\Enums\TournamentStatusEnum::PENDING)
                                         <x-button icon="o-flag" class="btn-ghost btn-xs btn-square text-base-content/40"
                                             :tooltip="__('Withdraw')" :aria-label="__('Withdraw :name', ['name' => $displayName])"
-                                            wire:click="withdraw({{ $entryUserId }})"
-                                            wire:confirm="{{ __(':name withdraws: every match still to play is lost, those played stand. Continue?', ['name' => $displayName]) }}" />
+                                            x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __(':name withdraws: every match still to play is lost, those played stand. Continue?', ['name' => $displayName]), 'method' => 'withdraw', 'params' => [$entryUserId], 'danger' => false]) }}, id: $wire.$id })" />
                                     @endif
                                 </div>
                             </div>

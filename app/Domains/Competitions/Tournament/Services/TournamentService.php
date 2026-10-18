@@ -20,6 +20,7 @@ use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentRequestNo
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationCancelledNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationConfirmedNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentUnexcusedAbsenceNotification;
+use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistRemovedNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistSpotOpenedNotification;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Role;
@@ -108,6 +109,26 @@ class TournamentService
         } else {
             // Waiting user withdrew — renumber remaining positions.
             $this->recalculateWaitlistPositions($tournament);
+        }
+    }
+
+    /**
+     * Registrations are closed: whoever is still waiting will not get a spot.
+     *
+     * Each of them is taken off the list and told so — the same however the
+     * registrations closed, by the committee or by the deadline at night.
+     */
+    public function closeWaitlist(Tournament $tournament): void
+    {
+        $waiting = $tournament->users()->wherePivot('registration_status', 'waiting')->get();
+
+        foreach ($waiting as $user) {
+            DB::table('tournament_user')
+                ->where('tournament_id', $tournament->id)
+                ->where('user_id', $user->id)
+                ->update(['registration_status' => 'cancelled', 'waitlist_position' => null]);
+
+            $user->notify(new TournamentWaitlistRemovedNotification($tournament, becauseRegistrationsClosed: true));
         }
     }
 

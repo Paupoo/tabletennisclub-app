@@ -15,6 +15,8 @@ La date limite est **incluse** : « inscriptions jusqu'au 20/11 » veut dire que
 
 Quand le tournoi est complet, les inscriptions suivantes partent en liste d'attente, numérotées.
 
+**À la clôture des inscriptions** — à la main ou automatiquement la nuit qui suit la date limite —, la liste d'attente se ferme : chaque personne qui attendait encore est retirée et reçoit un mail lui disant qu'aucune place ne s'est libérée. Le jour J, un membre qui se présente quand même s'inscrit par le comité (« Inscrire un membre »).
+
 Dès qu'une place se libère, **la première personne de la liste reçoit une proposition** et a **48 heures** pour confirmer. Passé ce délai, **la proposition expire, elle en est prévenue, et la place passe à la suivante.** Les numéros de tous les autres sont recalculés.
 
 Accepter la place — par le lien du mail ou depuis « Mes inscriptions » — **vaut inscription** : le membre reçoit la même demande de paiement que les autres, à son tarif.

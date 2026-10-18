@@ -475,18 +475,8 @@ new class extends Component
             return;
         }
 
-        // Kick everyone still on the waitlist — they no longer have a chance.
-        $tournament->users()
-            ->wherePivotIn('registration_status', ['waiting'])
-            ->get()
-            ->each(function (User $user) use ($tournament): void {
-                DB::table('tournament_user')
-                    ->where('tournament_id', $tournament->id)
-                    ->where('user_id', $user->id)
-                    ->update(['registration_status' => 'cancelled', 'waitlist_position' => null]);
-
-                $user->notify(new TournamentWaitlistRemovedNotification($tournament));
-            });
+        // Ceux qui attendent encore n'auront pas de place : ils sont prévenus.
+        app(TournamentService::class)->closeWaitlist($tournament);
 
         unset($this->currentTournament, $this->waitlist, $this->registrationRows, $this->registrationTabCounts, $this->registrations, $this->registrationsOpen, $this->canOpenRegistrations);
         $this->showCloseRegistrationsModal = false;

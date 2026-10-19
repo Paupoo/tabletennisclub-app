@@ -9,163 +9,61 @@ use App\Http\Controllers\Bar\BarPaymentController;
 use App\Http\Controllers\ClubAdmin\Users\Auth\AuthenticatedSessionController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Bar Home
-|--------------------------------------------------------------------------
-*/
-// Composant Livewire : le comptoir est une saisie en série — on y répète le même
-// geste des dizaines de fois d'affilée, debout, avec quelqu'un en face. Chaque « + »
-// était un rechargement complet de page.
-Route::livewire('/', 'pages::bar.counter')
-    ->middleware('can:bar.orders.manage')
-    ->name('index');
+/* Bar Home */
+Route::livewire('/', 'pages::bar.counter')->middleware('can:bar.orders.manage')->name('index');
 
-/*
-|--------------------------------------------------------------------------
-| Tabs — pour qui on sert
-|--------------------------------------------------------------------------
-*/
-// Ouvrir, rejoindre et quitter une ardoise sont des actions du composant du
-// comptoir : elles n'ont pas de route à elles. Les trois POST qui vivaient ici
-// servaient la version Blade de l'écran de choix.
-Route::post('/orders/{order}/rename', [BarOrderController::class, 'rename'])
-    ->middleware('can:bar.orders.manage')
-    ->name('orders.rename');
+/* Tabs */
+Route::post('/orders/{order}/rename', [BarOrderController::class, 'rename'])->middleware('can:bar.orders.manage')->name('orders.rename');
 
-/*
-|--------------------------------------------------------------------------
-| Cart
-|--------------------------------------------------------------------------
-*/
-// Le ticket est un composant : ajouter, retirer, vider et clore sont ses actions,
-// pas des routes. Les quatre POST qui vivaient ici servaient les formulaires de la
-// version Blade, où chaque « + » coûtait un rechargement complet.
-Route::livewire('/cart', 'pages::bar.cart')
-    ->middleware('can:bar.orders.manage')
-    ->name('cart.show');
-/*
-|--------------------------------------------------------------------------
-| Payments
-|--------------------------------------------------------------------------
-*/
-Route::get('/orders/{order}/payment', [BarPaymentController::class, 'show'])
-    ->middleware('can:bar.orders.pay')
-    ->name('payment.show');
-Route::post('/orders/{order}/payment/pay', [BarPaymentController::class, 'pay'])
-    ->middleware('can:bar.orders.pay')
-    ->name('payment.pay');
-/*
-|--------------------------------------------------------------------------
-| Orders
-|--------------------------------------------------------------------------
-*/
-Route::get('/orders', [BarOrderController::class, 'index'])
-    ->middleware('can:bar.orders.manage')
-    ->name('orders.index');
-// Route::post('/orders/{order}/pay', [BarOrderController::class, 'pay'])
-//     ->name('orders.pay');
-Route::get('/orders/history', [BarOrderController::class, 'history'])
-    ->middleware('can:bar.orders.manage')
-    ->name('orders.history');
-Route::get('/orders/{order}/modify', [BarOrderController::class, 'modify'])
-    ->middleware('can:bar.orders.manage')
-    ->name('orders.modify');
-Route::delete('/orders/{order}', [BarOrderController::class, 'destroy'])
-    ->middleware('can:bar.orders.manage')
-    ->name('orders.destroy');
-/*
-|--------------------------------------------------------------------------
-| Categories
-|--------------------------------------------------------------------------
-*/
+/* Cart */
+Route::livewire('/cart', 'pages::bar.cart')->middleware('can:bar.orders.manage')->name('cart.show');
+
+/* Payments */
+Route::get('/orders/{order}/payment', [BarPaymentController::class, 'show'])->middleware('can:bar.orders.pay')->name('payment.show');
+Route::post('/orders/{order}/payment/pay', [BarPaymentController::class, 'pay'])->middleware('can:bar.orders.pay')->name('payment.pay');
+
+/* Orders */
+Route::get('/orders', [BarOrderController::class, 'index'])->middleware('can:bar.orders.manage')->name('orders.index');
+Route::get('/orders/history', [BarOrderController::class, 'history'])->middleware('can:bar.orders.manage')->name('orders.history');
+Route::get('/orders/{order}/modify', [BarOrderController::class, 'modify'])->middleware('can:bar.orders.manage')->name('orders.modify');
+Route::delete('/orders/{order}', [BarOrderController::class, 'destroy'])->middleware('can:bar.orders.manage')->name('orders.destroy');
+
+/* Categories */
 Route::prefix('categories')->middleware('can:bar.categories.manage')->name('categories.')->group(function (): void {
-    Route::get('/', [BarCategoryController::class, 'index'])
-        ->name('index');
-    Route::post('/', [BarCategoryController::class, 'store'])
-        ->name('store');
-    Route::put('/{category}', [BarCategoryController::class, 'update'])
-        ->name('update');
-    Route::delete('/{category}', [BarCategoryController::class, 'destroy'])
-        ->name('destroy');
+    Route::get('/', [BarCategoryController::class, 'index'])->name('index');
+    Route::post('/', [BarCategoryController::class, 'store'])->name('store');
+    Route::put('/{category}', [BarCategoryController::class, 'update'])->name('update');
+    Route::delete('/{category}', [BarCategoryController::class, 'destroy'])->name('destroy');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Products
-|--------------------------------------------------------------------------
-*/
+/* Products */
 Route::prefix('products')->middleware('can:bar.products.manage')->name('products.')->group(function (): void {
-    // Une seule route : l'écran est un composant Livewire qui écrit lui-même.
-    //
-    // Les quatre routes POST/PUT/DELETE qui vivaient ici servaient les formulaires
-    // de l'ancienne grille de tuiles, et `products/state` mettait une saisie de côté
-    // le temps d'aller créer une catégorie — un détour que la modale a rendu inutile.
-    // Elles sont parties avec BarProductController, qu'aucune d'elles n'atteignait
-    // plus.
-    Route::livewire('/', 'pages::bar.products')
-        ->name('index');
+    Route::livewire('/', 'pages::bar.products')->name('index');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Restocking — les courses
-|--------------------------------------------------------------------------
-*/
-Route::livewire('/restocking', 'pages::bar.restocking')
-    ->middleware('can:bar.restocking.shop')
-    ->name('restocking.index');
+/* Restocking */
+Route::livewire('/restocking', 'pages::bar.restocking')->middleware('can:bar.restocking.shop')->name('restocking.index');
 
-/*
-|--------------------------------------------------------------------------
-| Inventories — la seule porte qui corrige le stock
-|--------------------------------------------------------------------------
-*/
-// L'historique et le détail se lisent comme les ventes : le comité les consulte
-// sans avoir accès au comptoir. Compter et valider restent au stock.
+/* Inventories */
 Route::prefix('inventories')->name('inventories.')->group(function (): void {
-    Route::livewire('/', 'pages::bar.inventories')
-        ->withoutMiddleware('can:bar.access')
-        ->middleware('can:bar.stats.view')
-        ->name('index');
-    Route::livewire('/current', 'pages::bar.inventory')
-        ->middleware('can:bar.stock.manage')
-        ->name('current');
-    Route::livewire('/{inventory}', 'pages::bar.inventory-show')
-        ->withoutMiddleware('can:bar.access')
-        ->middleware('can:bar.stats.view')
-        ->whereNumber('inventory')
-        ->name('show');
+    Route::livewire('/', 'pages::bar.inventories')->withoutMiddleware('can:bar.access')->middleware('can:bar.stats.view')->name('index');
+    Route::livewire('/current', 'pages::bar.inventory')->middleware('can:bar.stock.manage')->name('current');
+    Route::livewire('/{inventory}', 'pages::bar.inventory-show')->withoutMiddleware('can:bar.access')->middleware('can:bar.stats.view')->whereNumber('inventory')->name('show');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Sales — l'écran du comité
-|--------------------------------------------------------------------------
-*/
-// Le seul écran du bar qui ne demande pas `bar.access` : le comité lit les ventes
-// pour guider les achats, mais n'a rien à faire au comptoir.
-Route::livewire('/stats', 'pages::bar.stats')
+/* Sales */
+Route::livewire('/stats', 'pages::bar.stats')->withoutMiddleware('can:bar.access')->middleware('can:bar.stats.view')->name('stats.index');
+
+/* Cash sheet */
+Route::prefix('cashsheet')
     ->withoutMiddleware('can:bar.access')
-    ->middleware('can:bar.stats.view')
-    ->name('stats.index');
+    ->middleware('can:bar.cash_sheet.send')
+    ->name('cashSheet.')
+    ->group(function (): void {
+        Route::get('/', [BarCashSheetController::class, 'index'])->name('index');
+        Route::post('/send', [BarCashSheetController::class, 'send'])->name('send');
+        Route::get('/download', [BarCashSheetController::class, 'download'])->name('download');
+    });
 
-/*
-|--------------------------------------------------------------------------
-| Cash sheet
-|--------------------------------------------------------------------------
-*/
-Route::prefix('cashsheet')->middleware('can:bar.cash_sheet.send')->name('cashSheet.')->group(function (): void {
-    Route::get('/', [BarCashSheetController::class, 'index'])
-        ->name('index');
-    Route::post('/send', [BarCashSheetController::class, 'send'])
-        ->name('send');
-});
-
-/*
-|--------------------------------------------------------------------------
-| Logout
-|--------------------------------------------------------------------------
-*/
-Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
-    ->name('logout');
+/* Logout */
+Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');

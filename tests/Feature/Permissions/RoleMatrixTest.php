@@ -122,6 +122,8 @@ describe('what a délégation actually grants', function (): void {
         expect($user)
             ->can(Permission::PaymentsReconcile->value)->toBeTrue()
             ->can(Permission::TransactionsImport->value)->toBeTrue()
+            ->can(Permission::BarCashSheetSend->value)->toBeTrue()
+            ->can(Permission::BarAccess->value)->toBeFalse()
             // the cash box is a separate duty — that is the whole point of the split
             ->can(Permission::CashRegisterHolderChange->value)->toBeFalse()
             ->can(Permission::UsersCreate->value)->toBeFalse();

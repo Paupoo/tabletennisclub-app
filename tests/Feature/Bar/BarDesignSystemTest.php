@@ -25,10 +25,7 @@ use Livewire\Livewire;
 */
 
 beforeEach(function (): void {
-    // Administrateur : c'est aujourd'hui le seul profil qui atteint les huit
-    // écrans. Aucun rôle du bar ne porte `bar.cash_sheet.send` — la feuille de
-    // caisse est hors de portée d'un barman comme d'un magasinier. C'est une
-    // lacune de la matrice des rôles, pas des vues ; le test la constate.
+    // The administrator has access to all eight screens.
     $this->manager = User::factory()->isAdmin()->create();
 
     $this->category = BarCategory::create(['name' => 'Bières']);

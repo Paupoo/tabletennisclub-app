@@ -296,6 +296,7 @@ enum Role: string
             ],
 
             self::TREASURY => [
+                Permission::BarCashSheetSend,
                 Permission::PaymentsView,
                 Permission::PaymentsReconcile,
                 Permission::PaymentsRefund,

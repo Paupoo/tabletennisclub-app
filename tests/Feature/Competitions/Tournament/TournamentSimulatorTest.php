@@ -49,7 +49,7 @@ it('calculates bracket matches as N-1, plus the match for third place', function
     expect($result->bracketMatchesTotal)->toBe($expected);
 })->with([
     '4 pools x 2 qualifiers = 8 finalists -> 7 matches + bronze' => [4, 2, 8],
-    '3 pools x 1 qualifier = 3 finalists -> 2 matches, no bronze' => [3, 1, 2],
+    '3 pools x 1 qualifier = 3 straight in + 1 from the rank below -> 3 matches + bronze' => [3, 1, 4],
     '8 pools x 2 qualifiers = 16 finalists -> 15 matches + bronze' => [8, 2, 16],
 ]);
 

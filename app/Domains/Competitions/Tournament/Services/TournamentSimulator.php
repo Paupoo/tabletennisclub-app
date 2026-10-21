@@ -24,6 +24,29 @@ class TournamentSimulator
         9 => 40,
     ];
 
+    /**
+     * The smallest bracket the pools can fill: every direct qualifier, plus at
+     * most one player per pool from the rank just below.
+     */
+    public function fittingBracketSize(int $nbPools, int $nbQualifiersPerPool): int
+    {
+        $direct = $nbPools * $nbQualifiersPerPool;
+
+        foreach ([4, 8, 16] as $size) {
+            if ($size >= $direct && $size <= $direct + $nbPools) {
+                return $size;
+            }
+        }
+
+        foreach ([4, 8, 16] as $size) {
+            if ($size >= $direct) {
+                return $size;
+            }
+        }
+
+        return 16;
+    }
+
     public function simulate(TournamentConfig $config): SimulationResult
     {
         $bestOf = ($config->setsToWin * 2) - 1;
@@ -39,7 +62,7 @@ class TournamentSimulator
 
         $matchesPerPool = (int) ($config->poolSize * ($config->poolSize - 1) / 2);
         $poolMatchesTotal = $matchesPerPool * $config->nbPools;
-        $finalistsCount = $config->nbPools * $config->nbQualifiersPerPool;
+        $finalistsCount = $config->bracketSize ?? $this->fittingBracketSize($config->nbPools, $config->nbQualifiersPerPool);
         // N − 1 matches to name a winner, plus the match for third place as
         // soon as there are semi-finals.
         $bracketMatchesTotal = max(0, $finalistsCount - 1) + ($finalistsCount >= 4 ? 1 : 0);
@@ -54,8 +77,9 @@ class TournamentSimulator
             ? (int) round(($grandTotalMatches / $totalMatchCapacity) * 100)
             : 0;
 
+        // Two entrants take part in every match.
         $avgMatchesPerPlayer = $totalPlayers > 0
-            ? round($grandTotalMatches / $totalPlayers, 1)
+            ? round(2 * $grandTotalMatches / $totalPlayers, 1)
             : 0.0;
 
         $safetyMarginMatches = $totalMatchCapacity - $grandTotalMatches;

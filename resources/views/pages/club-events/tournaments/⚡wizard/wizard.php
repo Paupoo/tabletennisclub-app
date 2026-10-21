@@ -1708,6 +1708,7 @@ new class extends Component
             nbQualifiersPerPool: max(1, $this->nb_qualifies),
             setsToWin: max(1, $this->totalSets),
             matchType: $this->matchType,
+            bracketSize: $this->bracketSize,
         ));
     }
 
@@ -1970,21 +1971,7 @@ new class extends Component
      */
     private function fittingBracketSize(): int
     {
-        $direct = $this->nb_poules * $this->nb_qualifies;
-
-        foreach ([4, 8, 16] as $size) {
-            if ($size >= $direct && $size <= $direct + $this->nb_poules) {
-                return $size;
-            }
-        }
-
-        foreach ([4, 8, 16] as $size) {
-            if ($size >= $direct) {
-                return $size;
-            }
-        }
-
-        return 16;
+        return app(TournamentSimulator::class)->fittingBracketSize($this->nb_poules, $this->nb_qualifies);
     }
 
     private function markPoolsStaleIfGenerated(): void

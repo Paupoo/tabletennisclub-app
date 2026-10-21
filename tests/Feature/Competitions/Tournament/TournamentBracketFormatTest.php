@@ -306,4 +306,78 @@ describe('the simulator', function (): void {
         // Bracket: quarters, semis, then final and bronze side by side = 3 rounds.
         expect($result->estimatedMinutes)->toBe(6 * 27);
     });
+
+    it('plans the bracket of the size set, repêchés included', function (): void {
+        $result = app(TournamentSimulator::class)->simulate(new TournamentConfig(
+            durationMinutes: 240, nbTables: 8, logisticsBufferMinutes: 3, poolSize: 4, nbPools: 4,
+            nbQualifiersPerPool: 1, setsToWin: 3, matchType: 'single', bracketSize: 8,
+        ));
+
+        // 4 straight in, 4 from the rank below: quarters, semis, final and bronze.
+        expect($result->finalistsCount)->toBe(8)
+            ->and($result->bracketMatchesTotal)->toBe(8);
+    });
+
+    it('plans the smallest bracket the pools can fill when no size is set', function (int $nbPools, int $nbQualifiers, int $expected): void {
+        $simulator = app(TournamentSimulator::class);
+
+        $result = $simulator->simulate(new TournamentConfig(
+            durationMinutes: 240, nbTables: 8, logisticsBufferMinutes: 3, poolSize: 4, nbPools: $nbPools,
+            nbQualifiersPerPool: $nbQualifiers, setsToWin: 3, matchType: 'single',
+        ));
+
+        expect($result->finalistsCount)->toBe($expected)
+            ->and($simulator->fittingBracketSize($nbPools, $nbQualifiers))->toBe($expected);
+    })->with([
+        '3 pools × 2: 6 straight in, 2 repêchés' => [3, 2, 8],
+        '4 pools × 2: 8 straight in' => [4, 2, 8],
+        '6 pools × 2: 12 straight in, 4 repêchés' => [6, 2, 16],
+    ]);
+
+    it('counts the matches each entrant plays, two to a match', function (): void {
+        $result = app(TournamentSimulator::class)->simulate(new TournamentConfig(
+            durationMinutes: 240, nbTables: 8, logisticsBufferMinutes: 3, poolSize: 6, nbPools: 4,
+            nbQualifiersPerPool: 2, setsToWin: 3, matchType: 'double', bracketSize: 8,
+        ));
+
+        // 60 pool matches + 8 in the bracket, two entrants each, over 24 pairs.
+        expect($result->avgMatchesPerPlayer)->toBe(5.7);
+    });
+});
+
+describe('the simulation in the wizard', function (): void {
+    it('follows the bracket size chosen', function (): void {
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard')
+            ->set('nb_poules', 4)
+            ->set('nb_qualifies', 1)
+            ->set('bracketSize', 4)
+            ->assertSeeText('tableau de 4')
+            ->set('bracketSize', 8)
+            ->assertSeeText('tableau de 8');
+    });
+
+    it('counts pairs and players apart in a doubles tournament', function (): void {
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard')
+            ->set('matchType', 'double')
+            ->set('nb_poules', 4)
+            ->set('pool_size', 6)
+            ->set('nb_qualifies', 2)
+            ->assertSeeText('24 paires · 48 joueurs')
+            ->assertSeeText('4 poules de 6 → tableau de 8')
+            ->assertSeeText('Matchs par paire');
+    });
+
+    it('counts players in a singles tournament', function (): void {
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard')
+            ->set('matchType', 'single')
+            ->set('nb_poules', 4)
+            ->set('pool_size', 6)
+            ->set('nb_qualifies', 2)
+            ->assertSeeText('24 joueurs')
+            ->assertDontSeeText('24 paires')
+            ->assertSeeText('Matchs par joueur');
+    });
 });

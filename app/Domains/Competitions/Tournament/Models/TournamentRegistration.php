@@ -123,6 +123,7 @@ class TournamentRegistration extends Pivot implements DescribesPayment
         return $this->registration_status === 'spot_offered';
     }
 
+    /** @return MorphOne<Payment, $this> */
     public function payment(): MorphOne
     {
         return $this->morphOne(Payment::class, 'payable');

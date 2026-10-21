@@ -97,6 +97,20 @@ describe('registerUser', function (): void {
         expect(Payment::first()->status)->toBe('pending');
     });
 
+    it('sends one message for a paid registration, carrying the payment request', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 10, 'max_users' => 10]);
+        Event::fake();
+
+        $user = User::factory()->create();
+        (new TournamentService)->registerUser($tournament, $user);
+
+        Notification::assertCount(1);
+        Notification::assertSentTo($user, TournamentRegistrationConfirmedNotification::class,
+            fn (TournamentRegistrationConfirmedNotification $notification): bool => $notification->payment?->is(Payment::first()) === true
+                && $notification->deadline !== null);
+    });
+
     // The payment deadline is NOT a fixed 72h window (I6): these lock the real rule.
     it('sets the payment deadline to the registration-close date for a normal sign-up', function (): void {
         Notification::fake();

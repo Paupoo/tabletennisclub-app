@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\Tournament;
-use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentRequestNotification;
+use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationConfirmedNotification;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
@@ -154,7 +154,7 @@ describe('registerViaEmail', function (): void {
 
         Log::shouldReceive('error')->once()->withArgs(
             fn (string $message, array $context): bool => str_contains($message, 'notification failed')
-                && $context['notification'] === TournamentPaymentRequestNotification::class
+                && $context['notification'] === TournamentRegistrationConfirmedNotification::class
         );
 
         $tournament = publishedTournament(['price' => 12.5]);

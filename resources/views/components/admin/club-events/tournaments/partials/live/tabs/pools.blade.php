@@ -80,10 +80,43 @@
                                     <span class="w-8 text-right font-mono text-sm">{{ $entry['matches_won'] }}</span>
                                     <span class="w-8 text-right font-mono text-sm opacity-60">{{ $entry['sets_won'] }}</span>
                                     <span class="w-8 text-right font-bold text-sm">{{ $entry['total_points'] }}</span>
+                                    @if (($manage ?? false) && ! $entry['no_show'] && $entryUserId !== null && $tournament->status === \App\Domains\Shared\Enums\TournamentStatusEnum::PENDING)
+                                        <x-button icon="o-flag" class="btn-ghost btn-xs btn-square text-base-content/40"
+                                            :tooltip="__('Withdraw')" :aria-label="__('Withdraw :name', ['name' => $displayName])"
+                                            x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __(':name withdraws: every match still to play is lost, those played stand. Continue?', ['name' => $displayName]), 'method' => 'withdraw', 'params' => [$entryUserId], 'danger' => false]) }}, id: $wire.$id })" />
+                                    @endif
                                 </div>
                             </div>
                         @endforeach
                     </div>
+
+                    {{-- Les matchs joués, pour corriger un score tant que le tableau n'est pas tiré. --}}
+                    @if (($manage ?? false) && ! $this->bracketExists && ($this->playedPoolMatches[$pool['id']] ?? collect())->isNotEmpty())
+                        <details class="mt-3 text-xs" data-played-matches>
+                            <summary class="cursor-pointer text-base-content/60">{{ __('Matches played') }}</summary>
+                            <ul class="mt-2 space-y-1">
+                                @foreach ($this->playedPoolMatches[$pool['id']] as $played)
+                                    @php
+                                        $playedDoubles = $played->pair1_id !== null;
+                                        $playedSide1 = $playedDoubles ? ($played->pair1?->displayName() ?? '—') : ($played->player1?->full_name ?? '—');
+                                        $playedSide2 = $playedDoubles ? ($played->pair2?->displayName() ?? '—') : ($played->player2?->full_name ?? '—');
+                                    @endphp
+                                    <li wire:key="played-{{ $played->id }}" class="flex items-center gap-2">
+                                        <span class="min-w-0 flex-1 truncate">{{ $playedSide1 }} — {{ $playedSide2 }}</span>
+                                        <span class="shrink-0 font-mono">
+                                            @if ($played->is_forfeit)
+                                                {{ __('WO') }}
+                                            @else
+                                                {{ $played->sets->map(fn ($set) => $set->player1_score . '-' . $set->player2_score)->implode(' ') }}
+                                            @endif
+                                        </span>
+                                        <x-button icon="o-pencil" class="btn-ghost btn-xs btn-square" :tooltip="__('Correct the score')"
+                                            :aria-label="__('Correct the score')" wire:click="openScoreEntry({{ $played->id }})" />
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </details>
+                    @endif
                 </x-card>
             @endforeach
         </div>

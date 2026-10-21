@@ -86,7 +86,7 @@ class TournamentPairingService
 
         $this->rearrange($tournament, $player, $target, $by);
 
-        $this->noticeChanges($tournament, $before);
+        $this->settle($tournament, $before);
     }
 
     /**
@@ -103,7 +103,7 @@ class TournamentPairingService
             $this->pair($tournament, $players->shift(), $players->pop(), $by);
         }
 
-        $this->noticeChanges($tournament, $before);
+        $this->settle($tournament, $before);
     }
 
     /**
@@ -121,8 +121,9 @@ class TournamentPairingService
     /**
      * A player leaves the tournament: their pair breaks and the partner goes to the bench.
      *
-     * Once the pools are drawn the pair stays where it is — the day itself
-     * settles it, with a replacement or a walkover.
+     * Before the launch a drawn pool would keep a pair that no longer exists,
+     * so the draw goes with it. Once launched the pair stays where it is — the
+     * day itself settles it, with a walkover.
      *
      * @return User|null The partner sent back to the bench, if any.
      */
@@ -130,9 +131,11 @@ class TournamentPairingService
     {
         $pair = $this->pairOf($tournament, $player);
 
-        if (! $pair instanceof TournamentPair || $tournament->pools()->exists()) {
+        if (! $pair instanceof TournamentPair || $tournament->state()->hasBeenLaunched()) {
             return null;
         }
+
+        $this->eraseDraw($tournament);
 
         $before = $this->partners($tournament);
         $partner = $pair->partnerOf($player);
@@ -155,14 +158,14 @@ class TournamentPairingService
 
         $tournament->pairs()->delete();
 
-        $this->noticeChanges($tournament, $before);
+        $this->settle($tournament, $before);
     }
 
     /**
      * Once the tournament is launched, the pairs are on the tables.
      *
-     * Drawn pools do not freeze them: the committee may still rework a pair,
-     * then redraw the pools — which needs an empty bench.
+     * Drawn pools do not freeze them: a change before the launch erases the
+     * draw, and the pools are drawn again — which needs an empty bench.
      */
     private function ensureStillOpen(Tournament $tournament): void
     {
@@ -172,13 +175,32 @@ class TournamentPairingService
     }
 
     /**
-     * Once the pairs are published, tell each player whose partner changed.
+     * Pools drawn on pairs that are about to change are wrong: they go, with
+     * their matches, and the committee draws again once the pairs are set.
+     *
+     * Kept in the database rather than flagged on the screen, so that no reload
+     * can bring back a launch on matches whose pair is gone.
+     */
+    private function eraseDraw(Tournament $tournament): void
+    {
+        $tournament->pools()->delete();
+    }
+
+    /**
+     * Once the players know their pairs, tell each player whose partner changed
+     * — never on the tournament day.
      *
      * @param  array<int, int>  $before
      */
     private function noticeChanges(Tournament $tournament, array $before, ?User $except = null): void
     {
-        if ($tournament->pairs_published_at === null) {
+        if (! $tournament->pairsAreKnownToPlayers()) {
+            return;
+        }
+
+        // Le jour du tournoi, tout le monde est dans la salle : une paire se
+        // refait de vive voix, pas par mail.
+        if ($tournament->start_date !== null && $tournament->start_date->copy()->startOfDay()->lte(today())) {
             return;
         }
 
@@ -266,6 +288,25 @@ class TournamentPairingService
 
             $this->pair($tournament, $player, $target, $by);
         });
+    }
+
+    /**
+     * After a change on the board: erase a draw it made wrong, and tell the
+     * players whose partner changed.
+     *
+     * @param  array<int, int>  $before
+     */
+    private function settle(Tournament $tournament, array $before): void
+    {
+        $after = $this->partners($tournament);
+        ksort($after);
+        ksort($before);
+
+        if ($after !== $before) {
+            $this->eraseDraw($tournament);
+        }
+
+        $this->noticeChanges($tournament, $before);
     }
 
     /**

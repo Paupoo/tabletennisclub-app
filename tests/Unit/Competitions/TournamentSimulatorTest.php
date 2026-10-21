@@ -36,11 +36,11 @@ it('calculates pool matches total correctly', function (): void {
 });
 
 it('calculates bracket matches correctly', function (): void {
-    // finalists = 4 × 2 = 8 → bracket = 7 → grand total = 31
+    // finalists = 4 × 2 = 8 → bracket = 7 + the match for third place → grand total = 32
     $result = (new TournamentSimulator)->simulate(makeConfig());
     expect($result->finalistsCount)->toBe(8);
-    expect($result->bracketMatchesTotal)->toBe(7);
-    expect($result->grandTotalMatches)->toBe(31);
+    expect($result->bracketMatchesTotal)->toBe(8);
+    expect($result->grandTotalMatches)->toBe(32);
 });
 
 it('calculates correct pool matches for pools of 3', function (): void {

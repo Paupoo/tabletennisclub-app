@@ -12,14 +12,17 @@ Bonjour **{{ $recipient->first_name }}**,
 ## Classement final
 
 @foreach ($rankings as $entry)
+@php
+$rankedName = isset($entry['pair']) && $entry['pair'] !== null ? $entry['pair']->fullName() : $entry['user']->full_name;
+@endphp
 @if ($entry['rank'] === 1)
-🥇 **{{ $entry['user']->full_name }}** — {{ $entry['result'] }}
+🥇 **{{ $rankedName }}** — {{ $entry['result'] }}
 @elseif ($entry['rank'] === 2)
-🥈 **{{ $entry['user']->full_name }}** — {{ $entry['result'] }}
+🥈 **{{ $rankedName }}** — {{ $entry['result'] }}
 @elseif ($entry['rank'] === 3)
-🥉 **{{ $entry['user']->full_name }}** — {{ $entry['result'] }}
+🥉 **{{ $rankedName }}** — {{ $entry['result'] }}
 @else
-{{ $entry['rank'] }}. {{ $entry['user']->full_name }}
+{{ $entry['rank'] }}. {{ $rankedName }}
 @endif
 @endforeach
 

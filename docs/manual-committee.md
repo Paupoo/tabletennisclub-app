@@ -197,7 +197,11 @@ From the tournament page, click **Manage live**. Available tabs:
 - **Pools**: pool standings
 - **Bracket**: elimination bracket (after pool phase)
 - **Rankings**: live rankings
-- **Closure**: end the tournament and publish results
+- **Closure**: take the unpaid entries, end the tournament and publish results
+
+The format is set at creation: in doubles a pool size counts **pairs** and the cap counts **players** (an even number); the **bracket size** (4, 8 or 16) is a setting, completed by the best of the rank below, compared on averages. On the day, the roll call happens in the wizard (excused or unexcused absence, late entry by the committee), the pools are drawn on site, and the tables put up are ticked at the launch. Live, every mistake has a way back: cancel a launch, correct a score (in a pool until the bracket is drawn, in the bracket until the next match has started), record a walkover or a withdrawal. The referee is a suggestion: replace them, or play without one. The details are in the help article « Faire tourner un tournoi le jour J ».
+
+An unpaid entry is never dropped: the member gets two reminders (three days before their deadline, then the day after) and can pay on site. After the deadline — the day itself included — they can no longer withdraw alone and contact the Tournaments delegation.
 
 ### Bulk registration
 
@@ -396,8 +400,12 @@ Go to **Club admin → Club info**. Update club details: name, address, contact 
 
 Go to **Club admin → Rooms**. Manage training/competition venues:
 - Name, address, building name
-- Capacity for trainings and interclubs
-- Total tables per room
+- Capacity, in tables, for trainings, official matches and tournaments
+- The room's tables and their state
+
+Each capacity shown is **what the room really offers**: the room typed in, brought down to the tables that can be played on. A room with room for 6 in training and 3 tables out of service offers 5, and its page says so. A table that needs repair still plays. A training pack without a cap takes two players per table offered; at a tournament launch, the wizard ticks as many tables as the tournament capacity, sound tables first.
+
+**QR stickers.** "Print the stickers" (rooms list, a room's page, or "Reprint the sticker" on a table) produces an A4 sheet of 5 cm squares to cut out and stick on the edge of the tables. Each QR carries its table's permanent address: during a launched tournament it opens the table's score entry, otherwise the table's form for the Facilities delegation, and for any other member a "Report a problem" page that writes to the club. Print from the live website: from any other address, the page warns you.
 
 ### Tables
 

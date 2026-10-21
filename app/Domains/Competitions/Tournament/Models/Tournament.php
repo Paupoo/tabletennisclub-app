@@ -47,6 +47,7 @@ use Illuminate\Support\Carbon;
  * @property int $pool_size
  * @property int $nb_pools
  * @property int $nb_qualifiers_per_pool
+ * @property int|null $bracket_size
  * @property int $sets_to_win
  * @property int $logistics_buffer_minutes
  * @property string $match_type
@@ -121,6 +122,19 @@ class Tournament extends Model
     /** @use HasFactory<TournamentFactory> */
     use HasFactory;
 
+    /**
+     * The database default, known before the row is read back.
+     *
+     * The wizard creates a tournament and goes on using the model it got:
+     * without this the status stayed null in memory, and the first state()
+     * call on a brand new tournament threw.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'status' => 'draft',
+    ];
+
     protected $casts = [
         'name',
         'start_date' => 'datetime:Y-m-d\TH:i',
@@ -139,6 +153,7 @@ class Tournament extends Model
         'pool_size' => 'integer',
         'nb_pools' => 'integer',
         'nb_qualifiers_per_pool' => 'integer',
+        'bracket_size' => 'integer',
         'sets_to_win' => 'integer',
         'deuce_enabled' => 'boolean',
         'logistics_buffer_minutes' => 'integer',
@@ -161,6 +176,7 @@ class Tournament extends Model
         'pool_size',
         'nb_pools',
         'nb_qualifiers_per_pool',
+        'bracket_size',
         'sets_to_win',
         'deuce_enabled',
         'logistics_buffer_minutes',
@@ -269,6 +285,17 @@ class Tournament extends Model
     public function pairs(): HasMany
     {
         return $this->hasMany(TournamentPair::class);
+    }
+
+    /**
+     * Do the players know who they play with?
+     *
+     * Pairs the players chose themselves are known from the start; pairs the
+     * committee composes once it has published them.
+     */
+    public function pairsAreKnownToPlayers(): bool
+    {
+        return $this->doubles_registration_mode === 'self' || $this->pairs_published_at !== null;
     }
 
     public function pools(): HasMany
@@ -413,7 +440,7 @@ class Tournament extends Model
         return $this->belongsToMany(User::class)
             ->using(TournamentRegistration::class)
             ->withPivot([
-                'id', 'has_paid', 'qr_confirmed',
+                'id', 'has_paid', 'qr_confirmed', 'absence_excused',
                 'registration_status', 'waitlist_position',
                 'confirmation_deadline', 'payment_deadline', 'payment_id',
             ])

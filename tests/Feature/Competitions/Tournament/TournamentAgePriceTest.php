@@ -119,6 +119,7 @@ function wizardReadyTournament(array $overrides = []): Tournament
         'sets_to_win' => 3,
         'logistics_buffer_minutes' => 3,
         'match_type' => 'double',
+        'max_users' => 16,
         'has_handicap_points' => false,
         'deuce_enabled' => false,
     ], $overrides));

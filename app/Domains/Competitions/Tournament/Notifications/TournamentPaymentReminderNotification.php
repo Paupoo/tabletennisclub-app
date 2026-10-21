@@ -21,6 +21,7 @@ class TournamentPaymentReminderNotification extends Notification
         public Tournament $tournament,
         public Payment $payment,
         public Carbon $deadline,
+        public bool $isOverdue = false,
     ) {}
 
     /** @return array<string, mixed> */
@@ -37,25 +38,30 @@ class TournamentPaymentReminderNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $hoursLeft = (int) now()->diffInHours($this->deadline, false);
         $club = Club::ourClub()->first();
+        $amount = number_format($this->payment->amount_due, 2, ',', ' ');
 
-        return (new MailMessage)
+        $message = (new MailMessage)
             ->subject(__('Payment reminder') . ' — ' . $this->tournament->name)
             ->greeting(__('Reminder') . ', ' . $notifiable->first_name . ' !')
             ->line(__('Your payment of **:amount €** for :name is still pending.', [
-                'amount' => number_format($this->payment->amount_due, 2, ',', ' '),
+                'amount' => $amount,
                 'name' => $this->tournament->name,
+            ]));
+
+        $message = $this->isOverdue
+            ? $message->line(__('The payment deadline (:deadline) has passed. Your spot is kept: you can still pay by bank transfer, or at the desk on the tournament day.', [
+                'deadline' => $this->deadline->format('d/m/Y'),
             ]))
-            ->line(__('You have :hours hours left to pay (deadline: :deadline).', [
-                'hours' => $hoursLeft,
-                'deadline' => $this->deadline->format('d/m/Y à H:i'),
-            ]))
+            : $message->line(__('Please pay by :deadline.', [
+                'deadline' => $this->deadline->format('d/m/Y'),
+            ]));
+
+        return $message
             ->line('---')
             ->line(__('Structured reference: :ref', ['ref' => $this->payment->reference]))
             ->line(__('payment.iban_bic_line', ['iban' => $club->bank_account_formatted, 'bic' => $club->bic]))
             ->line('---')
-            ->line(__('After the deadline, your registration will be cancelled automatically.'))
             ->line(__('If you have already paid by the time you receive this message, please ignore this reminder.'));
     }
 

@@ -60,5 +60,9 @@
         <div class="pt-1 text-center text-xs font-bold text-amber-500">
             <x-icon name="o-trophy" class="mb-0.5 inline h-3.5 w-3.5" /> {{ $winnerName }}
         </div>
+        @if (($manage ?? false) && $tournament->status === \App\Domains\Shared\Enums\TournamentStatusEnum::PENDING)
+            <x-button :label="__('Correct the score')" icon="o-pencil" class="btn-ghost btn-xs w-full"
+                wire:click="openScoreEntry({{ $match->id }})" />
+        @endif
     @endif
 </div>

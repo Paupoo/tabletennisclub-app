@@ -145,8 +145,7 @@
                         <x-button icon="o-beaker" :label="__('Send me a test')" wire:click="sendTest" spinner="sendTest" class="btn-outline" />
                         <x-button icon="o-paper-airplane" class="btn-primary" spinner="send"
                             :label="__('Send to :count addresses', ['count' => $this->addressCount])"
-                            wire:click="send"
-                            wire:confirm="{{ __('Send this message to :addresses addresses (:members members)? It cannot be recalled.', ['addresses' => $this->addressCount, 'members' => $this->audience->members->count()]) }}" />
+                            x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __('Send this message to :addresses addresses (:members members)? It cannot be recalled.', ['addresses' => $this->addressCount, 'members' => $this->audience->members->count()]), 'method' => 'send', 'params' => [], 'danger' => false]) }}, id: $wire.$id })" />
                     </div>
                 </div>
             </x-card>

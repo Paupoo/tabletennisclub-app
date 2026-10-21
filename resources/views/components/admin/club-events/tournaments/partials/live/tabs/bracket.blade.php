@@ -51,6 +51,7 @@
                         <div class="flex flex-1 flex-col justify-around gap-4">
                             @foreach ($rounds[$round] as $match)
                                 @include('components.admin.club-events.tournaments.partials.live.bracket-match', [
+                                    'manage' => $manage ?? false,
                                     'match' => $match,
                                     'round' => $round,
                                 ])
@@ -87,6 +88,7 @@
                         </p>
                         <div class="flex flex-1 flex-col justify-around">
                             @include('components.admin.club-events.tournaments.partials.live.bracket-match', [
+                                    'manage' => $manage ?? false,
                                 'match' => $bronze,
                                 'round' => 'bronze',
                             ])
@@ -116,6 +118,7 @@
                     <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         @foreach ($rounds[$round] as $match)
                             @include('components.admin.club-events.tournaments.partials.live.bracket-match', [
+                                    'manage' => $manage ?? false,
                                 'match' => $match,
                                 'round' => $round,
                             ])
@@ -131,6 +134,7 @@
                         <div class="h-px grow bg-base-300"></div>
                     </div>
                     @include('components.admin.club-events.tournaments.partials.live.bracket-match', [
+                                    'manage' => $manage ?? false,
                         'match' => $bronze,
                         'round' => 'bronze',
                     ])

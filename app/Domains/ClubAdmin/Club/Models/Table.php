@@ -21,7 +21,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $name
  * @property Carbon|null $purchased_on
- * @property string|null $state
+ * @property TableStateEnum $state
  * @property int|null $room_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at

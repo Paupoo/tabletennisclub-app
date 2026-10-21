@@ -6,6 +6,7 @@ namespace App\Actions\Tournament;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Color\Color;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\Exception\ValidationException;
@@ -22,9 +23,16 @@ use Endroid\QrCode\Writer\PngWriter;
  * taped to a wall, in a sports hall, at an angle, by somebody holding a bat —
  * a code that tolerates a third of itself being unreadable is worth the extra
  * density. Same writer and same encoding as {@see GeneratePaymentQR}.
+ *
+ * Drawn in the club blue of the design system (`--color-primary`, #1e40af)
+ * rather than black: dark enough on white for any phone to read, and the
+ * club's own colour on its sheets and stickers.
  */
 class GenerateTournamentQR
 {
+    /** The club blue: `--color-primary` of the light theme. */
+    private const array CLUB_BLUE = [30, 64, 175];
+
     /**
      * @return string A `data:image/png;base64,…` URI, embeddable in a printed page.
      *
@@ -39,6 +47,7 @@ class GenerateTournamentQR
             errorCorrectionLevel: ErrorCorrectionLevel::High,
             size: $size,
             margin: 8,
+            foregroundColor: new Color(...self::CLUB_BLUE),
         )->build();
 
         return 'data:image/png;base64,' . base64_encode($result->getString());

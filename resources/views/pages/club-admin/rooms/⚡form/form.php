@@ -29,6 +29,9 @@ new class extends Component
     #[Validate('required|integer|between:0,99|lte:capacity_for_trainings')]
     public int|string $capacity_for_interclubs = 0;
 
+    #[Validate('required|integer|between:0,99')]
+    public int|string $capacity_for_tournaments = 0;
+
     #[Validate('required|integer|between:0,99|gte:capacity_for_interclubs')]
     public int|string $capacity_for_trainings = 0;
 
@@ -119,6 +122,7 @@ new class extends Component
             $this->access_description = $this->room->access_description ?? '';
             $this->capacity_for_trainings = $this->room->capacity_for_trainings;
             $this->capacity_for_interclubs = $this->room->capacity_for_interclubs;
+            $this->capacity_for_tournaments = $this->room->capacity_for_tournaments;
 
             $this->selectedTables = $this->room->tables()->pluck('id')->toArray();
         }
@@ -174,6 +178,7 @@ new class extends Component
             'access_description' => $this->access_description,
             'capacity_for_trainings' => $this->capacity_for_trainings,
             'capacity_for_interclubs' => $this->capacity_for_interclubs,
+            'capacity_for_tournaments' => $this->capacity_for_tournaments,
         ]);
 
         $this->room->save();

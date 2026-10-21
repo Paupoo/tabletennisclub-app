@@ -9,6 +9,8 @@ use App\Domains\Shared\Enums\InvitationTarget;
 use App\Http\Controllers\Attestations\AttestationDownloadController;
 use App\Http\Controllers\Attestations\AttestationVerificationController;
 use App\Http\Controllers\Bar\PublicBarMenuController;
+use App\Http\Controllers\ClubAdmin\Club\TableScanController;
+use App\Http\Controllers\ClubAdmin\Club\TableStickersController;
 use App\Http\Controllers\ClubAdmin\Communications\InvitationRedirectController;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\GuardianInvitationController;
@@ -404,6 +406,8 @@ Route::prefix('admin/club-admin/rooms/')
 Route::prefix('admin/club-admin/tables/')
     ->middleware(['auth', 'verified', 'can:tables.manage'])
     ->group(function (): void {
+        Route::get('stickers', TableStickersController::class)->name('admin.tables.stickers');
+
         Route::middleware('can:update,table')
             ->group(function (): void {
                 Route::livewire('{table}/edit', 'pages::club-admin.tables.form')->name('admin.tables.edit');
@@ -644,6 +648,9 @@ Route::get('/tournament/{tournament}/calendar.ics', [TournamentController::class
 // Tournament QR table score (auth, URL stable = imprimable/affichable sur table)
 Route::middleware(['auth', 'verified'])
     ->group(function (): void {
+        // L'adresse permanente imprimée sur l'autocollant de chaque table.
+        Route::get('/table/{table}', TableScanController::class)->name('table.scan');
+
         Route::get('/tournament/{tournament}/table/{table}/score', [TableScoreController::class, 'show'])
             ->name('tournament.table.score');
         Route::post('/tournament/{tournament}/table/{table}/score', [TableScoreController::class, 'submit'])

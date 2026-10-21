@@ -1,3 +1,13 @@
+{{-- Le tirage refuse un banc non vide : on le dit avant qu'il ne refuse. --}}
+@php $benchLeft = $this->currentTournament?->match_type === 'double' && ! $this->isLaunched ? count($this->pairBoard['bench']) : 0; @endphp
+@if ($benchLeft > 0)
+    <div class="mt-6 flex flex-wrap items-center gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4 text-sm" data-bench-reminder>
+        <x-icon name="o-exclamation-triangle" class="h-5 w-5 shrink-0 text-warning-content" />
+        <span class="flex-1">{{ trans_choice(':count player still has no partner: compose the pairs first.|:count players still have no partner: compose the pairs first.', $benchLeft, ['count' => $benchLeft]) }}</span>
+        <x-button :label="__('Go to the pairs')" icon="o-user-group" class="btn-outline btn-sm" wire:click="$set('step', 'pairs')" />
+    </div>
+@endif
+
 @include('components.admin.club-events.tournaments.partials.shared.start-pools', ['isLocked' => $this->isLaunched])
 
 {{-- Launch Section --}}
@@ -22,9 +32,25 @@
             {{ __('Configuration is complete. Click below to generate the tournament brackets and notify all participants.') }}
         </p>
 
+        <div class="mt-8 w-full max-w-xl text-left" data-launch-tables>
+            <p class="text-sm font-semibold">{{ __('Tables of the day') }}</p>
+            <p class="text-xs text-base-content/60">{{ __('Untick the tables that will not be put up. More can be opened from the live centre.') }}</p>
+            <div class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                @forelse ($this->launchableTables as $table)
+                    <label @class(['flex items-center gap-2 rounded-lg border border-base-300 px-2 py-1.5 text-sm', 'opacity-50' => $table['out_of_service']])>
+                        <input type="checkbox" class="checkbox checkbox-sm checkbox-primary" value="{{ $table['id'] }}"
+                            wire:model.live="launchTableIds" @disabled($table['out_of_service']) />
+                        <span class="truncate">{{ $table['name'] }}</span>
+                    </label>
+                @empty
+                    <p class="col-span-full text-sm text-warning-content">{{ __('No room is chosen for this tournament: choose one in the configuration.') }}</p>
+                @endforelse
+            </div>
+        </div>
+
         <x-button :label="__('Launch Tournament')" icon="o-play"
             class="btn-primary btn-lg mt-10 shadow-xl shadow-primary/20" wire:click="launch" spinner="launch"
-            :disabled="!$this->matchesGenerated || $this->poolsStale" />
+            :disabled="!$this->matchesGenerated || $this->poolsStale || $launchTableIds === []" />
     @endif
 </div>
 

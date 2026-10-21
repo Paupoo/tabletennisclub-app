@@ -21,6 +21,7 @@ use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\Domains\Competitions\Tournament\Services\TournamentSimulator;
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
+use App\Domains\Shared\Enums\TableStateEnum;
 use App\Domains\Shared\Enums\TournamentObjectiveEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Shared\States\Tournament\TournamentStateMachine;
@@ -36,6 +37,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -46,6 +48,16 @@ new class extends Component
 {
     use HasBreadcrumbs;
     use HasEventPostForm, KeepsNumericPropertiesTyped, Toast, WithFileUploads;
+
+    /** The icons of the three absences, shared by their buttons and their badges. */
+    public const string ICON_ABSENT = 'o-user-minus';
+
+    public const string ICON_EXCUSED = 'o-hand-raised';
+
+    public const string ICON_UNEXCUSED = 'o-exclamation-triangle';
+
+    /** Places in the bracket: 4, 8 or 16. */
+    public int $bracketSize = 8;
 
     public bool $bulkCancelModal = false;
 
@@ -67,6 +79,13 @@ new class extends Component
     public bool $inviteIncludeArticle = false;
 
     public string $inviteMessage = '';
+
+    /**
+     * The tables put up for the day, ticked at the launch.
+     *
+     * @var list<int>
+     */
+    public array $launchTableIds = [];
 
     public int $logistics_buffer = 3;
 
@@ -104,10 +123,6 @@ new class extends Component
 
     public int $pool_size = 4;
 
-    // ── Options statiques
-    /** @var array<int, array{id: int, name: string}> */
-    public array $poolSizeOptions = [];
-
     // ── Pools staleness flag
     public bool $poolsStale = false;
 
@@ -126,6 +141,12 @@ new class extends Component
     public string $reducedPriceUnderAge = '';
 
     public string $registration_deadline = '';
+
+    /** What the list of registrations searches, by first or last name. */
+    public string $registrationSearch = '';
+
+    /** The tab of the list of registrations: all, to_check, present, absent or unpaid. */
+    public string $registrationTab = 'all';
 
     public array $selectedMembers = [];
 
@@ -167,7 +188,7 @@ new class extends Component
 
     public bool $showRequireCloseRegistrationsModal = false;
 
-    public array $sortBy = ['column' => 'registered_at', 'direction' => 'asc'];
+    public array $sortBy = ['column' => 'name', 'direction' => 'asc'];
 
     public string $startTime = '';
 
@@ -229,6 +250,7 @@ new class extends Component
         // La suggestion redessine les poules : sans ça le plafond restait celui
         // de la configuration précédente, sans que rien ne le signale.
         $this->suggestMaxUsers();
+        $this->bracketSize = $this->fittingBracketSize();
 
         $this->success(
             title: __('Suggestion applied!'),
@@ -242,12 +264,12 @@ new class extends Component
     #[Computed]
     public function availableRooms(): array
     {
-        return Room::select(['id', 'name', 'total_playable_tables'])
+        return Room::with('tables:id,room_id,state')
             ->orderBy('name')
             ->get()
-            ->map(fn ($room): array => [
+            ->map(fn (Room $room): array => [
                 'id' => $room->id,
-                'name' => $room->name . ' (' . $room->total_playable_tables . ' tables)',
+                'name' => $room->name . ' (' . $room->usableTournamentCapacity() . ' tables)',
             ])
             ->toArray();
     }
@@ -305,7 +327,7 @@ new class extends Component
 
         app(TournamentService::class)->cancelRegistration($tournament, $user);
 
-        unset($this->registrations);
+        unset($this->registrationRows, $this->registrationTabCounts, $this->registrations);
         unset($this->waitlist);
 
         $this->error($user->full_name . ' ' . __('has been unregistered.'));
@@ -361,12 +383,21 @@ new class extends Component
             return;
         }
 
-        DB::table('tournament_user')
-            ->where('tournament_id', $this->tournamentId)
-            ->whereIn('user_id', $this->selectedPeople)
-            ->update(['registration_status' => 'no_show']);
+        $tournament = Tournament::findOrFail($this->tournamentId);
+        $service = app(TournamentService::class);
+
+        try {
+            foreach (User::whereIn('id', $this->selectedPeople)->get() as $player) {
+                $service->markAbsent($tournament, $player, excused: true);
+            }
+        } catch (LogicException) {
+            $this->error(__('The tournament is launched: record a walkover from the live centre instead.'));
+
+            return;
+        }
 
         $this->resetPostAction();
+        unset($this->pairBoard);
         $this->warning(__('No-shows recorded.'));
     }
 
@@ -415,7 +446,7 @@ new class extends Component
 
         app(TournamentService::class)->recordCashPayment($tournament, $user, $register);
 
-        unset($this->registrations);
+        unset($this->registrationRows, $this->registrationTabCounts, $this->registrations);
         $this->reset(['showCashConfirmModal', 'paymentActionUserId']);
         $this->success(__('Cash payment recorded.'), icon: 'o-currency-euro');
     }
@@ -444,20 +475,10 @@ new class extends Component
             return;
         }
 
-        // Kick everyone still on the waitlist — they no longer have a chance.
-        $tournament->users()
-            ->wherePivotIn('registration_status', ['waiting'])
-            ->get()
-            ->each(function (User $user) use ($tournament): void {
-                DB::table('tournament_user')
-                    ->where('tournament_id', $tournament->id)
-                    ->where('user_id', $user->id)
-                    ->update(['registration_status' => 'cancelled', 'waitlist_position' => null]);
+        // Ceux qui attendent encore n'auront pas de place : ils sont prévenus.
+        app(TournamentService::class)->closeWaitlist($tournament);
 
-                $user->notify(new TournamentWaitlistRemovedNotification($tournament));
-            });
-
-        unset($this->currentTournament, $this->waitlist, $this->registrations, $this->registrationsOpen, $this->canOpenRegistrations);
+        unset($this->currentTournament, $this->waitlist, $this->registrationRows, $this->registrationTabCounts, $this->registrations, $this->registrationsOpen, $this->canOpenRegistrations);
         $this->showCloseRegistrationsModal = false;
         $this->success(__('Registrations closed. Waitlisted players have been notified.'), icon: 'o-lock-closed');
     }
@@ -498,12 +519,18 @@ new class extends Component
             return;
         }
 
-        DB::table('tournament_user')
-            ->where('tournament_id', $this->tournamentId)
-            ->where('user_id', $userId)
-            ->update(['registration_status' => 'confirmed']);
+        $isBack = app(TournamentService::class)->markPresent(
+            Tournament::findOrFail($this->tournamentId),
+            User::findOrFail($userId),
+        );
 
-        unset($this->registrations);
+        if (! $isBack) {
+            $this->error(__('The pools are drawn: this player can no longer be brought back.'));
+
+            return;
+        }
+
+        unset($this->registrationRows, $this->registrationTabCounts, $this->registrations, $this->pairBoard);
         $this->success(__('Presence confirmed.'));
     }
 
@@ -567,13 +594,29 @@ new class extends Component
 
                 return;
             }
-        } elseif ($tournament->users()->count() === 0) {
+        } elseif ($tournament->users()->wherePivotIn('registration_status', ['registered', 'confirmed'])->count() === 0) {
             $this->error(__('No registered players.'));
 
             return;
         }
 
-        app(TournamentPoolService::class)->distributePlayersInPools($tournament, $this->nb_poules);
+        // Le tirage suit la configuration enregistrée : un nombre de poules
+        // saisi sans être enregistré ne doit pas tirer autre chose que ce que
+        // le tableau final attendra.
+        $entrants = $tournament->match_type === 'double'
+            ? $tournament->pairs()->count()
+            : $tournament->users()->wherePivotIn('registration_status', ['registered', 'confirmed'])->count();
+
+        if (intdiv($entrants, max(1, $tournament->nb_pools)) < 3) {
+            $this->error(__('Every pool needs at least three entrants: :count for :pools pools. Use fewer pools.', [
+                'count' => $entrants,
+                'pools' => $tournament->nb_pools,
+            ]));
+
+            return;
+        }
+
+        app(TournamentPoolService::class)->distributePlayersInPools($tournament, $tournament->nb_pools);
 
         $this->poolsStale = false;
         $this->success(__('Pools generated!'), icon: 'o-user-group');
@@ -660,32 +703,54 @@ new class extends Component
         $this->js('$wire.processLaunch()');
     }
 
-    public function markNoShow(int $userId): void
+    /**
+     * The tables of the chosen rooms, for the checklist of the launch.
+     *
+     * @return list<array{id: int, name: string, out_of_service: bool}>
+     */
+    #[Computed]
+    public function launchableTables(): array
+    {
+        return Table::with('room')
+            ->whereIn('room_id', $this->selectedRooms)
+            ->orderBy('room_id')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Table $table): array => [
+                'id' => $table->id,
+                'name' => ($table->room?->name ?? '—') . ' · ' . __('Table') . ' ' . $table->name,
+                'out_of_service' => $table->state === TableStateEnum::OUT_OF_SERVICE,
+            ])
+            ->all();
+    }
+
+    /**
+     * The roll call: a registered player is not here.
+     *
+     * `$excused` says whether they had warned, which decides what becomes of
+     * an unpaid entry fee.
+     */
+    public function markAbsent(int $userId, bool $excused): void
     {
         if (! $this->tournamentId) {
             return;
         }
 
-        DB::table('tournament_user')
-            ->where('tournament_id', $this->tournamentId)
-            ->where('user_id', $userId)
-            ->update(['registration_status' => 'no_show']);
+        try {
+            app(TournamentService::class)->markAbsent(
+                Tournament::findOrFail($this->tournamentId),
+                User::findOrFail($userId),
+                $excused,
+            );
+        } catch (LogicException) {
+            $this->error(__('The tournament is launched: record a walkover from the live centre instead.'));
 
-        $forfeited = 0;
-        if ($this->isLaunched) {
-            $tournament = Tournament::findOrFail($this->tournamentId);
-            $user = User::findOrFail($userId);
-            $forfeited = app(App\Services\TournamentMatchService::class)
-                ->forfeitPoolMatchesForPlayer($tournament, $user);
+            return;
         }
 
-        unset($this->registrations);
+        unset($this->registrationRows, $this->registrationTabCounts, $this->registrations, $this->pairBoard, $this->poolsGenerated, $this->pools);
 
-        $msg = $forfeited > 0
-            ? __('No-show recorded. :count pool match(es) forfeited.', ['count' => $forfeited])
-            : __('No-show recorded.');
-
-        $this->warning($msg, icon: 'o-no-symbol');
+        $this->warning($excused ? __('Excused absence recorded.') : __('Unexcused absence recorded: the entry fee stays due.'), icon: 'o-no-symbol');
     }
 
     public function markQrConfirmed(int $userId): void
@@ -699,7 +764,7 @@ new class extends Component
             ->where('user_id', $userId)
             ->update(['qr_confirmed' => true]);
 
-        unset($this->registrations);
+        unset($this->registrationRows, $this->registrationTabCounts, $this->registrations);
         $this->reset(['showQrModal', 'paymentActionUserId']);
         $this->success(__('QR payment confirmed on-site.'), icon: 'o-check-circle');
     }
@@ -743,6 +808,24 @@ new class extends Component
     {
         return $this->tournamentId !== null
             && (bool) Tournament::find($this->tournamentId)?->matches()->exists();
+    }
+
+    /**
+     * How far the tournament lets the committee go in the steps.
+     */
+    public function maxReachableStepIndex(): int
+    {
+        $keys = array_column($this->wizardSteps(), 'key');
+
+        $reachable = match (true) {
+            in_array($this->currentTournament?->status, [TournamentStatusEnum::SETUP, TournamentStatusEnum::PENDING, TournamentStatusEnum::CLOSED], true) => '6',
+            $this->currentTournament?->status === TournamentStatusEnum::PUBLISHED => in_array('pairs', $keys, true) ? 'pairs' : '5',
+            $this->currentTournament?->status === TournamentStatusEnum::LOCKED => '4',
+            $this->tournamentId !== null => '3',
+            default => '1',
+        };
+
+        return (int) array_search($reachable, $keys, true);
     }
 
     // ── Computed: members from DB
@@ -790,18 +873,6 @@ new class extends Component
     {
         $this->tournamentDate = today()->addWeek()->format('Y-m-d');
 
-        /*
-         * Les libellés étaient écrits en français dans la déclaration de propriété,
-         * là où __() n'est pas encore résolu. Ils se construisent donc ici.
-         */
-        $this->poolSizeOptions = array_map(
-            fn (int $size): array => [
-                'id' => $size,
-                'name' => trans_choice('{1} :count player|[2,*] :count players', $size, ['count' => $size]),
-            ],
-            [3, 4, 5, 6],
-        );
-
         if ($tournament !== null) {
             $this->tournamentId = $tournament->id;
             $this->name = $tournament->name;
@@ -820,15 +891,17 @@ new class extends Component
             $this->nb_poules = $tournament->nb_pools;
             $this->pool_size = $tournament->pool_size;
             $this->nb_qualifies = $tournament->nb_qualifiers_per_pool;
+            $this->bracketSize = $tournament->bracket_size ?? $this->fittingBracketSize();
             $this->maxUsers = $tournament->max_users;
             $this->maxUsersManual = $tournament->max_users > 0
-                && $tournament->max_users !== $tournament->nb_pools * $tournament->pool_size;
+                && $tournament->max_users !== $tournament->nb_pools * $tournament->pool_size * $this->playersPerEntrant();
             $this->price = (float) ($tournament->price ?? 0);
             $this->reducedPrice = $tournament->reduced_price_under_age === null ? '' : (string) $tournament->reduced_price;
             $this->reducedPriceUnderAge = (string) ($tournament->reduced_price_under_age ?? '');
             $this->selectedObjective = $tournament->objective?->value ?? '';
             $this->selectedRooms = $tournament->rooms->pluck('id')->toArray();
-            $this->nb_tables = (int) $tournament->rooms->sum('total_playable_tables') ?: 8;
+            $this->launchTableIds = $this->playableTableIds();
+            $this->nb_tables = count($this->launchTableIds) ?: 8;
 
             /*
              * Le statut ne choisit l'étape que si l'URL n'en porte pas une : l'icône
@@ -894,9 +967,7 @@ new class extends Component
             return $this->nb_tables;
         }
 
-        $total = Room::whereIn('id', $this->selectedRooms)->sum('total_playable_tables');
-
-        return (int) ($total ?: $this->nb_tables);
+        return count($this->playableTableIds()) ?: $this->nb_tables;
     }
 
     public function openCashConfirmModal(int $userId): void
@@ -1078,6 +1149,25 @@ new class extends Component
             && (bool) Tournament::find($this->tournamentId)?->pools()->exists();
     }
 
+    /**
+     * The pool sizes on offer, counted in pairs for doubles.
+     *
+     * @return list<array{id: int, name: string}>
+     */
+    #[Computed]
+    public function poolSizeOptions(): array
+    {
+        return array_map(
+            fn (int $size): array => [
+                'id' => $size,
+                'name' => $this->matchType === 'double'
+                    ? trans_choice('{1} :count pair|[2,*] :count pairs', $size, ['count' => $size])
+                    : trans_choice('{1} :count player|[2,*] :count players', $size, ['count' => $size]),
+            ],
+            [3, 4, 5, 6],
+        );
+    }
+
     public function processLaunch(): mixed
     {
         if (! $this->tournamentId) {
@@ -1098,11 +1188,20 @@ new class extends Component
             return null;
         }
 
-        new TournamentStateMachine($tournament)->start();
-
-        // Populate table_tournament pivot from the tournament's linked rooms
-        $tableIds = Table::whereHas('room', fn ($q) => $q->whereIn('rooms.id', $tournament->rooms()->pluck('rooms.id')))
+        // Les tables du jour sont celles cochées : la salle en compte souvent
+        // plus qu'on n'en monte, et une table hors service n'a rien à y faire.
+        $tableIds = Table::whereIn('id', $this->launchTableIds)
+            ->whereNot('state', TableStateEnum::OUT_OF_SERVICE)
             ->pluck('id');
+
+        if ($tableIds->isEmpty()) {
+            $this->showLaunchModal = false;
+            $this->error(__('Tick at least one table for the day.'));
+
+            return null;
+        }
+
+        new TournamentStateMachine($tournament)->start();
 
         $tournament->tables()->sync(
             $tableIds->mapWithKeys(fn ($id): array => [$id => ['is_table_free' => true]])->all()
@@ -1136,7 +1235,7 @@ new class extends Component
             ]);
 
         app(TournamentService::class)->countRegisteredUsers($tournament);
-        unset($this->registrations);
+        unset($this->registrationRows, $this->registrationTabCounts, $this->registrations);
         unset($this->waitlist);
 
         $this->success($user->full_name . ' ' . __('has been moved to the registered list.'));
@@ -1192,14 +1291,14 @@ new class extends Component
         $user = User::findOrFail($this->memberToRegister);
 
         try {
-            app(TournamentService::class)->registerUser($tournament, $user);
+            app(TournamentService::class)->registerUser($tournament, $user, byCommittee: true);
         } catch (LogicException $e) {
             $this->error($e->getMessage());
 
             return;
         }
 
-        unset($this->registrations, $this->waitlist, $this->members);
+        unset($this->registrationRows, $this->registrationTabCounts, $this->registrations, $this->waitlist, $this->members, $this->pairBoard);
 
         $this->memberToRegister = 0;
         $this->showRegisterModal = false;
@@ -1214,39 +1313,75 @@ new class extends Component
         return $this->currentTournament?->state()->canCreatePools() ?? false;
     }
 
-    // ── Computed: active registrations (not waiting, not cancelled)
-
+    /**
+     * Every active registration, with the tabs it belongs to.
+     *
+     * An absence excused has its fee dropped: it owes nothing, so it is not
+     * unpaid.
+     */
     #[Computed]
-    public function registrations(): Collection
+    public function registrationRows(): Collection
     {
         if (! $this->tournamentId) {
             return collect();
         }
 
-        $col = $this->sortBy['column'];
-        $dir = $this->sortBy['direction'];
-
-        $users = Tournament::findOrFail($this->tournamentId)
+        $tournament = Tournament::findOrFail($this->tournamentId);
+        $users = $tournament
             ->users()
             ->wherePivotIn('registration_status', ['registered', 'confirmed', 'spot_offered', 'no_show'])
             ->get();
 
         $paymentIds = $users->map(fn (User $u) => $u->pivot->payment_id)->filter()->unique()->values();
         $paidPaymentIds = Payment::whereIn('id', $paymentIds)->where('status', 'paid')->pluck('id')->flip();
+        $isPaid = $tournament->isPaid();
 
-        $rows = $users->map(fn (User $u): array => [
-            'id' => $u->id,
-            'name' => $u->full_name,
-            'ranking' => $u->ranking->getLabel(),
-            'status' => $u->pivot->registration_status,
-            'has_paid' => (bool) $u->pivot->has_paid || isset($paidPaymentIds[$u->pivot->payment_id]),
-            'qr_confirmed' => (bool) $u->pivot->qr_confirmed,
-            'payment_id' => $u->pivot->payment_id,
-            'payment_deadline' => $u->pivot->payment_deadline,
-            'registered_at' => $u->pivot->created_at,
-        ]);
+        return $users->map(function (User $u) use ($paidPaymentIds, $isPaid): array {
+            $status = $u->pivot->registration_status;
+            $hasPaid = (bool) $u->pivot->has_paid || isset($paidPaymentIds[$u->pivot->payment_id]);
+            $owes = $isPaid && ! $hasPaid && ($status !== 'no_show' || $u->pivot->absence_excused !== true);
 
-        return $dir === 'asc'
+            return [
+                'id' => $u->id,
+                'name' => $u->full_name,
+                'sort_name' => Str::lower(Str::ascii($u->first_name . ' ' . $u->last_name)),
+                'search' => Str::lower(Str::ascii($u->first_name . ' ' . $u->last_name)),
+                'ranking' => $u->ranking->getLabel(),
+                'status' => $status,
+                'has_paid' => $hasPaid,
+                'qr_confirmed' => (bool) $u->pivot->qr_confirmed,
+                'payment_id' => $u->pivot->payment_id,
+                'payment_deadline' => $u->pivot->payment_deadline,
+                'registered_at' => $u->pivot->created_at,
+                'status_badge' => $this->statusBadge($status, $u->pivot->absence_excused, $hasPaid),
+                'tabs' => array_values(array_filter([
+                    in_array($status, ['registered', 'spot_offered'], true) ? 'to_check' : null,
+                    $status === 'confirmed' ? 'present' : null,
+                    $status === 'no_show' ? 'absent' : null,
+                    $owes ? 'unpaid' : null,
+                ])),
+            ];
+        });
+    }
+
+    // ── Computed: active registrations (not waiting, not cancelled)
+
+    /**
+     * The registered players as the list shows them: the tab chosen, the name
+     * searched, sorted by first name then last name unless a column says
+     * otherwise.
+     */
+    #[Computed]
+    public function registrations(): Collection
+    {
+        $col = $this->sortBy['column'] === 'name' ? 'sort_name' : $this->sortBy['column'];
+        $search = Str::lower(Str::ascii(trim($this->registrationSearch)));
+
+        $rows = $this->registrationRows
+            ->filter(fn (array $row): bool => $this->registrationTab === 'all' || in_array($this->registrationTab, $row['tabs'], true))
+            ->filter(fn (array $row): bool => $search === '' || str_contains($row['search'], $search));
+
+        return $this->sortBy['direction'] === 'asc'
             ? $rows->sortBy($col)->values()
             : $rows->sortByDesc($col)->values();
     }
@@ -1256,6 +1391,26 @@ new class extends Component
     public function registrationsOpen(): bool
     {
         return $this->currentTournament?->state()->canRegisterUsers() ?? false;
+    }
+
+    /**
+     * How many players each tab of the list holds.
+     *
+     * @return array{all: int, to_check: int, present: int, absent: int, unpaid: int}
+     */
+    #[Computed]
+    public function registrationTabCounts(): array
+    {
+        $rows = $this->registrationRows;
+        $count = fn (string $tab): int => $rows->filter(fn (array $row): bool => in_array($tab, $row['tabs'], true))->count();
+
+        return [
+            'all' => $rows->count(),
+            'to_check' => $count('to_check'),
+            'present' => $count('present'),
+            'absent' => $count('absent'),
+            'unpaid' => $count('unpaid'),
+        ];
     }
 
     public function removeFromWaitlist(int $userId): void
@@ -1276,7 +1431,7 @@ new class extends Component
             $user->notify(new TournamentWaitlistRemovedNotification($tournament));
         }
 
-        unset($this->registrations);
+        unset($this->registrationRows, $this->registrationTabCounts, $this->registrations);
         unset($this->waitlist);
 
         $this->success(__('Removed from waiting list.'));
@@ -1322,13 +1477,28 @@ new class extends Component
             'nb_poules' => 'required|integer|min:1|max:64',
             'pool_size' => 'required|integer|min:2|max:10',
             'nb_qualifies' => 'required|integer|min:1',
+            'bracketSize' => ['required', 'integer', 'in:4,8,16', function (string $attribute, mixed $value, Closure $fail): void {
+                $direct = $this->nb_poules * $this->nb_qualifies;
+
+                if ((int) $value < $direct || (int) $value > $direct + $this->nb_poules) {
+                    $fail(__('A bracket of :size cannot be filled: :direct players go straight in, and at most :pools more can come from the rank below.', [
+                        'size' => $value,
+                        'direct' => $direct,
+                        'pools' => $this->nb_poules,
+                    ]));
+                }
+            }],
             'totalSets' => 'required|integer|min:1|max:5',
             'deuceEnabled' => 'boolean',
             'hasHandicapPoints' => 'boolean',
             'logistics_buffer' => 'required|integer|min:0|max:30',
             'matchType' => 'required|in:single,double',
             'doublesRegistrationMode' => 'nullable|in:club,self',
-            'maxUsers' => 'required|integer|min:0',
+            'maxUsers' => ['required', 'integer', 'min:0', function (string $attribute, mixed $value, Closure $fail): void {
+                if ($this->matchType === 'double' && (int) $value % 2 !== 0) {
+                    $fail(__('In doubles the cap must be even: every player needs a partner.'));
+                }
+            }],
             'price' => 'required|numeric|min:0',
             'reducedPrice' => 'nullable|required_with:reducedPriceUnderAge|numeric|min:0|lt:price',
             'reducedPriceUnderAge' => 'nullable|required_with:reducedPrice|integer|min:1|max:99',
@@ -1378,6 +1548,7 @@ new class extends Component
                 'pool_size' => $this->pool_size,
                 'nb_pools' => $this->nb_poules,
                 'nb_qualifiers_per_pool' => $this->nb_qualifies,
+                'bracket_size' => $this->bracketSize,
                 'sets_to_win' => $this->totalSets,
                 'deuce_enabled' => $this->deuceEnabled,
                 'has_handicap_points' => $this->hasHandicapPoints,
@@ -1431,7 +1602,7 @@ new class extends Component
             $this->pendingWaitlistOffers,
             $this->pendingOverCapacity,
             $this->waitlist,
-            $this->registrations,
+            $this->registrationRows, $this->registrationTabCounts, $this->registrations,
         );
 
         if ($this->step === '1') {
@@ -1537,6 +1708,7 @@ new class extends Component
             nbQualifiersPerPool: max(1, $this->nb_qualifies),
             setsToWin: max(1, $this->totalSets),
             matchType: $this->matchType,
+            bracketSize: $this->bracketSize,
         ));
     }
 
@@ -1594,6 +1766,7 @@ new class extends Component
     public function updatedMatchType(): void
     {
         $this->markPoolsStaleIfGenerated();
+        $this->suggestMaxUsers();
     }
 
     public function updatedMaxUsers(): void
@@ -1605,11 +1778,13 @@ new class extends Component
     {
         $this->markPoolsStaleIfGenerated();
         $this->suggestMaxUsers();
+        $this->bracketSize = $this->fittingBracketSize();
     }
 
     public function updatedNbQualifies(): void
     {
         $this->markPoolsStaleIfGenerated();
+        $this->bracketSize = $this->fittingBracketSize();
     }
 
     public function updatedPoolSize(): void
@@ -1620,12 +1795,10 @@ new class extends Component
 
     public function updatedSelectedRooms(): void
     {
-        if ($this->selectedRooms !== []) {
-            $total = Room::whereIn('id', $this->selectedRooms)->sum('total_playable_tables');
+        $this->launchTableIds = $this->playableTableIds();
 
-            if ($total > 0) {
-                $this->nb_tables = (int) $total;
-            }
+        if ($this->launchTableIds !== []) {
+            $this->nb_tables = count($this->launchTableIds);
         }
     }
 
@@ -1699,6 +1872,34 @@ new class extends Component
         ];
     }
 
+    /**
+     * The steps of this tournament, in order.
+     *
+     * A doubles tournament has one more, for its pairs, between the
+     * registrations and the launch — pairs the players chose can be reworked
+     * on the day as well.
+     *
+     * @return list<array{key: string, label: string, icon: string}>
+     */
+    public function wizardSteps(): array
+    {
+        $steps = [
+            ['key' => '1', 'label' => __('Configuration'), 'icon' => 'o-cog-6-tooth'],
+            ['key' => '2', 'label' => __('Web event'), 'icon' => 'o-globe-alt'],
+            ['key' => '3', 'label' => __('Validation'), 'icon' => 'o-lock-closed'],
+            ['key' => '4', 'label' => __('Invitations'), 'icon' => 'o-envelope'],
+            ['key' => '5', 'label' => __('Registrations'), 'icon' => 'o-users'],
+        ];
+
+        if (($this->currentTournament?->match_type ?? $this->matchType) === 'double') {
+            $steps[] = ['key' => 'pairs', 'label' => __('Pairs'), 'icon' => 'o-user-group'];
+        }
+
+        $steps[] = ['key' => '6', 'label' => __('Launch'), 'icon' => 'o-rocket-launch'];
+
+        return $steps;
+    }
+
     // ── Render
 
     protected function breadcrumbChain(): Breadcrumb
@@ -1751,8 +1952,7 @@ new class extends Component
             return;
         }
 
-        unset($this->pairBoard);
-        $this->markPoolsStaleIfGenerated();
+        unset($this->pairBoard, $this->poolsGenerated, $this->matchesGenerated, $this->pools, $this->matchesByPool);
     }
 
     /**
@@ -1765,6 +1965,15 @@ new class extends Component
             ->find($userId);
     }
 
+    /**
+     * The smallest bracket the pools can fill: every direct qualifier in, and
+     * no more repêchés than there are pools.
+     */
+    private function fittingBracketSize(): int
+    {
+        return app(TournamentSimulator::class)->fittingBracketSize($this->nb_poules, $this->nb_qualifies);
+    }
+
     private function markPoolsStaleIfGenerated(): void
     {
         if ($this->poolsGenerated || $this->matchesGenerated) {
@@ -1772,12 +1981,68 @@ new class extends Component
         }
     }
 
+    /**
+     * The tables ticked by default at the launch: in each chosen room, as many
+     * as it really offers a tournament — the sound ones first, then those that
+     * need repair, by number.
+     *
+     * Counted from the tables themselves, as the rooms screen sets them up.
+     *
+     * @return list<int>
+     */
+    private function playableTableIds(): array
+    {
+        return Room::with('tables')
+            ->whereIn('id', $this->selectedRooms)
+            ->orderBy('name')
+            ->get()
+            ->flatMap(fn (Room $room): array => $room->tables
+                ->filter(fn (Table $table): bool => $table->state->isPlayable())
+                ->sortBy([
+                    fn (Table $a, Table $b): int => (int) ($a->state !== TableStateEnum::GOOD) <=> (int) ($b->state !== TableStateEnum::GOOD),
+                    fn (Table $a, Table $b): int => strnatcmp($a->name, $b->name),
+                ])
+                ->take($room->usableTournamentCapacity())
+                ->pluck('id')
+                ->all())
+            ->values()
+            ->all();
+    }
+
+    /**
+     * How many registered players make one entrant of a pool: a pair holds two.
+     */
+    private function playersPerEntrant(): int
+    {
+        return $this->matchType === 'double' ? 2 : 1;
+    }
+
     private function resetPostAction(): void
     {
         $this->selectedPeople = [];
         $this->bulkDrawer = false;
-        unset($this->registrations);
+        unset($this->registrationRows, $this->registrationTabCounts, $this->registrations);
         unset($this->waitlist);
+    }
+
+    /**
+     * How a registration reads in the list, with the icon of the button that set it.
+     *
+     * One vocabulary for both: an absence excused raises its hand, an
+     * unexcused one warns, a player who had paid is simply away.
+     *
+     * @return array{label: string, icon: string|null, class: string}
+     */
+    private function statusBadge(string $status, ?bool $absenceExcused, bool $hasPaid): array
+    {
+        return match (true) {
+            $status === 'confirmed' => ['label' => __('Present'), 'icon' => 'o-check', 'class' => 'badge-success badge-soft'],
+            $status === 'spot_offered' => ['label' => __('Spot offered'), 'icon' => null, 'class' => 'badge-info badge-soft'],
+            $status === 'no_show' && $absenceExcused === false && ! $hasPaid => ['label' => __('Unexcused absence'), 'icon' => self::ICON_UNEXCUSED, 'class' => 'badge-warning badge-soft'],
+            $status === 'no_show' && $absenceExcused === true && ! $hasPaid => ['label' => __('Excused absence'), 'icon' => self::ICON_EXCUSED, 'class' => 'badge-ghost'],
+            $status === 'no_show' => ['label' => __('Absent'), 'icon' => self::ICON_ABSENT, 'class' => 'badge-ghost'],
+            default => ['label' => __('To check in'), 'icon' => null, 'class' => 'badge-ghost'],
+        };
     }
 
     // ── Private helpers
@@ -1796,6 +2061,6 @@ new class extends Component
             return;
         }
 
-        $this->maxUsers = $this->nb_poules * $this->pool_size;
+        $this->maxUsers = $this->nb_poules * $this->pool_size * $this->playersPerEntrant();
     }
 };

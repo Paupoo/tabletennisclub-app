@@ -715,8 +715,8 @@ describe('cancelling a tournament', function (): void {
 /*
  * Le champ existait dans le formulaire depuis le début, sans wire:model ni
  * propriété : ce que le comité y tapait disparaissait au premier aller-retour
- * Livewire, sans le moindre signal. La colonne `description`, elle, existait
- * déjà sur la table — elle manquait seulement au $fillable.
+ * Livewire, sans le moindre signal. La colonne `description` existait sur les
+ * bases recréées, pas en prod : voir AddDescriptionToTournamentsMigrationTest.
  */
 describe('additional information', function (): void {
 
@@ -748,6 +748,21 @@ describe('additional information', function (): void {
             ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
             ->set('step', '1')
             ->assertSeeHtml('wire:model="description"');
+    });
+
+    /*
+     * La colonne est un varchar(255). SQLite ne vérifie pas la longueur, MariaDB
+     * en mode strict si : la validation seule protège la prod.
+     */
+    it('refuses more than the column holds', function (): void {
+        $tournament = wizardTournament();
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('step', '1')
+            ->set('description', str_repeat('a', 256))
+            ->call('save')
+            ->assertHasErrors(['description' => 'max']);
     });
 });
 

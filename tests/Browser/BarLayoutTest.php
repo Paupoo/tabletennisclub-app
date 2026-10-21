@@ -53,6 +53,36 @@ const BAR_STEPPERS = <<<'JS_WRAP'
 })()
 JS_WRAP;
 
+const BAR_CASHSHEET_CAROUSEL = <<<'JS_WRAP'
+(async () => {
+  const track = document.querySelector('#cashsheet-active-days');
+  const card = track?.querySelector('[aria-current="date"]') ?? track?.firstElementChild;
+  if (!track || !card) return JSON.stringify({seen: 0});
+  const hiddenProbe = document.createElement('div');
+  hiddenProbe.className = 'hidden';
+  document.body.append(hiddenProbe);
+  const stylesheetDeadline = Date.now() + 3000;
+  while (getComputedStyle(hiddenProbe).display !== 'none' && Date.now() < stylesheetDeadline) {
+    await new Promise(resolve => setTimeout(resolve, 25));
+  }
+  const hiddenUtilityReady = getComputedStyle(hiddenProbe).display === 'none';
+  hiddenProbe.remove();
+
+  return JSON.stringify({
+    seen: track.children.length,
+    visible: [...track.children].filter(card => card.getClientRects().length > 0).length,
+    hiddenUtilityReady,
+    cardDisplays: [...track.children].map(card => getComputedStyle(card).display),
+    selectedVisible: card.getAttribute('aria-current') === 'date' && card.getClientRects().length > 0,
+    selectedDate: new URL(card.href).searchParams.get('date'),
+    trackWidth: track.clientWidth,
+    scrollWidth: track.scrollWidth,
+    cardWidth: Math.round(card.getBoundingClientRect().width),
+    pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  });
+})()
+JS_WRAP;
+
 beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->create();
     makeActiveSeason();
@@ -120,6 +150,40 @@ it('never scrolls sideways on a phone', function (string $route): void {
     'feuille de caisse' => 'bar.cashSheet.index',
     'paiement' => 'bar.payment.show',
 ]);
+
+it('keeps the selected active day in view in the mobile carousel', function (): void {
+    foreach (range(1, 4) as $daysAgo) {
+        $order = BarOrder::create([
+            'created_by' => $this->admin->id,
+            'total_price' => 250,
+            'is_paid' => false,
+        ]);
+        $order->forceFill([
+            'created_at' => now()->subDays($daysAgo)->setTime(14, 0),
+        ])->saveQuietly();
+    }
+
+    $page = visit(route('bar.cashSheet.index'))->resize(390, 844);
+
+    foreach (range(1, 4) as $_) {
+        $page->click('[data-cashsheet-carousel-previous]');
+    }
+
+    $layout = json_decode((string) $page->script(BAR_CASHSHEET_CAROUSEL), true);
+
+    expect($layout['seen'])->toBeGreaterThan(1)
+        ->and($layout['hiddenUtilityReady'])->toBeTrue('Tailwind hidden utility did not load')
+        ->and($layout['visible'])->toBe(1, json_encode($layout['cardDisplays']))
+        ->and($layout['selectedVisible'])->toBeTrue()
+        ->and($layout['selectedDate'])->toBe(now()->subDays(4)->toDateString())
+        ->and($layout['scrollWidth'])->toBe($layout['trackWidth'])
+        ->and($layout['cardWidth'])->toBeGreaterThan((int) ($layout['trackWidth'] * 0.9))
+        ->and($layout['pageOverflow'])->toBeLessThanOrEqual(0);
+
+    $desktop = json_decode((string) $page->resize(1280, 900)->script(BAR_CASHSHEET_CAROUSEL), true);
+
+    expect($desktop['visible'])->toBe($desktop['seen']);
+});
 
 /**
  * Défilement latéral confiné dans un conteneur, et cibles tactiles.

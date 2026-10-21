@@ -207,6 +207,7 @@ function smokeSkippedRouteNames(): array
 
         // Non-HTML downloads.
         'tournament.calendar.ical' => 'ICS file download, not an HTML page',
+        'bar.cashSheet.download' => 'CSV export requires a date query parameter',
     ];
 }
 

@@ -4,13 +4,22 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Tournament\Notifications;
 
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Traits\LinksToMemberSpace;
+use App\Mail\TournamentRegistrationMail;
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
+/**
+ * What a player hears when they register: one message, whether the tournament
+ * is free or paid. A paid registration carries its payment request — once
+ * separate, it told the player "not final until paid" right after this one had
+ * said "confirmed". Waiting-list entries keep their own wording.
+ */
 class TournamentRegistrationConfirmedNotification extends Notification
 {
     use LinksToMemberSpace, Queueable;
@@ -19,22 +28,39 @@ class TournamentRegistrationConfirmedNotification extends Notification
         public Tournament $tournament,
         public bool $isWaitlisted = false,
         public int $waitlistPosition = 0,
+        public ?Payment $payment = null,
+        public ?Carbon $deadline = null,
     ) {}
 
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __($this->isWaitlisted ? "Liste d'attente confirmée : :name" : 'Inscription confirmée : :name', ['name' => $this->tournament->name]),
-            'body' => __($this->isWaitlisted ? "Position en liste d'attente : #:pos" : 'Votre inscription au tournoi est confirmée', ['pos' => $this->waitlistPosition]),
+            'title' => $this->isWaitlisted
+                ? __('On the waiting list: :name', ['name' => $this->tournament->name])
+                : __('Registration recorded: :name', ['name' => $this->tournament->name]),
+            'body' => match (true) {
+                $this->isWaitlisted => __('Waiting list #:position', ['position' => $this->waitlistPosition]),
+                $this->payment !== null && $this->deadline !== null => __('To pay: :amount € before :date', [
+                    'amount' => number_format($this->payment->amount_due, 2, ',', ' '),
+                    'date' => $this->deadline->format('d/m/Y'),
+                ]),
+                default => __('See the tournament details'),
+            },
             'url' => $this->memberEventsUrl($notifiable),
             'category' => 'tournament',
             'icon' => 'o-trophy',
         ];
     }
 
-    public function toMail(object $notifiable): MailMessage
+    public function toMail(object $notifiable): MailMessage|TournamentRegistrationMail
     {
+        if (! $this->isWaitlisted && $notifiable instanceof User) {
+            // Addressed by PerRecipientMailChannel: one message per contact
+            // address, so a minor's guardians are reached rather than a null login.
+            return new TournamentRegistrationMail($this->tournament, $notifiable, $this->payment, $this->deadline);
+        }
+
         $tournament = $this->tournament;
         $tournament->loadMissing('rooms');
 
@@ -48,22 +74,13 @@ class TournamentRegistrationConfirmedNotification extends Notification
         $dateStr = $tournament->start_date?->format('d/m/Y') ?? '—';
         $timeStr = $tournament->start_time ?? '—';
 
-        if ($this->isWaitlisted) {
-            $mail = (new MailMessage)
-                ->subject(__(':tournament — Waitlist confirmation', ['tournament' => $tournament->name]))
-                ->greeting(__('Hello :name!', ['name' => $notifiable->first_name]))
-                ->line(__('You have been added to the waiting list for **:tournament**.', ['tournament' => $tournament->name]))
-                ->line(__('Your current position: **#:position**', ['position' => $this->waitlistPosition]))
-                ->line(__('This position may move up as other players withdraw.'))
-                ->line(__('If a spot opens up, you will receive an email to confirm your participation. You will have 48 hours to respond — after that, the spot will be offered to the next person on the list.'));
-        } else {
-            $mail = (new MailMessage)
-                ->subject(__(':tournament — Registration confirmed', ['tournament' => $tournament->name]))
-                ->greeting(__('Hello :name!', ['name' => $notifiable->first_name]))
-                ->line(__('Your registration for **:tournament** is confirmed!', ['tournament' => $tournament->name]));
-        }
-
-        $mail
+        $mail = (new MailMessage)
+            ->subject(__(':tournament — Waitlist confirmation', ['tournament' => $tournament->name]))
+            ->greeting(__('Hello :name!', ['name' => $notifiable->first_name]))
+            ->line(__('You have been added to the waiting list for **:tournament**.', ['tournament' => $tournament->name]))
+            ->line(__('Your current position: **#:position**', ['position' => $this->waitlistPosition]))
+            ->line(__('This position may move up as other players withdraw.'))
+            ->line(__('If a spot opens up, you will receive an email to confirm your participation. You will have 48 hours to respond — after that, the spot will be offered to the next person on the list.'))
             ->line('---')
             ->line(__('**Date:** :date at :time', ['date' => $dateStr, 'time' => $timeStr]))
             ->line(__('**Location:** :rooms', ['rooms' => $location]))
@@ -73,7 +90,6 @@ class TournamentRegistrationConfirmedNotification extends Notification
         if ($tournament->isPaid()) {
             $fee = $notifiable instanceof User ? $tournament->priceFor($notifiable) : $tournament->price;
             $mail->line(__('**Entry fee:** :price €', ['price' => number_format($fee, 2)]));
-            $mail->line(__('Payment instructions have been sent separately.'));
         }
 
         if ($tournament->registration_deadline) {
@@ -82,46 +98,12 @@ class TournamentRegistrationConfirmedNotification extends Notification
             ]));
         }
 
-        $mail->salutation(__('See you on the court!'));
-
-        if ($tournament->start_date && ! $this->isWaitlisted) {
-            $ics = $this->buildIcs($tournament, $location);
-            $mail->attachData($ics, 'tournament.ics', ['mime' => 'text/calendar']);
-        }
-
-        return $mail;
+        return $mail->salutation(__('See you on the court!'));
     }
 
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
         return ['mail', 'database'];
-    }
-
-    private function buildIcs(Tournament $tournament, string $location): string
-    {
-        $start = $tournament->start_date->format('Ymd');
-        $startTime = str_replace(':', '', $tournament->start_time ?? '000000');
-        $dtStart = $start . ($tournament->start_time ? 'T' . $startTime . '00' : '');
-        $dtEnd = $tournament->end_date
-            ? $tournament->end_date->format('Ymd\THis')
-            : $tournament->start_date->format('Ymd\THis');
-        $uid = 'tournament-' . $tournament->id . '@tabletennisclub';
-        $name = str_replace(["\r", "\n", ',', ';'], [' ', ' ', '\,', '\;'], $tournament->name);
-        $loc = str_replace(["\r", "\n", ',', ';'], [' ', ' ', '\,', '\;'], $location);
-
-        return implode("\r\n", [
-            'BEGIN:VCALENDAR',
-            'VERSION:2.0',
-            'PRODID:-//TableTennisClub//Tournament//EN',
-            'BEGIN:VEVENT',
-            'UID:' . $uid,
-            'SUMMARY:' . $name,
-            'DTSTART:' . $dtStart,
-            'DTEND:' . $dtEnd,
-            'LOCATION:' . $loc,
-            'END:VEVENT',
-            'END:VCALENDAR',
-        ]) . "\r\n";
     }
 }

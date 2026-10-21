@@ -84,6 +84,76 @@ describe('sendInvitations', function (): void {
         Notification::assertNothingSent();
     });
 
+    /*
+     * The invitation is the only mailing a tournament sends to the club now
+     * that opening the registrations announces nothing: it carries the
+     * "new tournaments" opt-out the announcement used to honour.
+     */
+    it('leaves out the members who asked not to hear about new tournaments', function (): void {
+        Bus::fake();
+
+        $tournament = wizardTournament(['registration_deadline' => now()->addWeek()]);
+        $willing = User::factory()->create();
+        $optedOut = User::factory()->create(['notification_preferences' => ['new_tournaments' => false]]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('selectedMembers', [$willing->id, $optedOut->id])
+            ->call('sendInvitations');
+
+        Bus::assertBatched(fn (PendingBatch $batch): bool => $batch->jobs
+            ->map(fn (SendTournamentInvitationJob $job): int => $job->userId)
+            ->all() === [$willing->id]);
+        expect(DB::table('tournament_invitations')->where('tournament_id', $tournament->id)->value('user_count'))->toBe(1);
+    });
+
+    it('marks those members in the list, and selecting everybody passes them over', function (): void {
+        $season = makeActiveSeason();
+        $tournament = wizardTournament(['registration_deadline' => now()->addWeek()]);
+        $willing = activeMember($season);
+        $optedOut = activeMember($season, ['notification_preferences' => ['new_tournaments' => false]]);
+
+        $wizard = Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('selectAllMembers');
+
+        $members = collect($wizard->get('members'))->keyBy('id');
+
+        expect($members[$willing->id]['declinesInvitations'])->toBeFalse()
+            ->and($members[$optedOut->id]['declinesInvitations'])->toBeTrue()
+            ->and($wizard->get('selectedMembers'))->toContain($willing->id)
+            ->not->toContain($optedOut->id);
+    });
+
+    it('will not tick such a member by hand either', function (): void {
+        $season = makeActiveSeason();
+        $tournament = wizardTournament(['registration_deadline' => now()->addWeek()]);
+        $optedOut = activeMember($season, ['notification_preferences' => ['new_tournaments' => false]]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('toggleMember', $optedOut->id)
+            ->assertSet('selectedMembers', [])
+            ->set('selectedMembers', [$optedOut->id])
+            ->assertSet('selectedMembers', [])
+            ->assertSee(__('Does not wish to hear about new tournaments'));
+    });
+
+    it('sends nothing when every selected member declined', function (): void {
+        Bus::fake();
+
+        $tournament = wizardTournament(['registration_deadline' => now()->addWeek()]);
+        $optedOut = User::factory()->create(['notification_preferences' => ['new_tournaments' => false]]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('selectedMembers', [$optedOut->id])
+            ->call('sendInvitations');
+
+        Bus::assertNothingBatched();
+        expect(DB::table('tournament_invitations')->where('tournament_id', $tournament->id)->exists())->toBeFalse();
+    });
+
     it('creates a tournament_invitations record', function (): void {
         $tournament = wizardTournament();
         $users = competitiveUsers(4);

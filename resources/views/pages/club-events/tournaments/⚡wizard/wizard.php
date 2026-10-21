@@ -1332,7 +1332,7 @@ new class extends Component
             'price' => 'required|numeric|min:0',
             'reducedPrice' => 'nullable|required_with:reducedPriceUnderAge|numeric|min:0|lt:price',
             'reducedPriceUnderAge' => 'nullable|required_with:reducedPrice|integer|min:1|max:99',
-            'description' => 'nullable|string|max:2000',
+            'description' => 'nullable|string|max:255',
         ]);
 
         // Relever le plafond envoie des offres, tout de suite et sans retour

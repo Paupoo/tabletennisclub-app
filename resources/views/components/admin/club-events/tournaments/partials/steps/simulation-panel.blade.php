@@ -95,8 +95,12 @@
                         <span>{{ __('Capacity') }}</span>
                     </div>
                     <div class="text-right text-sm">
-                        <span class="font-semibold tabular-nums">{{ $sim->totalPlayers }} {{ __('players') }}</span>
-                        <span class="text-base-content/40 ml-1">{{ $nb_poules }}×{{ $pool_size }} → {{ $sim->finalistsCount }} {{ __('finalists') }}</span>
+                        @if ($matchType === 'double')
+                            <span class="font-semibold tabular-nums">{{ $sim->totalPlayers }} {{ __('pairs') }} · {{ $sim->totalPlayers * 2 }} {{ __('players') }}</span>
+                        @else
+                            <span class="font-semibold tabular-nums">{{ $sim->totalPlayers }} {{ __('players') }}</span>
+                        @endif
+                        <span class="text-base-content/40 ml-1">{{ __(':pools pools of :size → bracket of :bracket', ['pools' => $nb_poules, 'size' => $pool_size, 'bracket' => $sim->finalistsCount]) }}</span>
                     </div>
                 </div>
                 
@@ -114,7 +118,7 @@
                 <div class="flex items-center justify-between py-2.5">
                     <div class="flex items-center gap-2 text-sm text-base-content/60">
                         <x-icon name="o-bolt" class="w-4 h-4 shrink-0" />
-                        <span>{{ __('Matches per player') }}</span>
+                        <span>{{ $matchType === 'double' ? __('Matches per pair') : __('Matches per player') }}</span>
                     </div>
                     <div class="text-right text-sm">
                         <span class="font-semibold tabular-nums">{{ $sim->avgMatchesPerPlayer }}</span>

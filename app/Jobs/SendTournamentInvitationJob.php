@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\Notification;
  * already been fanned out over a limiter — this one was simply missed.
  *
  * Shares the `invitations` limiter declared in {@see AppServiceProvider} with
- * {@see SendMemberInvitationJob} and {@see SendTournamentAnnouncementJob},
+ * {@see SendMemberInvitationJob},
  * rather than taking one of its own: the semantics match exactly, and a shared
  * key means the non-urgent mailings queue behind each other instead of adding
  * up. Gmail counts the burst, not the job type.

@@ -39,7 +39,7 @@
             @foreach ($filteredMembers as $member)
                 @php $picked = in_array($member['id'], $selectedMembers, true); @endphp
                 <button type="button" wire:key="member-card-{{ $member['id'] }}"
-                    @disabled($isLocked)
+                    @disabled($isLocked || $member['declinesInvitations'])
                     wire:click="toggleMember({{ $member['id'] }})"
                     aria-pressed="{{ $picked ? 'true' : 'false' }}"
                     @class([
@@ -55,6 +55,9 @@
                             {{ $member['ranking'] }} ·
                             {{ trans_choice('{0} never played|{1} :count tournament played|[2,*] :count tournaments played', $member['played'], ['count' => $member['played']]) }}
                         </p>
+                        @if ($member['declinesInvitations'])
+                            <p class="text-xs text-warning-content">{{ __('Does not wish to hear about new tournaments') }}</p>
+                        @endif
                     </div>
                 </button>
             @endforeach
@@ -72,6 +75,15 @@
                 :rows="$filteredMembers"
                 selectable
                 wire:model.live="selectedMembers">
+
+                {{-- Les cases du tableau ne se désactivent pas une à une : le
+                     serveur décoche aussitôt un membre qui a refusé les annonces. --}}
+                @scope('cell_name', $member)
+                    <span>{{ $member['name'] }}</span>
+                    @if ($member['declinesInvitations'])
+                        <span class="block text-xs text-warning-content">{{ __('Does not wish to hear about new tournaments') }}</span>
+                    @endif
+                @endscope
 
                 @scope('cell_played', $member)
                     <span class="tabular-nums">{{ $member['played'] }}</span>

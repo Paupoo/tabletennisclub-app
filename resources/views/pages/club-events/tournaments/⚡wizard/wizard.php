@@ -863,6 +863,9 @@ new class extends Component
                 'email' => $u->email,
                 'ranking' => $u->ranking->getLabel(),
                 'played' => $u->tournaments_played_count ?? 0,
+                // Opting out of "new tournaments" now reaches the invitation:
+                // opening the registrations announces nothing any more.
+                'declinesInvitations' => ! $u->wantsNotification('new_tournaments'),
             ])
             ->toArray();
     }
@@ -1620,7 +1623,7 @@ new class extends Component
 
     public function selectAllMembers(): void
     {
-        $this->selectedMembers = array_column($this->members, 'id');
+        $this->selectedMembers = $this->withoutDecliners(array_column($this->members, 'id'));
     }
 
     public function selectNoMembers(): void
@@ -1650,7 +1653,16 @@ new class extends Component
 
             return;
         }
-        $users = User::whereIn('id', $this->selectedMembers)->get();
+        $users = User::whereIn('id', $this->selectedMembers)
+            ->get()
+            ->filter(fn (User $user): bool => $user->wantsNotification('new_tournaments'))
+            ->values();
+
+        if ($users->isEmpty()) {
+            $this->error(__('None of the selected members wishes to hear about new tournaments.'));
+
+            return;
+        }
 
         $includeArticle = $this->inviteIncludeArticle && $this->eventPostId !== null;
 
@@ -1759,7 +1771,7 @@ new class extends Component
                 array_filter($this->selectedMembers, fn ($m): bool => $m !== $id)
             );
         } else {
-            $this->selectedMembers[] = $id;
+            $this->selectedMembers = $this->withoutDecliners([...$this->selectedMembers, $id]);
         }
     }
 
@@ -1791,6 +1803,12 @@ new class extends Component
     {
         $this->markPoolsStaleIfGenerated();
         $this->suggestMaxUsers();
+    }
+
+    /** The table's checkboxes cannot be disabled one by one: a decliner ticked there is unticked here. */
+    public function updatedSelectedMembers(): void
+    {
+        $this->selectedMembers = $this->withoutDecliners($this->selectedMembers);
     }
 
     public function updatedSelectedRooms(): void
@@ -2062,5 +2080,19 @@ new class extends Component
         }
 
         $this->maxUsers = $this->nb_poules * $this->pool_size * $this->playersPerEntrant();
+    }
+
+    /**
+     * @param  array<int, int|string>  $ids
+     * @return list<int>
+     */
+    private function withoutDecliners(array $ids): array
+    {
+        $decliners = array_column(
+            array_filter($this->members, fn (array $member): bool => $member['declinesInvitations']),
+            'id',
+        );
+
+        return array_values(array_diff(array_map(intval(...), $ids), $decliners));
     }
 };

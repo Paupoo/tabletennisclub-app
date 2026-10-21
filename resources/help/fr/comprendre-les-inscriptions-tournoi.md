@@ -7,6 +7,12 @@ order: 12
 
 Les inscriptions aux tournois se gèrent **toutes seules** : places libérées, liste d'attente, rappels de paiement. Voici ce que l'application fait sans vous, et ce qu'elle ne fait jamais.
 
+## Prévenir les membres
+
+**Ouvrir les inscriptions ne prévient personne.** Le tournoi apparaît dans « Mes inscriptions », mais aucun mail ne part. C'est vous qui choisissez le moment : un mail d'annonce depuis **Communications** d'abord si vous le souhaitez, puis les invitations depuis l'étape **Invitations** de l'assistant, une fois les inscriptions ouvertes.
+
+Un membre qui a décoché **« Nouveaux tournois et événements »** dans ses paramètres ne reçoit pas les invitations. Il est signalé dans la liste et ne peut pas être coché ; le bouton **Tous** le laisse de côté.
+
 ## La date limite d'inscription
 
 La date limite est **incluse** : « inscriptions jusqu'au 20/11 » veut dire que le 20 est encore ouvert. La clôture automatique passe dans la nuit qui suit, à 00h05.

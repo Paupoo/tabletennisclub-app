@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use Illuminate\Support\Facades\Schema;
 
 /*
@@ -31,4 +32,10 @@ it('leaves a table that already has the column alone', function (): void {
     runAddDescriptionToTournamentsMigration();
 
     expect(Schema::hasColumn('tournaments', 'description'))->toBeTrue();
+});
+
+it('never makes a description longer than the column and the wizard allow', function (): void {
+    $lengths = collect(range(1, 200))->map(fn (): int => mb_strlen((string) Tournament::factory()->make()->description));
+
+    expect($lengths->max())->toBeLessThanOrEqual(255);
 });

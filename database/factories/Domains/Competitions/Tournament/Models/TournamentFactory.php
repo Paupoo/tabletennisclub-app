@@ -28,7 +28,7 @@ class TournamentFactory extends Factory
 
         return [
             'name' => fake()->name(),
-            'description' => fake()->paragraph(),
+            'description' => fake()->sentence(),
             'location' => fake()->address(),
             'image' => fake()->imageUrl(400, 300),
             'start_date' => $start_date,

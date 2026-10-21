@@ -37,4 +37,15 @@ final readonly class Audience
     {
         return array_keys($this->recipients);
     }
+
+    /**
+     * The addresses that speak for more than one member — why there are fewer
+     * addresses than members reached.
+     *
+     * @return array<string, list<User>>
+     */
+    public function sharedAddresses(): array
+    {
+        return array_filter($this->recipients, fn (array $members): bool => count($members) > 1);
+    }
 }

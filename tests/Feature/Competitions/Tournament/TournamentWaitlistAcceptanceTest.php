@@ -6,7 +6,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
-use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentRequestNotification;
+use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationConfirmedNotification;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
@@ -62,7 +62,7 @@ it('registers the player who accepts through the e-mail link, with a payment req
     expect($registration->registration_status)->toBe('registered')
         ->and($registration->payment?->amount_due)->toBe(15.0)
         ->and($registration->payment_deadline?->format('Y-m-d H:i'))->toBe('2026-11-20 23:59');
-    Notification::assertSentTo($member, TournamentPaymentRequestNotification::class);
+    Notification::assertSentTo($member, TournamentRegistrationConfirmedNotification::class);
 });
 
 it('registers the player who accepts from their space, at their own price', function (): void {
@@ -75,7 +75,7 @@ it('registers the player who accepts from their space, at their own price', func
     $registration = acceptedRegistration($tournament, $member);
     expect($registration->registration_status)->toBe('registered')
         ->and($registration->payment?->amount_due)->toBe(10.0);
-    Notification::assertSentTo($member, TournamentPaymentRequestNotification::class);
+    Notification::assertSentTo($member, TournamentRegistrationConfirmedNotification::class);
 });
 
 it('gives a late acceptance three days to pay', function (): void {

@@ -241,11 +241,11 @@ php artisan test
 
 ### Symptôme
 ```
-App\Jobs\SendTournamentAnnouncementJob has been attempted too many times.
+App\Jobs\SendTournamentInvitationJob has been attempted too many times.
 Illuminate\Queue\MaxAttemptsExceededException
 ```
-Une rafale d'échecs de quelques millisecondes chacun, juste après une publication de
-tournoi ou un envoi d'invitations. Les premiers destinataires reçoivent leur mail, les
+Une rafale d'échecs de quelques millisecondes chacun, juste après un envoi
+d'invitations. Les premiers destinataires reçoivent leur mail, les
 autres jamais — et rien ne le signale à l'utilisateur.
 
 ### Cause
@@ -262,9 +262,9 @@ La politique de retry appartient au job, pas au flag du worker (qui diffère ent
 ```php
 use App\Jobs\Concerns\RetriesWhileRateLimited;
 
-class SendTournamentAnnouncementJob implements ShouldQueue
+class SendTournamentInvitationJob implements ShouldQueue
 {
-    use Queueable, RetriesWhileRateLimited;
+    use Batchable, Queueable, RetriesWhileRateLimited;
 ```
 
 Il pose une échéance (`retryUntil`, 6 h) au lieu d'un compteur — dans le worker, une

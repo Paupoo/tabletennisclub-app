@@ -231,24 +231,6 @@ parameters:
 			path: app/Domains/Competitions/Tournament/Services/TournamentMatchService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domains/Competitions/Tournament/Services/TournamentService.php
-
-		-
-			message: '#^Method App\\Domains\\Competitions\\Tournament\\Services\\TournamentService\:\:ensurePaymentExists\(\) should return App\\Domains\\ClubAdmin\\Payment\\Models\\Payment but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/Competitions/Tournament/Services/TournamentService.php
-
-		-
-			message: '#^Parameter \$payment of class App\\Domains\\Competitions\\Tournament\\Notifications\\TournamentPaymentRequestNotification constructor expects App\\Domains\\ClubAdmin\\Payment\\Models\\Payment, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domains/Competitions/Tournament/Services/TournamentService.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:tables\(\)\.$#'
 			identifier: method.notFound
 			count: 2

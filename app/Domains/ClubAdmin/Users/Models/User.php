@@ -1372,13 +1372,18 @@ class User extends Authenticatable implements MustVerifyEmail
         }
     }
 
+    /**
+     * Members who owe this season's subscription: affiliated, confirmed, not yet
+     * paid. Whoever was never affiliated — a responsible adult — owes nothing,
+     * nor does a pending request, a cancelled or a refunded affiliation.
+     */
     public function scopeUnpaid(EloquentBuilder $query): EloquentBuilder
     {
         $seasonId = Season::current()?->id;
 
-        return $query->whereDoesntHave('subscriptions', fn (EloquentBuilder $q) => $q
+        return $query->whereHas('subscriptions', fn (EloquentBuilder $q) => $q
             ->where('season_id', $seasonId)
-            ->where('status', 'paid')
+            ->where('status', 'confirmed')
         );
     }
 

@@ -276,3 +276,24 @@ describe('the stat strip', function (): void {
             ->assertSee(trans_choice('Including :count newcomer|Including :count newcomers', 1, ['count' => 1]));
     });
 });
+
+describe('the unpaid subscription toggle', function (): void {
+    it('lists only the members whose affiliation this season is confirmed and still unpaid', function (): void {
+        $paid = User::factory()->create(['last_name' => 'Deja-Paye']);
+        Subscription::factory()->for($paid)->for($this->current)->create(['status' => 'paid']);
+
+        $pending = User::factory()->create(['last_name' => 'Demande-Attente']);
+        Subscription::factory()->for($pending)->for($this->current)->create(['status' => 'pending']);
+
+        $cancelled = User::factory()->create(['last_name' => 'Affiliation-Annulee']);
+        Subscription::factory()->for($cancelled)->for($this->current)->create(['status' => 'cancelled']);
+
+        $refunded = User::factory()->create(['last_name' => 'Affiliation-Remboursee']);
+        Subscription::factory()->for($refunded)->for($this->current)->create(['status' => 'refunded']);
+
+        // The responsible adult, never affiliated, owes nothing; neither does
+        // the member to follow up, affiliated last season only.
+        expect(listedLastNames(Livewire::test(AFFILIATION_LIST)->set('unpaidSubscription', true)))
+            ->toEqualCanonicalizing(['Nouveau-Venu', 'Fidele-Renouvele', 'Revenant-Retour']);
+    });
+});

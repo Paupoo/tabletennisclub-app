@@ -8,8 +8,6 @@ use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Notifications\InterclubAvailabilityRequestNotification;
 use App\Domains\Competitions\Interclub\Notifications\InterclubSelectionNotification;
-use App\Domains\Competitions\Tournament\Models\Tournament;
-use App\Domains\Competitions\Tournament\Notifications\NewTournamentPublishedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -34,21 +32,6 @@ it('defaults every optional notification to enabled', function (): void {
         ->and($user->wantsNotification('availability_requests'))->toBeTrue()
         ->and($user->wantsNotification('interclub_selections'))->toBeTrue()
         ->and($user->wantsNotification('unknown_future_key'))->toBeTrue();
-});
-
-it('mutes the new-tournament notification for members who opted out', function (): void {
-    makeActiveSeason();
-    $tournament = Tournament::factory()->create();
-
-    $optedOut = User::factory()->create([
-        'notification_preferences' => ['new_tournaments' => false],
-    ]);
-    $default = User::factory()->create();
-
-    $notification = new NewTournamentPublishedNotification($tournament, $optedOut);
-
-    expect($notification->via($optedOut))->toBe([])
-        ->and($notification->via($default))->toBe(['mail', 'database']);
 });
 
 it('actually skips delivery when the member muted the family', function (): void {

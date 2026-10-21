@@ -17,7 +17,7 @@
             <div class="space-y-5">
                 <x-toggle class="toggle-primary"
                     :label="__('New tournaments and events')"
-                    :hint="__('Be notified when the club publishes a new tournament.')"
+                    :hint="__('Receive the invitations the committee sends for a new tournament.')"
                     wire:model.live="notifyNewTournaments" />
 
                 <x-toggle class="toggle-primary"

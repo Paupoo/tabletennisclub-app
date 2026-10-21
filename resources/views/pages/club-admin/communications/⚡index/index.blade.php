@@ -80,7 +80,31 @@
         <div class="space-y-6 lg:col-span-2">
             <div class="grid grid-cols-2 gap-4 xl:grid-cols-4">
                 <x-admin.shared.stat-card :label="__('Members reached')" :value="(string) $this->audience->members->count()" icon="o-users" color="primary" />
-                <x-admin.shared.stat-card :label="__('Addresses')" :value="(string) $this->addressCount" :hint="__('Once each, duplicates merged')" icon="o-envelope" color="info" />
+                <x-admin.shared.stat-card :label="__('Addresses')" :value="(string) $this->addressCount" :hint="__('Once each, duplicates merged')" icon="o-envelope" color="info">
+                    {{-- Pourquoi il y a moins d'adresses que de membres : sans ce
+                         détail, on cherche dans la liste des membres quelqu'un
+                         qui n'existe pas. --}}
+                    @if (($sharedAddresses = $this->audience->sharedAddresses()) !== [])
+                        <x-slot:extra>
+                            <details class="mt-1 text-xs">
+                                <summary class="cursor-pointer link">
+                                    {{ trans_choice(':addresses address for :members members|:addresses addresses for :members members', count($sharedAddresses), [
+                                        'addresses' => count($sharedAddresses),
+                                        'members' => collect($sharedAddresses)->flatten()->unique('id')->count(),
+                                    ]) }}
+                                </summary>
+                                <ul class="mt-1 space-y-1">
+                                    @foreach ($sharedAddresses as $address => $members)
+                                        <li wire:key="shared-address-{{ $address }}">
+                                            <span class="break-all font-medium">{{ $address }}</span>
+                                            <span class="text-muted">— {{ collect($members)->pluck('full_name')->join(', ') }}</span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </details>
+                        </x-slot:extra>
+                    @endif
+                </x-admin.shared.stat-card>
                 <x-admin.shared.stat-card :label="__('Unreachable')" :value="(string) $this->audience->unreachable->count()" icon="o-no-symbol" color="error" />
                 <x-admin.shared.stat-card :label="__('Unclassified')" :value="(string) $this->audience->unclassified->count()" icon="o-question-mark-circle" color="warning" />
             </div>

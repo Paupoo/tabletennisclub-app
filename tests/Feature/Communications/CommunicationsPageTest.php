@@ -85,6 +85,27 @@ describe('previewing the audience', function (): void {
             ->assertSet('addressCount', 2);
     });
 
+    it('names the members who share an address, so the counts add up', function (): void {
+        communicationsMember($this->season, ['first_name' => 'Anne', 'last_name' => 'Lefèvre', 'email' => 'family@example.com']);
+        communicationsMember($this->season, ['first_name' => 'Paul', 'last_name' => 'Lefèvre', 'email' => 'Family@example.com']);
+        communicationsMember($this->season, ['email' => 'alone@example.com']);
+
+        Livewire::test(COMMUNICATIONS_COMPONENT)
+            ->assertSet('addressCount', 2)
+            ->assertSee(trans_choice(':addresses address for :members members|:addresses addresses for :members members', 1, ['addresses' => 1, 'members' => 2]))
+            ->assertSeeHtml('wire:key="shared-address-family@example.com"')
+            ->assertSee('Anne Lefèvre')
+            ->assertSee('Paul Lefèvre');
+    });
+
+    it('says nothing of shared addresses when every member has their own', function (): void {
+        communicationsMember($this->season, ['email' => 'one@example.com']);
+        communicationsMember($this->season, ['email' => 'two@example.com']);
+
+        Livewire::test(COMMUNICATIONS_COMPONENT)
+            ->assertDontSeeHtml('wire:key="shared-address-');
+    });
+
     it('points out the members nobody can be written to for', function (): void {
         communicationsMember($this->season, ['first_name' => 'Nora', 'last_name' => 'Nowhere', 'email' => null, 'phone_number' => '0470112233']);
 

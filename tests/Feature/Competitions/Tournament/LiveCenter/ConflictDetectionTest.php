@@ -95,7 +95,12 @@ describe('detectStartConflict', function (): void {
         expect(app(TournamentMatchService::class)->detectStartConflict($tournament, $next))->not->toBeNull();
     });
 
-    it('detects a referee already playing in an active match', function (): void {
+    /*
+     * The referee is a suggestion, not a lock (2026-10-17): a busy referee is
+     * replaced in the launch drawer, or the players count themselves. Only a
+     * player already on a table blocks a match.
+     */
+    it('lets a match start whose referee is playing in an active match', function (): void {
         $tournament = conflictTournament();
         [$a, $b, $c, $d] = User::factory(4)->create()->all();
 
@@ -104,23 +109,23 @@ describe('detectStartConflict', function (): void {
         // $a is also the referee of the next match
         $next = conflictMatch($tournament, $c->id, $d->id, referee: $a->id);
 
-        expect(app(TournamentMatchService::class)->detectStartConflict($tournament, $next))->not->toBeNull();
+        expect(app(TournamentMatchService::class)->detectStartConflict($tournament, $next))->toBeNull();
     });
 
-    it('detects a referee already refereeing another active match', function (): void {
+    it('lets a match start whose referee is refereeing another active match', function (): void {
         $tournament = conflictTournament();
         [$a, $b, $c, $d, $ref] = User::factory(5)->create()->all();
 
         conflictMatch($tournament, $a->id, $b->id, referee: $ref->id, status: 'in_progress');
         $next = conflictMatch($tournament, $c->id, $d->id, referee: $ref->id);
 
-        expect(app(TournamentMatchService::class)->detectStartConflict($tournament, $next))->not->toBeNull();
+        expect(app(TournamentMatchService::class)->detectStartConflict($tournament, $next))->toBeNull();
     });
 
     // Real-world scenario: a doubles pair member is assigned as referee for another match
     // (exactly what happened in tournament 5: user 51 was in pair 8 playing at table 15
     //  AND assigned as referee for the match at table 2)
-    it('detects a doubles pair member assigned as referee for another active match', function (): void {
+    it('lets a match start whose referee is a doubles player on another table', function (): void {
         $tournament = Tournament::factory()->create([
             'status' => TournamentStatusEnum::PENDING,
             'match_type' => 'double',
@@ -157,7 +162,7 @@ describe('detectStartConflict', function (): void {
         ]);
         $next->load(['pair1', 'pair2']);
 
-        expect(app(TournamentMatchService::class)->detectStartConflict($tournament, $next))->not->toBeNull();
+        expect(app(TournamentMatchService::class)->detectStartConflict($tournament, $next))->toBeNull();
     });
 })->group('Tournament', 'Conflict');
 
@@ -248,7 +253,8 @@ describe('queue', function (): void {
 
         expect($entry['ready'])->toBeTrue()
             ->and($entry['refereeBlocked'])->toBeTrue()
-            ->and($entry['blocked'])->toBeTrue()
+            // A warning to replace the referee, not a lock.
+            ->and($entry['blocked'])->toBeFalse()
             // Les deux joueurs sont libres : c'est l'arbitre qu'il faut remplacer.
             ->and($entry['side1Blocked'])->toBeFalse()
             ->and($entry['side2Blocked'])->toBeFalse();

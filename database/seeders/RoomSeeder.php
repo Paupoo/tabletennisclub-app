@@ -24,6 +24,7 @@ class RoomSeeder extends Seeder
             'access_description' => fake()->text(150),
             'capacity_for_trainings' => 7,
             'capacity_for_interclubs' => 4,
+            'capacity_for_tournaments' => 7,
         ])->clubs()->attach(1);
 
         Room::create([
@@ -36,6 +37,7 @@ class RoomSeeder extends Seeder
             'access_description' => fake()->text(150),
             'capacity_for_trainings' => 5,
             'capacity_for_interclubs' => 4,
+            'capacity_for_tournaments' => 5,
         ])->clubs()->attach(1);
 
         Room::create([
@@ -48,6 +50,7 @@ class RoomSeeder extends Seeder
             'access_description' => fake()->text(150),
             'capacity_for_trainings' => 5,
             'capacity_for_interclubs' => 4,
+            'capacity_for_tournaments' => 5,
         ])->clubs()->attach(1);
 
         Room::create([
@@ -59,6 +62,7 @@ class RoomSeeder extends Seeder
             'access_description' => fake()->text(150),
             'capacity_for_trainings' => 12,
             'capacity_for_interclubs' => 0,
+            'capacity_for_tournaments' => 12,
         ])->clubs()->attach(1);
 
         Room::factory()

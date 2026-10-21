@@ -13,9 +13,9 @@
             spinner />
 
         <x-button
-            :label="__('Mark absent (No-show)')"
-            icon="o-no-symbol"
-            class="btn-ghost btn-warning justify-start"
+            :label="__('Mark absent (excused)')"
+            :icon="$this::ICON_EXCUSED"
+            class="btn-ghost justify-start"
             wire:click="confirmBulkNoShow"
             spinner />
 

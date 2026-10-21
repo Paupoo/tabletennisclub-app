@@ -34,12 +34,15 @@ erDiagram
         int total_users
         int max_users
         mixed price
+        float reduced_price
+        int reduced_price_under_age "nullable"
         TournamentStatusEnum status
         bool has_handicap_points
         int duration_minutes
         int pool_size
         int nb_pools
         int nb_qualifiers_per_pool
+        int bracket_size "nullable"
         int sets_to_win
         int logistics_buffer_minutes
         string match_type
@@ -50,7 +53,7 @@ erDiagram
         TournamentObjectiveEnum objective "nullable"
         bool deuce_enabled
         string doubles_registration_mode "nullable"
-        mixed 0
+        datetime pairs_published_at "nullable"
     }
     TournamentMatch {
         int id PK
@@ -92,8 +95,11 @@ erDiagram
         int waitlist_position "nullable"
         datetime confirmation_deadline "nullable"
         datetime payment_deadline "nullable"
+        datetime payment_reminder_sent_at "nullable"
+        datetime payment_overdue_reminder_sent_at "nullable"
         int payment_id FK "nullable"
         bool qr_confirmed
+        bool absence_excused "nullable"
     }
 
     Pool }o--o{ TournamentPair : "pairs"

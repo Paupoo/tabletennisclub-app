@@ -25,13 +25,9 @@ class TournamentPoolService
         }
 
         $pools = $this->createPools($tournament, $numberOfPools);
-        $poolCount = $pools->count();
-        $poolIndex = 0;
 
-        foreach ($pairs as $pair) {
-            $pools[$poolIndex]->attachPair($pair);
-
-            $poolIndex = ($poolIndex === $poolCount - 1) ? 0 : $poolIndex + 1;
+        foreach ($pairs as $rank => $pair) {
+            $pools[$this->snakeIndex($rank, $pools->count())]->attachPair($pair);
         }
 
         return $pools->toArray();
@@ -91,32 +87,18 @@ class TournamentPoolService
      */
     private function assignPlayersToPools(Collection $players, Collection $pools): void
     {
-        $poolCount = $pools->count();
-        if ($poolCount === 0) {
+        if ($pools->isEmpty()) {
             return;
         }
 
-        $poolIndex = 0;
+        foreach ($players->values() as $rank => $player) {
+            $currentPool = $pools[$this->snakeIndex($rank, $pools->count())];
 
-        foreach ($players as $player) {
-            // Obtenir la pool actuelle
-            $currentPool = $pools[$poolIndex];
-
-            // Attacher le joueur à la pool
             try {
                 $currentPool->attachUser($player);
             } catch (Exception $e) {
-                // Log l'erreur si besoin
                 throw new Exception('Something went wrong while setting a player into ' . $currentPool->name, $e->getCode(), $e);
             }
-
-            // Reseter l'index si on a terminé de distribuer un joueur dans chaque poule
-            if ($poolIndex === $poolCount - 1) {
-                $poolIndex = 0;
-            } else {
-                $poolIndex++;
-            }
-
         }
     }
 
@@ -143,5 +125,19 @@ class TournamentPoolService
         }
 
         return $pools;
+    }
+
+    /**
+     * The pool of the entrant at this seed, in a snake: A B C D, then D C B A.
+     *
+     * Dealt in a plain cycle, pool A drew the 1st, 5th and 9th seeds while
+     * pool D drew the 4th, 8th and 12th — the strongest pool every time.
+     */
+    private function snakeIndex(int $rank, int $poolCount): int
+    {
+        $lap = intdiv($rank, $poolCount);
+        $position = $rank % $poolCount;
+
+        return $lap % 2 === 0 ? $position : $poolCount - 1 - $position;
     }
 }

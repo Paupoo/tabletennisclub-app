@@ -5,8 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
-use App\Domains\Competitions\Tournament\Services\TournamentFinalPhaseService;
-use App\Domains\Competitions\Tournament\Services\TournamentTableService;
+use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
 use Illuminate\View\View;
 use Livewire\Component;
 use Mary\Traits\Toast;
@@ -34,6 +33,7 @@ new class extends Component
 
     public function mount(): void
     {
+        $this->match->loadMissing(['pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2']);
         $maxSets = ($this->tournament->sets_to_win * 2) - 1;
 
         $this->p1Handicap = $this->tournament->has_handicap_points ? $this->match->player1_handicap_points : 0;
@@ -156,12 +156,10 @@ new class extends Component
             }
         }
 
-        $this->match->recordResult($setResults);
+        if (! app(TournamentMatchService::class)->recordFirstResult($this->match, $setResults)) {
+            $this->error(__('Score already entered: ask the scorers\' table for a correction.'));
 
-        app(TournamentTableService::class)->freeUsedTable($this->match);
-
-        if ($this->match->round !== null && $this->match->winner_id) {
-            app(TournamentFinalPhaseService::class)->completeMatch($this->match, $this->match->winner_id);
+            return;
         }
 
         $this->redirect(route('tournament.table.score', [
@@ -214,8 +212,11 @@ new class extends Component
 
             $matchFinished = $p1Sets >= $tournament->sets_to_win || $p2Sets >= $tournament->sets_to_win;
             $hasSets  = $doneSets->isNotEmpty();
+            $isDoubles = $match->pair1_id !== null;
+            $side1Name = $isDoubles ? ($match->pair1?->displayName() ?? '—') : ($match->player1?->full_name ?? '—');
+            $side2Name = $isDoubles ? ($match->pair2?->displayName() ?? '—') : ($match->player2?->full_name ?? '—');
             $winner   = $matchFinished
-                ? ($p1Sets >= $tournament->sets_to_win ? $match->player1 : $match->player2)
+                ? ($p1Sets >= $tournament->sets_to_win ? $side1Name : $side2Name)
                 : null;
         @endphp
 
@@ -229,7 +230,7 @@ new class extends Component
                 <div class="flex-1 text-center">
                     <div class="font-black text-sm uppercase leading-tight wrap-break-word hyphens-auto
                         {{ $matchFinished && $p1Sets >= $tournament->sets_to_win ? 'text-success' : '' }}">
-                        {{ $match->player1?->full_name ?? '—' }}
+                        {{ $side1Name }}
                     </div>
                     <div class="text-4xl font-extrabold mt-1
                         {{ $matchFinished && $p1Sets >= $tournament->sets_to_win ? 'text-success' : 'text-primary' }}">
@@ -240,7 +241,7 @@ new class extends Component
                 <div class="flex-1 text-center">
                     <div class="font-black text-sm uppercase leading-tight wrap-break-word hyphens-auto
                         {{ $matchFinished && $p2Sets >= $tournament->sets_to_win ? 'text-success' : '' }}">
-                        {{ $match->player2?->full_name ?? '—' }}
+                        {{ $side2Name }}
                     </div>
                     <div class="text-4xl font-extrabold mt-1
                         {{ $matchFinished && $p2Sets >= $tournament->sets_to_win ? 'text-success' : '' }}">
@@ -258,14 +259,14 @@ new class extends Component
                 </p>
                 <div class="flex justify-between items-center gap-4">
                     <div class="flex-1 text-center">
-                        <div class="text-xs font-bold opacity-60 truncate">{{ $match->player1?->full_name ?? '—' }}</div>
+                        <div class="text-xs font-bold opacity-60 truncate">{{ $side1Name }}</div>
                         <div @class(['text-3xl font-extrabold leading-none mt-1', 'text-warning-content' => $hp1 > 0, 'text-base-content/30' => $hp1 === 0])>
                             +{{ $hp1 }}
                         </div>
                     </div>
                     <div class="text-xs font-bold text-muted">pts</div>
                     <div class="flex-1 text-center">
-                        <div class="text-xs font-bold opacity-60 truncate">{{ $match->player2?->full_name ?? '—' }}</div>
+                        <div class="text-xs font-bold opacity-60 truncate">{{ $side2Name }}</div>
                         <div @class(['text-3xl font-extrabold leading-none mt-1', 'text-warning-content' => $hp2 > 0, 'text-base-content/30' => $hp2 === 0])>
                             +{{ $hp2 }}
                         </div>
@@ -357,7 +358,7 @@ new class extends Component
                 @if ($winner)
                     <div>
                         <p class="text-xs uppercase font-bold text-muted mb-1">{{ __('Winner') }}</p>
-                        <p class="text-xl font-black">{{ $winner->full_name }}</p>
+                        <p class="text-xl font-black">{{ $winner }}</p>
                         <p class="text-4xl font-extrabold text-success mt-1">{{ $p1Sets }} — {{ $p2Sets }}</p>
                     </div>
                 @endif

@@ -59,8 +59,8 @@ describe('TournamentPair model', function (): void {
     });
 
     it('returns a display name from last names', function (): void {
-        $p1 = User::factory()->create(['last_name' => 'Dupont']);
-        $p2 = User::factory()->create(['last_name' => 'Martin']);
+        $p1 = User::factory()->create(['first_name' => 'Anne', 'last_name' => 'Dupont']);
+        $p2 = User::factory()->create(['first_name' => 'Marc', 'last_name' => 'Martin']);
         $tournament = Tournament::factory()->create();
         $admin = User::factory()->create();
 
@@ -71,7 +71,7 @@ describe('TournamentPair model', function (): void {
             'registered_by' => $admin->id,
         ]);
 
-        expect($pair->displayName())->toBe('Dupont/Martin');
+        expect($pair->displayName())->toBe('A. Dupont / M. Martin');
     });
 
     it('labels a pair with both rankings rather than inventing an average', function (): void {

@@ -198,7 +198,11 @@ Depuis la page du tournoi, cliquez sur **Gérer en direct**. Onglets disponibles
 - **Poules** : classements des poules
 - **Tableau** : tableau à élimination directe (après la phase de poules)
 - **Classements** : classements en temps réel
-- **Clôture** : terminer le tournoi et publier les résultats
+- **Clôture** : encaisser les impayés, terminer le tournoi et publier les résultats
+
+Le format se fixe à la création : en double, la taille d'une poule compte des **paires** et le plafond des **joueurs** (pair) ; la **taille du tableau** (4, 8 ou 16) est un réglage, complété par les meilleurs du rang suivant comparés sur des moyennes. Le jour J, l'appel se fait dans l'assistant (absence excusée ou injustifiée, inscription tardive par le comité), les poules se tirent sur place, et les tables montées se cochent au lancement. En direct, chaque erreur a son retour : annuler un lancement, corriger un score (en poule tant que le tableau n'est pas tiré, dans le tableau tant que le match suivant n'a pas commencé), déclarer un forfait ou un abandon. L'arbitre est une suggestion : on le remplace ou on joue sans. Le détail est dans l'aide « Faire tourner un tournoi le jour J ».
+
+Un impayé n'est jamais désinscrit : le membre reçoit deux rappels (trois jours avant son échéance, puis le lendemain) et peut régler sur place. Après la date limite — incluse —, il ne peut plus se désister seul et contacte la délégation Tournois.
 
 ### Inscription groupée
 
@@ -397,8 +401,12 @@ Allez dans **Administration club → Infos club**. Mettez à jour les coordonné
 
 Allez dans **Administration club → Salles**. Gérez les lieux d'entraînement/compétition :
 - Nom, adresse, nom du bâtiment
-- Capacité pour les entraînements et les interclubs
-- Nombre total de tables par salle
+- Capacité, en tables, pour les entraînements, les matchs officiels et les tournois
+- Les tables de la salle et leur état
+
+Chaque capacité affichée est **ce que la salle offre vraiment** : la place saisie, ramenée au nombre de tables jouables. Une salle de 6 places en entraînement dont 3 tables sont hors service en offre 5, et la fiche le dit. Une table « à réparer » reste jouable. Un pack d'entraînement sans plafond prend deux joueurs par table offerte ; au lancement d'un tournoi, l'assistant coche autant de tables que la capacité tournoi, les tables en bon état d'abord.
+
+**Autocollants QR.** « Imprimer les autocollants » (liste des salles, fiche d'une salle, ou « Réimprimer l'autocollant » sur une table) produit une feuille A4 de carrés de 5 cm à découper et coller sur le bord des tables. Chaque QR porte l'adresse permanente de sa table : pendant un tournoi lancé il ouvre la saisie du score de la table, sinon la fiche de la table pour la délégation Installations, et pour tout autre membre une page « Signaler un problème » qui écrit au club. Imprimez depuis le site en ligne : depuis une autre adresse, la page vous en avertit.
 
 ### Tables
 

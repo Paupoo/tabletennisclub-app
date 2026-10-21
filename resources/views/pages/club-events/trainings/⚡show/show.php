@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Payments\InviteToPayAction;
 use App\Actions\ClubAdmin\Subscriptions\AddMemberToTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingCampAction;
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -342,7 +343,8 @@ new class extends Component
      *
      * Comptés en base plutôt que lus dans les onglets : seul l'onglet ouvert
      * est monté, et la fiche ne doit pas charger les trois pour quatre totaux.
-     * Les inscriptions non affiliées sont écartées comme dans l'onglet Membres.
+     * Les inscriptions non affiliées sont écartées comme dans l'onglet Membres ;
+     * les participants externes inscrits comptent parmi les inscrits.
      *
      * @return array{enrolled: int, waiting: int, pending: int, max: int, capped: bool, spotsLeft: int|null, sessions: int, held: int, cancelled: int, upcoming: int, turnout: int|null}
      */
@@ -373,7 +375,11 @@ new class extends Component
         $cancelled = (int) $sessions?->cancelled;
         $held = (int) $sessions?->held;
 
-        $enrolled = $enrolledIds->count();
+        // Les externes prennent une place comme un membre : la tuile les compte,
+        // comme le calcul des places restantes. L'assiduité, elle, ne se pointe
+        // que pour les membres.
+        $externals = $pack->externalRegistrations()->whereIn('status', ExternalRegistration::SEATED_STATUSES)->count();
+        $enrolled = $enrolledIds->count() + $externals;
         $max = $pack->effectiveMaxParticipants();
         // Un pack en libre-service n'a pas de places à compter : le plafond hérité
         // de la salle ne s'y applique pas (même règle que la carte de la liste).
@@ -392,9 +398,9 @@ new class extends Component
             'held' => $held,
             'cancelled' => $cancelled,
             'upcoming' => $total - $cancelled - $held,
-            'turnout' => ($attendance['counted'] === 0 || $enrolled === 0)
+            'turnout' => ($attendance['counted'] === 0 || $enrolledIds->isEmpty())
                 ? null
-                : (int) round(($presentAmongEnrolled / ($attendance['counted'] * $enrolled)) * 100),
+                : (int) round(($presentAmongEnrolled / ($attendance['counted'] * $enrolledIds->count())) * 100),
         ];
     }
 

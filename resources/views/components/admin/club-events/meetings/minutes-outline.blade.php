@@ -113,9 +113,8 @@
                 <x-button icon="o-paper-airplane"
                     :label="$minutes->sent_to_all_at ? __('Sent to all members') : __('Send to all members')"
                     class="btn-outline btn-sm w-full"
-                    wire:click="sendMinutes(true)" spinner="sendMinutes(true)"
-                    :disabled="(bool) $minutes->sent_to_all_at"
-                    wire:confirm="{{ __('Send the minutes to every active member? It cannot be recalled.') }}" />
+                    x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __('Send the minutes to every active member? It cannot be recalled.'), 'method' => 'sendMinutes', 'params' => [true], 'danger' => false]) }}, id: $wire.$id })" spinner="sendMinutes(true)"
+                    :disabled="(bool) $minutes->sent_to_all_at" />
             @endif
         @endif
     </div>

@@ -40,7 +40,7 @@ it('calculates pool matches as n(n-1)/2', function (int $poolSize, int $expected
     'pool of 6' => [6, 15],
 ]);
 
-it('calculates bracket matches as N-1', function (int $nbPools, int $nbQualifiers, int $expected): void {
+it('calculates bracket matches as N-1, plus the match for third place', function (int $nbPools, int $nbQualifiers, int $expected): void {
     $result = $this->simulator->simulate(defaultConfig([
         'nbPools' => $nbPools,
         'nbQualifiersPerPool' => $nbQualifiers,
@@ -48,9 +48,9 @@ it('calculates bracket matches as N-1', function (int $nbPools, int $nbQualifier
 
     expect($result->bracketMatchesTotal)->toBe($expected);
 })->with([
-    '4 pools x 2 qualifiers = 8 finalists -> 7 matches' => [4, 2, 7],
-    '3 pools x 1 qualifier = 3 finalists -> 2 matches' => [3, 1, 2],
-    '8 pools x 2 qualifiers = 16 finalists -> 15 matches' => [8, 2, 15],
+    '4 pools x 2 qualifiers = 8 finalists -> 7 matches + bronze' => [4, 2, 8],
+    '3 pools x 1 qualifier = 3 finalists -> 2 matches, no bronze' => [3, 1, 2],
+    '8 pools x 2 qualifiers = 16 finalists -> 15 matches + bronze' => [8, 2, 16],
 ]);
 
 it('calculates total players as nbPools x poolSize', function (): void {
@@ -61,12 +61,12 @@ it('calculates total players as nbPools x poolSize', function (): void {
 
 it('calculates grand total matches as pool + bracket', function (): void {
     // 4 pools x 4 players = 6 matches/pool x 4 = 24 pool matches
-    // 4 pools x 2 qualifiers = 8 finalists -> 7 bracket matches
+    // 4 pools x 2 qualifiers = 8 finalists -> 7 bracket matches + bronze
     $result = $this->simulator->simulate(defaultConfig());
 
     expect($result->poolMatchesTotal)->toBe(24)
-        ->and($result->bracketMatchesTotal)->toBe(7)
-        ->and($result->grandTotalMatches)->toBe(31);
+        ->and($result->bracketMatchesTotal)->toBe(8)
+        ->and($result->grandTotalMatches)->toBe(32);
 });
 
 // ── Duree des matchs ─────────────────────────────────────────────────────────

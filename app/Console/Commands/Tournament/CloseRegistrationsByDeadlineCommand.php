@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands\Tournament;
 
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\Domains\Shared\States\Tournament\TournamentStateMachine;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -12,14 +13,14 @@ use Illuminate\Console\Command;
 use InvalidArgumentException;
 
 #[Signature('tournament:close-registrations')]
-#[Description('Transition published tournaments whose registration deadline has passed to setup status.')]
+#[Description('Transition published tournaments whose registration deadline day is over to setup status.')]
 class CloseRegistrationsByDeadlineCommand extends Command
 {
     public function handle(): int
     {
         $tournaments = Tournament::registrationsOpen()
             ->whereNotNull('registration_deadline')
-            ->where('registration_deadline', '<', now())
+            ->where('registration_deadline', '<', now()->startOfDay())
             ->get();
 
         $closed = 0;
@@ -35,6 +36,9 @@ class CloseRegistrationsByDeadlineCommand extends Command
 
                 continue;
             }
+
+            // Comme une clôture à la main : la liste d'attente se ferme avec.
+            app(TournamentService::class)->closeWaitlist($tournament);
 
             $this->info("Closed: {$tournament->name} (ID {$tournament->id})");
             $closed++;

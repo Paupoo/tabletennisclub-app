@@ -64,7 +64,7 @@
                             class="btn-warning btn-xs"
                             icon="o-qr-code"
                             :label="__('Pay')"
-                            spinner="openPaymentModal"
+                            spinner="openPaymentModal({{ $payment->id }})"
                             wire:click="openPaymentModal({{ $payment->id }})"
                         />
                     </div>
@@ -146,12 +146,26 @@
                                     @endif
                                 @endif
 
-                                <x-button
-                                    class="btn-ghost btn-xs text-error/70"
-                                    icon="o-x-mark"
-                                    :tooltip="__('Cancel registration')"
-                                    spinner="cancelRegistration"
-                                    wire:click="openCancelConfirm({{ $tournament->id }})" :aria-label="__('Cancel registration')" />
+                                @if ($tournament->status === \App\Domains\Shared\Enums\TournamentStatusEnum::PUBLISHED)
+                                    <x-button
+                                        class="btn-ghost btn-xs text-error/70"
+                                        icon="o-x-mark"
+                                        :tooltip="__('Cancel registration')"
+                                        spinner="openCancelConfirm({{ $tournament->id }})"
+                                        wire:click="openCancelConfirm({{ $tournament->id }})" :aria-label="__('Cancel registration')" />
+                                @else
+                                    <div class="w-full text-xs text-base-content/70" data-withdraw-contact>
+                                        <p>{{ __('To withdraw, contact the organisers:') }}</p>
+                                        @forelse ($this->tournamentOrganisers as $organiser)
+                                            <div class="mt-1">
+                                                <span class="font-medium text-base-content">{{ $organiser->full_name }}</span>
+                                                <x-admin.users.duty-contact :member="$organiser" class="mt-0.5" />
+                                            </div>
+                                        @empty
+                                            <p class="mt-1">{{ __('the committee.') }}</p>
+                                        @endforelse
+                                    </div>
+                                @endif
                             @elseif ($isSpotOffered)
                                 @if ($reg->confirmation_deadline)
                                     <span class="hidden text-xs text-base-content/50 sm:inline">
@@ -166,14 +180,14 @@
                                     class="btn-success btn-xs"
                                     icon="o-check"
                                     :label="__('Confirm')"
-                                    spinner="confirmTournamentSpot"
+                                    spinner="confirmTournamentSpot({{ $tournament->id }})"
                                     wire:click="confirmTournamentSpot({{ $tournament->id }})"
                                 />
                                 <x-button
                                     class="btn-ghost btn-xs text-error/70"
                                     icon="o-x-mark"
                                     :tooltip="__('Decline this spot')"
-                                    spinner="cancelRegistration"
+                                    spinner="openCancelConfirm({{ $tournament->id }})"
                                     wire:click="openCancelConfirm({{ $tournament->id }})" :aria-label="__('Decline this spot')" />
                             @elseif ($isWaiting)
                                 <x-admin.shared.status-badge status="waiting" :detail="$reg->waitlist_position" />
@@ -181,14 +195,14 @@
                                     class="btn-ghost btn-xs text-error/70"
                                     icon="o-x-mark"
                                     :tooltip="__('Leave waitlist')"
-                                    spinner="cancelRegistration"
+                                    spinner="openCancelConfirm({{ $tournament->id }})"
                                     wire:click="openCancelConfirm({{ $tournament->id }})" :aria-label="__('Leave waitlist')" />
                             @elseif ($isFull)
                                 <x-admin.shared.status-badge status="full" />
                                 <x-button
                                     class="btn-outline btn-sm btn-warning px-4"
                                     :label="__('Join waitlist')"
-                                    spinner="register"
+                                    spinner="register({{ $tournament->id }})"
                                     wire:click="register({{ $tournament->id }})"
                                 />
                             @else
@@ -201,7 +215,7 @@
                                 <x-button
                                     class="btn-primary btn-outline btn-sm px-6"
                                     :label="__('Register')"
-                                    spinner="register"
+                                    spinner="register({{ $tournament->id }})"
                                     wire:click="register({{ $tournament->id }})"
                                 />
                             @endif

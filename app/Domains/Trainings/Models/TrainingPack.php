@@ -204,7 +204,7 @@ class TrainingPack extends Model
 
     public function effectiveMaxParticipants(): int
     {
-        return $this->max_participants ?? $this->room?->capacity_for_trainings ?? 0;
+        return $this->max_participants ?? $this->room?->trainingSeats() ?? 0;
     }
 
     public function enrolledCount(): int

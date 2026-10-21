@@ -99,12 +99,12 @@
 
         <x-tab name="pools" icon="o-user-group">
             <x-slot:label>{{ __('Pools') }}</x-slot:label>
-            @include('admin.club-events.tournaments.partials.live.tabs.pools')
+            @include('admin.club-events.tournaments.partials.live.tabs.pools', ['manage' => $this->canManageTournament])
         </x-tab>
 
         <x-tab name="bracket" icon="o-trophy">
             <x-slot:label>{{ __('Bracket') }}</x-slot:label>
-            @include('admin.club-events.tournaments.partials.live.tabs.bracket')
+            @include('admin.club-events.tournaments.partials.live.tabs.bracket', ['manage' => $this->canManageTournament])
         </x-tab>
 
         <x-tab name="rankings" icon="o-chart-bar">

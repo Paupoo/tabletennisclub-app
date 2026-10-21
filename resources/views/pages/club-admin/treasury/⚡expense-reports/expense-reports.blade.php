@@ -351,8 +351,7 @@
             <x-slot:actions>
                 @can('cancelAcceptance', $shown)
                     <x-button :label="__('Undo the acceptance')" icon="o-arrow-uturn-left" class="btn-ghost"
-                        wire:click="cancelAcceptance"
-                        wire:confirm="{{ __('Cancel the refund and send this report back to be decided?') }}"
+                        x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __('Cancel the refund and send this report back to be decided?'), 'method' => 'cancelAcceptance', 'params' => [], 'danger' => false]) }}, id: $wire.$id })"
                         spinner="cancelAcceptance" />
                 @endcan
                 @can('decide', $shown)

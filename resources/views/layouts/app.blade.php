@@ -103,6 +103,7 @@ les réglages : appliquer le thème ici aussi le ferait une seconde fois, après
 
     {{-- TOAST area --}}
     <x-toast position="toast-bottom toast-start" />
+    <x-confirm-dialog />
 
     {{-- Session flash → Mary toast bridge: controllers redirecting with
          ->with('success'|'error'|'warning'|'info', …) surface as the same toasts

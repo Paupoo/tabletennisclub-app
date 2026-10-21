@@ -80,7 +80,7 @@ describe('configureKnockoutPhase', function (): void {
         // Don't generate any matches
         expect(fn () => app(TournamentFinalPhaseService::class)
             ->configureKnockoutPhase($tournament, 'semifinal')
-        )->toThrow(DivisionByZeroError::class);
+        )->toThrow(Exception::class);
     })->group('bracket', 'guard');
 
     it('creates a final and a bronze match at minimum', function (): void {

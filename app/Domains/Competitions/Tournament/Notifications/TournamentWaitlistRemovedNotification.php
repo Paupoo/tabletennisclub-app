@@ -14,8 +14,14 @@ class TournamentWaitlistRemovedNotification extends Notification
 {
     use LinksToMemberSpace, Queueable;
 
+    /**
+     * @param  bool  $becauseRegistrationsClosed  the list was closed with the
+     *                                            registrations, not one person
+     *                                            taken off by the committee
+     */
     public function __construct(
         public Tournament $tournament,
+        public bool $becauseRegistrationsClosed = false,
     ) {}
 
     /** @return array<string, mixed> */
@@ -35,10 +41,16 @@ class TournamentWaitlistRemovedNotification extends Notification
         return (new MailMessage)
             ->subject(__('Waiting list update') . ' — ' . $this->tournament->name)
             ->greeting(__('Hi') . ' ' . $notifiable->first_name . ' !')
-            ->line(__('Your waiting list entry for :name has been removed by an administrator.', [
-                'name' => '**' . $this->tournament->name . '**',
-            ]))
-            ->line(__('If you believe this is an error, please contact us.'));
+            ->line($this->becauseRegistrationsClosed
+                ? __('Registrations for :name are closed, and no spot freed up for you this time.', [
+                    'name' => '**' . $this->tournament->name . '**',
+                ])
+                : __('Your waiting list entry for :name has been removed by an administrator.', [
+                    'name' => '**' . $this->tournament->name . '**',
+                ]))
+            ->line($this->becauseRegistrationsClosed
+                ? __('Thank you for your interest — we hope to see you at the next tournament.')
+                : __('If you believe this is an error, please contact us.'));
     }
 
     /** @return array<int, string> */

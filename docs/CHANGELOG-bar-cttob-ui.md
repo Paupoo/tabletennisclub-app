@@ -326,8 +326,6 @@ confirmation, instead of landing on the products screen without a word.
   it — only the history carries names.
 - **No Bancontact.** Cash, QR and "offered" only, while the cash sheet reserves an
   "Other" row that cannot be filled.
-- **The cash sheet is out of reach of every bar role.** No role holds
-  `bar.cash_sheet.send`; only `ADMINISTRATOR` gets it, through `Permission::cases()`.
 - **The history has no pagination and no mobile card twin**, and loads every order
   ever with its items when the period is "All".
 - Issue #124 is only partly closed: the "to restock" filter and a product's movement
@@ -338,3 +336,10 @@ confirmation, instead of landing on the products screen without a word.
 
 Each of these is recorded, with its options and its priority, in the design review
 this branch closes.
+
+### Resolved after this review
+
+The treasury role now has access to the cash sheet without receiving general bar
+access. Cash received is attributed to the payment business day, saved recipients
+use the application settings table, and CSV product names are protected against
+spreadsheet formula execution.

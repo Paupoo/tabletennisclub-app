@@ -35,6 +35,10 @@ beforeEach(function (): void {
     makeActiveSeason();
 });
 
+it('does not treat the date-required cash sheet export as a page', function (): void {
+    expect(smokeableGetRoutes())->not->toHaveKey('bar.cashSheet.download');
+});
+
 it('renders every parameterless page without error as an admin', function (): void {
     $routes = smokeableGetRoutes();
 

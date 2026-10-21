@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Bar\Services;
 
 use App\Domains\Bar\Models\BarStockMovement;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class StockService
@@ -104,53 +105,54 @@ class StockService
             throw new RuntimeException('La quantité à sortir doit être supérieure à 0.');
         }
 
-        $qtyToConsume = $quantity;
+        DB::transaction(function () use ($productId, $quantity, $reason, $createdBy, $modifiedBy, $orderId, $orderItemId, $inventoryId): void {
+            $qtyToConsume = $quantity;
 
-        $inMovements = BarStockMovement::query()
-            ->where('product_id', $productId)
-            ->where('movement_type', BarStockMovement::TYPE_IN)
-            ->where('remaining_quantity', '>', 0)
-            ->orderBy('created_at')
-            ->lockForUpdate()
-            ->get();
+            $inMovements = BarStockMovement::query()
+                ->where('product_id', $productId)
+                ->where('movement_type', BarStockMovement::TYPE_IN)
+                ->where('remaining_quantity', '>', 0)
+                ->orderBy('created_at')
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
 
-        foreach ($inMovements as $inMovement) {
-            if ($qtyToConsume <= 0) {
-                break;
+            foreach ($inMovements as $inMovement) {
+                if ($qtyToConsume <= 0) {
+                    break;
+                }
+
+                $available = (int) $inMovement->remaining_quantity;
+                if ($available <= 0) {
+                    continue;
+                }
+
+                $consumed = min($available, $qtyToConsume);
+
+                $inMovement->remaining_quantity = $available - $consumed;
+                $inMovement->save();
+
+                BarStockMovement::create([
+                    'product_id' => $productId,
+                    'quantity' => $consumed,
+                    'remaining_quantity' => 0,
+                    'movement_type' => BarStockMovement::TYPE_OUT,
+                    'reason' => $reason,
+                    'created_by' => $createdBy,
+                    'modified_by' => $modifiedBy,
+                    'source_movement_id' => $inMovement->id,
+                    'order_id' => $orderId,
+                    'order_item_id' => $orderItemId,
+                    'inventory_id' => $inventoryId,
+                ]);
+
+                $qtyToConsume -= $consumed;
             }
 
-            $available = (int) $inMovement->remaining_quantity;
-            if ($available <= 0) {
-                continue;
+            if ($qtyToConsume > 0) {
+                throw new RuntimeException('Stock insuffisant pour appliquer la sortie FIFO.');
             }
-
-            $consumed = min($available, $qtyToConsume);
-
-            // Reduce remaining quantity on the source IN lot
-            $inMovement->remaining_quantity = $available - $consumed;
-            $inMovement->save();
-
-            // Create an OUT movement linked to the consumed source IN lot
-            BarStockMovement::create([
-                'product_id' => $productId,
-                'quantity' => $consumed,
-                'remaining_quantity' => 0,
-                'movement_type' => BarStockMovement::TYPE_OUT,
-                'reason' => $reason,
-                'created_by' => $createdBy,
-                'modified_by' => $modifiedBy,
-                'source_movement_id' => $inMovement->id,
-                'order_id' => $orderId,
-                'order_item_id' => $orderItemId,
-                'inventory_id' => $inventoryId,
-            ]);
-
-            $qtyToConsume -= $consumed;
-        }
-
-        if ($qtyToConsume > 0) {
-            throw new RuntimeException('Stock insuffisant pour appliquer la sortie FIFO.');
-        }
+        });
     }
 
     /**
@@ -159,26 +161,32 @@ class StockService
      */
     public function restoreFromOrderItem(int $orderItemId, ?int $modifiedBy = null): void
     {
-        $outMovements = BarStockMovement::query()
-            ->where('order_item_id', $orderItemId)
-            ->where('movement_type', BarStockMovement::TYPE_OUT)
-            ->lockForUpdate()
-            ->get();
+        DB::transaction(function () use ($orderItemId, $modifiedBy): void {
+            $outMovements = BarStockMovement::query()
+                ->where('order_item_id', $orderItemId)
+                ->where('movement_type', BarStockMovement::TYPE_OUT)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
 
-        foreach ($outMovements as $outMovement) {
-            if ($outMovement->source_movement_id) {
+            foreach ($outMovements as $outMovement) {
                 $sourceIn = BarStockMovement::query()
                     ->lockForUpdate()
                     ->find($outMovement->source_movement_id);
 
-                if ($sourceIn) {
-                    $sourceIn->remaining_quantity = (int) $sourceIn->remaining_quantity + (int) $outMovement->quantity;
-                    $sourceIn->modified_by = $modifiedBy;
-                    $sourceIn->save();
+                if (! $sourceIn instanceof BarStockMovement
+                    || ! $sourceIn->isIn()
+                    || $sourceIn->product_id !== $outMovement->product_id
+                    || (int) $sourceIn->remaining_quantity + (int) $outMovement->quantity > (int) $sourceIn->quantity) {
+                    throw new RuntimeException('Impossible de restaurer une sortie sans son lot d’entrée valide.');
                 }
-            }
 
-            $outMovement->delete();
-        }
+                $sourceIn->remaining_quantity = (int) $sourceIn->remaining_quantity + (int) $outMovement->quantity;
+                $sourceIn->modified_by = $modifiedBy;
+                $sourceIn->save();
+
+                $outMovement->delete();
+            }
+        });
     }
 }

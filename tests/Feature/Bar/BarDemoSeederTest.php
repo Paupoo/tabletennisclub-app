@@ -33,7 +33,7 @@ beforeEach(function (): void {
     Storage::fake('local');
     $this->travelTo(Carbon::parse('2026-09-26 12:00'));
     $this->firstUser = User::factory()->create();
-    $this->xavier = User::factory()->create(['email' => 'xavier.coenen@test.com', 'first_name' => 'Xavier']);
+    $this->xavier = User::factory()->create(['email' => 'xavier_coenen@hotmail.com', 'first_name' => 'Xavier']);
 
     $this->seed(BarDemoSeeder::class);
 });

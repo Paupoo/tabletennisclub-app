@@ -43,6 +43,7 @@
             'short' => 'bg-success ' . $shortRing,
             'to_send' => 'bg-info',
             'actionable' => 'bg-warning',
+            'missing_players' => 'bg-error/40',
             'urgent' => 'bg-error',
             'past' => 'border border-base-300',
             'forfeit' => 'border border-error',
@@ -55,6 +56,7 @@
             'short' => __('Under control — short-handed'),
             'to_send' => __('Lineup to send'),
             'actionable' => __('Ready to compose'),
+            'missing_players' => __('Missing players'),
             'urgent' => __('Needs attention'),
             'past' => __('Played'),
             'bye' => __('Bye'),
@@ -259,6 +261,7 @@
                                     'bg-error' => $segment === 'urgent',
                                     'bg-info' => $segment === 'to_send',
                                     'bg-warning' => $segment === 'actionable',
+                                    'bg-error/40' => $segment === 'missing_players',
                                     'bg-success' => in_array($segment, ['confirmed', 'short'], true),
                                     'ring-2 ring-inset ring-warning' => $segment === 'short',
                                     'bg-base-200' => $segment === 'future',
@@ -304,6 +307,7 @@
                                     'bg-error' => $row['status'] === 'urgent',
                                     'bg-info' => $row['status'] === 'to_send',
                                     'bg-warning' => $row['status'] === 'actionable',
+                                    'bg-error/40' => $row['status'] === 'missing_players',
                                 ]) aria-hidden="true"></span>
                                 <div class="w-16 shrink-0">
                                     <div class="text-sm font-bold tabular-nums">{{ __('Day') }} {{ $matchDayMap[$row['wk']] ?? $row['wk'] }}</div>

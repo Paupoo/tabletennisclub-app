@@ -9,7 +9,7 @@
 | {{ __('Date') }} | {{ __('Match') }} | {{ __('Status') }} |
 |:-----|:-----|:-----|
 @foreach ($fixtures as $fixture)
-| {{ $fixture['date'] }} | {{ $fixture['team'] }} – {{ $fixture['opponent'] }} | {{ $fixture['saved'] ? __('Saved, not sent') : __('To compose') }} |
+| {{ $fixture['date'] }} | {{ $fixture['team'] }} – {{ $fixture['opponent'] }} | @if ($fixture['saved']){{ __('Saved, not sent') }}@elseif ($fixture['missing'] > 0 && $fixture['pending'] > 0){{ trans_choice(':count player missing, :pending without an answer|:count players missing, :pending without an answer', $fixture['missing'], ['count' => $fixture['missing'], 'pending' => $fixture['pending']]) }}@elseif ($fixture['missing'] > 0){{ trans_choice(':count player missing, everyone answered|:count players missing, everyone answered', $fixture['missing'], ['count' => $fixture['missing']]) }}@else{{ __('To compose') }}@endif |
 @endforeach
 </x-mail::table>
 

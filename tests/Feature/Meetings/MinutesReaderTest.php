@@ -8,7 +8,6 @@ use App\Domains\Meetings\Models\MeetingActionItem;
 use App\Domains\Meetings\Models\MeetingMinutes;
 use App\Domains\Meetings\Pdf\MinutesPdf;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 

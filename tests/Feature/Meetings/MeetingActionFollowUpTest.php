@@ -267,7 +267,6 @@ describe('my actions', function (): void {
         $action = followUpAction($meeting, ['assigned_to_id' => $owner->id]);
         $abandoned = followUpAction($meeting, ['assigned_to_id' => $owner->id, 'abandoned_at' => now(), 'abandon_reason' => 'Sans objet']);
 
-    
         Livewire::actingAs($intruder)
             ->test('pages::club-events.meetings.my-actions')
             ->call('markDone', $action->id)

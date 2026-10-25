@@ -76,23 +76,6 @@ new class extends Component
         };
     }
 
-    /**
-     * Human-readable properties for audited actions without model changes.
-     *
-     * @return array<string, string>
-     */
-    protected function eventDetails(Activity $activity): array
-    {
-        if ($activity->event !== 'bar_cash_sheet_sent') {
-            return [];
-        }
-
-        return [
-            __('Report date') => (string) ($activity->properties['report_date'] ?? '—'),
-            __('Recipient') => (string) ($activity->properties['recipient'] ?? '—'),
-        ];
-    }
-
     public function getFilterChips(): array
     {
         $chips = [];
@@ -208,24 +191,6 @@ new class extends Component
             'AppSetting' => __('Setting'),
             default => $base,
         };
-    }
-
-    /**
-     * Label a subject-less activity without assuming every event has a model.
-     *
-     * @param  array<string, string>  $subjectLabels
-     */
-    protected function subjectName(Activity $activity, array $subjectLabels): string
-    {
-        if ($activity->event === 'bar_cash_sheet_sent') {
-            return __('Cash sheet for :date', ['date' => $activity->properties['report_date'] ?? '—']);
-        }
-
-        if ($activity->subject_type === null) {
-            return '—';
-        }
-
-        return $subjectLabels[$activity->subject_type] ?? Str::afterLast($activity->subject_type, '\\');
     }
 
     /**
@@ -362,6 +327,23 @@ new class extends Component
     }
 
     /**
+     * Human-readable properties for audited actions without model changes.
+     *
+     * @return array<string, string>
+     */
+    protected function eventDetails(Activity $activity): array
+    {
+        if ($activity->event !== 'bar_cash_sheet_sent') {
+            return [];
+        }
+
+        return [
+            __('Report date') => (string) ($activity->properties['report_date'] ?? '—'),
+            __('Recipient') => (string) ($activity->properties['recipient'] ?? '—'),
+        ];
+    }
+
+    /**
      * Actions present in the log, as select options.
      *
      * Read from the log rather than listed by hand, the way modelOptions() reads
@@ -424,5 +406,23 @@ new class extends Component
             ->searchName($term)
             ->pluck('id')
             ->all();
+    }
+
+    /**
+     * Label a subject-less activity without assuming every event has a model.
+     *
+     * @param  array<string, string>  $subjectLabels
+     */
+    protected function subjectName(Activity $activity, array $subjectLabels): string
+    {
+        if ($activity->event === 'bar_cash_sheet_sent') {
+            return __('Cash sheet for :date', ['date' => $activity->properties['report_date'] ?? '—']);
+        }
+
+        if ($activity->subject_type === null) {
+            return '—';
+        }
+
+        return $subjectLabels[$activity->subject_type] ?? Str::afterLast($activity->subject_type, '\\');
     }
 };

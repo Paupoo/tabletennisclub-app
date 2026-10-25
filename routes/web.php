@@ -559,6 +559,20 @@ Route::prefix('admin/club-events/interclubs/')
             Route::livewire('changes', 'pages::club-events.interclubs.changes')->name('admin.interclubs.changes');
         });
 
+        // Who wins beyond their ranking, and who plays: the committee decides
+        // selections and noyaux on it (decided 2026-10-25). Its expected-win
+        // table changes everyone's figures, so it has its own right.
+        Route::middleware('can:player_stats.view')->group(function (): void {
+            Route::livewire('player-stats', 'pages::club-events.interclubs.player-stats')->name('admin.interclubs.player-stats');
+            Route::livewire('player-stats/compare', 'pages::club-events.interclubs.player-compare')->name('admin.interclubs.player-stats.compare');
+            Route::livewire('player-stats/expected-win-rates', 'pages::club-events.interclubs.expected-win-rates')
+                ->middleware('can:player_stats.configure')
+                ->name('admin.interclubs.player-stats.expected-win-rates');
+            Route::livewire('player-stats/{member}', 'pages::club-events.interclubs.player-stat')
+                ->whereNumber('member')
+                ->name('admin.interclubs.player-stats.show');
+        });
+
         // Who plays where, and against whom: readable at the committee baseline.
         // Every write on these screens is guarded inside the component — the
         // route no longer is the only thing standing in front of them.

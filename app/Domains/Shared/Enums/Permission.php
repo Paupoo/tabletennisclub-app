@@ -104,6 +104,11 @@ enum Permission: string
     case PaymentsRemind = 'payments.remind';
     // Trésorerie
     case PaymentsView = 'payments.view';
+    // Statistiques des joueurs : lire qui gagne et qui joue, pour décider des
+    // sélections et des noyaux. Régler la table des victoires attendues change
+    // le classement de tout le monde, d'où un droit à part.
+    case PlayerStatsConfigure = 'player_stats.configure';
+    case PlayerStatsView = 'player_stats.view';
     case QueueManage = 'queue.manage';
     case QueueView = 'queue.view';
     case ResultsManage = 'results.manage';

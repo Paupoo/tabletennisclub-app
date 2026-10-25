@@ -90,7 +90,19 @@ describe('the committee reads the club', function (): void {
                 // Not a reading right: the one duty the whole committee shares
                 // (decided 2026-09-27).
                 'communications.send',
+                // Who wins and who plays, to decide selections and noyaux
+                // (decided 2026-10-25).
+                'player_stats.view',
             ]);
+    });
+
+    it('keeps the expected-win table for administrators', function (): void {
+        $committee = User::factory()->withRole(Role::COMMITTEE)->create();
+        $admin = User::factory()->withRole(Role::ADMINISTRATOR)->create();
+
+        expect($committee->can(Permission::PlayerStatsView->value))->toBeTrue()
+            ->and($committee->can(Permission::PlayerStatsConfigure->value))->toBeFalse()
+            ->and($admin->can(Permission::PlayerStatsConfigure->value))->toBeTrue();
     });
 
     it('lets the facilities délégation read what it manages', function (): void {

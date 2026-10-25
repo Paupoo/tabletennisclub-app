@@ -395,7 +395,7 @@
          access-selections / access-results Gates say so, and the menu has to
          ask the same question, or a captain reaches their own screens by URL
          only. The season configuration below stays permission-gated. --}}
-    @if (Gate::any(['access-selections', 'access-results']) || $user->can('interclubs.view'))
+    @if (Gate::any(['access-selections', 'access-results']) || $user->can('interclubs.view') || $user->can('player_stats.view'))
     <x-menu-sub icon="o-calendar-days" link="#">
         <x-slot:title><x-admin.menu-sub-title :title="__('Interclubs')" :badge="$badge('lineups_to_send')" /></x-slot:title>
         @can('access-selections')
@@ -404,6 +404,9 @@
         @endcan
         @can('access-results')
         <x-menu-item icon="o-squares-2x2" link="{{ route('admin.interclubs.results') }}" :title="__('Results')" />
+        @endcan
+        @can('player_stats.view')
+        <x-menu-item icon="o-chart-bar" link="{{ route('admin.interclubs.player-stats') }}" :title="__('Player statistics')" />
         @endcan
         {{-- Readable at the committee baseline; only the division setup is a
              tool with nothing to read, and stays with the délégation. --}}

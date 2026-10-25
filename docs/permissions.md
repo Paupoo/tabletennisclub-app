@@ -20,7 +20,7 @@ Trois familles cohabitent, et une seule décide :
 
 Accès sans restriction à toute l'application.
 
-Détient les 79 permissions. Accordées explicitement plutôt que
+Détient les 81 permissions. Accordées explicitement plutôt que
 par un court-circuit `Gate::before`, car certaines policies encodent des règles qui
 doivent survivre à un administrateur — il ne peut toujours pas supprimer son propre
 compte.
@@ -48,6 +48,7 @@ Accès de base au back-office : consulter les données du club sans les gérer.
 - `club.view`
 - `feedback.view`
 - `communications.send`
+- `player_stats.view`
 
 ---
 
@@ -277,6 +278,7 @@ est une situation légitime.
 
 Aucune délégation ne les porte : elles ne peuvent pas être confiées.
 
+- `player_stats.configure`
 - `users.anonymize`
 - `users.delete`
 

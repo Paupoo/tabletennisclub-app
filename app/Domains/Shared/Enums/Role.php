@@ -271,6 +271,10 @@ enum Role: string
                 // Writing to the club is a committee duty, not a délégation
                 // (decided 2026-09-27).
                 Permission::CommunicationsSend,
+                // Who wins and who plays, to decide selections and noyaux
+                // (decided 2026-10-25). Not its configuration: the
+                // expected-win table stays with the administrators.
+                Permission::PlayerStatsView,
             ],
 
             // The auditors the general assembly elects are, by design, outside

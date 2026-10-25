@@ -131,6 +131,7 @@
                         {{ match($entry->reason) {
                             'tournament_payment' => __('Tournament payment'),
                             'training_payment'   => __('Training payment'),
+                            'bar_sale'           => __('Bar sale'),
                             default              => __('Manual entry'),
                         } }}
                     </span>

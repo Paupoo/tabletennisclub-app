@@ -104,6 +104,7 @@ it('reaches the cart screen under the name the controller redirects to', functio
 });
 
 it('says so out loud when the cash sheet cannot be sent', function (): void {
+    AppSetting::set('treasurer_email', 'previous@example.test');
     $this->partialMock(
         CashSheetService::class,
         fn ($mock) => $mock->shouldReceive('sendCsv')->once()->andReturn(false)
@@ -117,8 +118,11 @@ it('says so out loud when the cash sheet cannot be sent', function (): void {
         ->post(route('bar.cashSheet.send'), [
             'date' => now()->toDateString(),
             'to' => 'tresorier@example.test',
+            'save_default' => true,
         ])
         ->assertSessionHas('error');
+
+    expect(AppSetting::get('treasurer_email'))->toBe('previous@example.test');
 });
 
 it('keeps after-midnight sales in the same cash sheet business day', function (): void {
@@ -186,9 +190,12 @@ it('can email a cash sheet containing payments for orders created on an earlier 
         ->post(route('bar.cashSheet.send'), [
             'date' => now()->toDateString(),
             'to' => 'treasurer@example.test',
+            'save_default' => true,
         ])
         ->assertRedirect(route('bar.cashSheet.index', ['date' => now()->toDateString()]))
         ->assertSessionHas('success');
+
+    expect(AppSetting::get('treasurer_email'))->toBe('treasurer@example.test');
 });
 
 it('lists active business days and navigates to payments made after the sale day', function (): void {
@@ -493,12 +500,17 @@ it('says so out loud when there is nothing to send', function (): void {
     // d'en-tête : il ne se déclenchait donc jamais. Une journée sans vente partait
     // au trésorier sous la forme d'un CSV à zéro ligne, annoncée « Email envoyé
     // avec succès ». Le garde compte maintenant commandes et paiements.
+    AppSetting::set('treasurer_email', 'previous@example.test');
+
     $this->actingAs($this->manager)
         ->post(route('bar.cashSheet.send'), [
             'date' => now()->subMonth()->toDateString(),
             'to' => 'tresorier@example.test',
+            'save_default' => true,
         ])
         ->assertSessionHas('error');
+
+    expect(AppSetting::get('treasurer_email'))->toBe('previous@example.test');
 });
 
 it('no longer registers a route towards a method that does not exist', function (): void {

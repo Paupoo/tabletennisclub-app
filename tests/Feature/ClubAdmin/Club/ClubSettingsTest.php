@@ -7,7 +7,6 @@ use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\ValueObjects\FiscalYear;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 
@@ -270,9 +269,9 @@ describe('Test Club Settings', function (): void {
 
         it('throws a 404 when user does not exist', function (): void {
             Livewire::actingAs(clubUpdater())->test(clubSettingsComponent())
-                ->call('removeMember', 99999);
-        })->throws(ModelNotFoundException::class);
-
+                ->call('removeMember', 99999)
+                ->assertNotFound();
+        });
     });
 
     // ─────────────────────────────────────────────────────────────────────────────

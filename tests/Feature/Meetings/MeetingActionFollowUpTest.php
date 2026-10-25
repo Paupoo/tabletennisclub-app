@@ -11,7 +11,6 @@ use App\Domains\Meetings\Notifications\MeetingInvitationNotification;
 use App\Domains\Meetings\Services\ActionFollowUp;
 use App\Domains\Shared\Enums\MeetingActionReviewOutcomeEnum;
 use App\Services\ClubAdmin\Dashboard\PendingTasks;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -268,10 +267,16 @@ describe('my actions', function (): void {
         $action = followUpAction($meeting, ['assigned_to_id' => $owner->id]);
         $abandoned = followUpAction($meeting, ['assigned_to_id' => $owner->id, 'abandoned_at' => now(), 'abandon_reason' => 'Sans objet']);
 
-        expect(fn () => Livewire::actingAs($intruder)->test('pages::club-events.meetings.my-actions')->call('markDone', $action->id))
-            ->toThrow(ModelNotFoundException::class);
-        expect(fn () => Livewire::actingAs($owner)->test('pages::club-events.meetings.my-actions')->call('markDone', $abandoned->id))
-            ->toThrow(ModelNotFoundException::class);
+    
+        Livewire::actingAs($intruder)
+            ->test('pages::club-events.meetings.my-actions')
+            ->call('markDone', $action->id)
+            ->assertNotFound();
+
+        Livewire::actingAs($owner)
+            ->test('pages::club-events.meetings.my-actions')
+            ->call('markDone', $abandoned->id)
+            ->assertNotFound();
 
         expect($action->fresh()->is_completed)->toBeFalse()
             ->and($abandoned->fresh()->is_completed)->toBeFalse();

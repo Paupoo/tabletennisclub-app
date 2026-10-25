@@ -8,7 +8,6 @@ use App\Domains\Meetings\Models\MeetingActionItem;
 use App\Domains\Meetings\Notifications\MeetingMinutesNotification;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Jobs\SendMeetingMinutesJob;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\RateLimited;
 use Illuminate\Support\Facades\Bus;
@@ -83,11 +82,11 @@ describe('Minutes page — drafting', function (): void {
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
         $foreign = Meeting::factory()->create()->agendaItems()->create(['sort_order' => 0, 'title' => 'Ailleurs']);
 
-        expect(fn () => Livewire::actingAs($admin)
+        Livewire::actingAs($admin)
             ->test(MINUTES_PAGE, ['meeting' => $meeting])
             ->set("newDecision.{$foreign->id}", 'Détournement')
-            ->call('addDecision', (string) $foreign->id))
-            ->toThrow(ModelNotFoundException::class);
+            ->call('addDecision', (string) $foreign->id)
+            ->assertNotFound();
 
         expect($meeting->fresh()->decisions)->toBeEmpty();
     });

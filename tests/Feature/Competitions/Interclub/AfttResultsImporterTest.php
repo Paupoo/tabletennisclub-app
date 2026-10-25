@@ -169,6 +169,17 @@ it('attaches a line to the member whose licence it carries', function (): void {
         ->and($lines->first()->our_player_name)->toBeNull();
 });
 
+it('keeps the ranking our player carried on the evening', function (): void {
+    User::factory()->create(['licence' => '166488']);
+    $match = localFixture('PBBWH01/021');
+
+    runImport();
+
+    $line = InterclubIndividualMatch::where('interclub_id', $match->id)->where('position', 1)->first();
+
+    expect($line->our_player_ranking)->toBe('C2');
+});
+
 it('reports a licence of ours that matches no member, and keeps the name beside the gap', function (): void {
     $match = localFixture('PBBWH01/021');
 

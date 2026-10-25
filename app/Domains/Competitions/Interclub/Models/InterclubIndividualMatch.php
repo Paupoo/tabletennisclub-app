@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $user_id
  * @property string|null $our_player_name
  * @property string|null $our_player_licence
+ * @property string|null $our_player_ranking
  * @property string|null $opponent_name
  * @property string|null $opponent_licence
  * @property string|null $opponent_ranking
@@ -61,6 +62,7 @@ class InterclubIndividualMatch extends Model
         'opponent_ranking',
         'our_player_licence',
         'our_player_name',
+        'our_player_ranking',
         'our_sets',
         'position',
         'their_sets',

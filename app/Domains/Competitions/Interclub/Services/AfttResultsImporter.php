@@ -287,6 +287,7 @@ class AfttResultsImporter
             'opponent_ranking' => $theirPlayer?->ranking,
             'our_player_licence' => $member === null ? $ourIndex : null,
             'our_player_name' => $member === null ? $ourPlayer?->fullName() : null,
+            'our_player_ranking' => $ourPlayer?->ranking,
             'our_sets' => $ourSets,
             'their_sets' => $theirSets,
             'user_id' => $member?->id,

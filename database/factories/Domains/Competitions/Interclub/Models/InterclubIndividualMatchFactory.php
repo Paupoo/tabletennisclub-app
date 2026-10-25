@@ -31,6 +31,7 @@ class InterclubIndividualMatchFactory extends Factory
             'opponent_licence' => (string) fake()->numberBetween(100000, 199999),
             'opponent_name' => fake()->name(),
             'opponent_ranking' => fake()->randomElement(['B4', 'C2', 'C4', 'D0', 'E0', 'NC']),
+            'our_player_ranking' => fake()->randomElement(['C2', 'C4', 'D0', 'E0']),
             'our_sets' => $ourSets,
             'position' => fake()->numberBetween(1, 16),
             'their_sets' => $theirSets,
@@ -49,6 +50,7 @@ class InterclubIndividualMatchFactory extends Factory
             'opponent_licence' => null,
             'opponent_name' => null,
             'opponent_ranking' => null,
+            'our_player_ranking' => null,
             'position' => 7,
             'user_id' => null,
         ]);

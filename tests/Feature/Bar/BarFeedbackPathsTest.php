@@ -12,6 +12,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Models\AppSetting;
 use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
+use Spatie\Activitylog\Models\Activity;
 
 /*
 |--------------------------------------------------------------------------
@@ -123,6 +124,7 @@ it('says so out loud when the cash sheet cannot be sent', function (): void {
         ->assertSessionHas('error');
 
     expect(AppSetting::get('treasurer_email'))->toBe('previous@example.test');
+    expect(Activity::query()->where('event', 'bar_cash_sheet_sent')->count())->toBe(0);
 });
 
 it('keeps after-midnight sales in the same cash sheet business day', function (): void {
@@ -196,6 +198,21 @@ it('can email a cash sheet containing payments for orders created on an earlier 
         ->assertSessionHas('success');
 
     expect(AppSetting::get('treasurer_email'))->toBe('treasurer@example.test');
+
+    $activity = Activity::query()->where('event', 'bar_cash_sheet_sent')->sole();
+
+    expect($activity->causer_id)->toBe($this->manager->id)
+        ->and($activity->properties['report_date'])->toBe(now()->toDateString())
+        ->and($activity->properties['recipient'])->toBe('treasurer@example.test')
+        ->and($activity->created_at)->not->toBeNull();
+
+    Livewire::actingAs($this->manager)
+        ->test('pages::club-admin.audit.index')
+        ->assertSee(__('Cash sheet sent'))
+        ->assertSee(__('Cash sheet for :date', ['date' => now()->toDateString()]))
+        ->assertSee(__('Report date'))
+        ->assertSee(__('Recipient'))
+        ->assertSee('treasurer@example.test');
 });
 
 it('lists active business days and navigates to payments made after the sale day', function (): void {
@@ -519,6 +536,7 @@ it('says so out loud when there is nothing to send', function (): void {
         ->assertSessionHas('error');
 
     expect(AppSetting::get('treasurer_email'))->toBe('previous@example.test');
+    expect(Activity::query()->where('event', 'bar_cash_sheet_sent')->count())->toBe(0);
 });
 
 it('no longer registers a route towards a method that does not exist', function (): void {

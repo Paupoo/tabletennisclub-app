@@ -12,6 +12,7 @@ use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\ExpenseCategory;
 use App\Domains\Shared\Enums\ExpenseReportStatus;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\Role;
 use Database\Seeders\BarDemoSeeder;
 use Illuminate\Support\Carbon;
@@ -114,9 +115,12 @@ it('puts Coca Zero alone in automatic mode, and lets the sandwich cover a single
         ->and(barDemoProduct('Sandwich')->restocking_weeks)->toBe(1);
 });
 
-it('gives Xavier both bar roles and makes the first account a store keeper', function (): void {
+it('gives Xavier bar, delegation-management and audit access', function (): void {
     expect($this->xavier->fresh()->hasRole(Role::STORE_KEEPER->value))->toBeTrue()
         ->and($this->xavier->fresh()->hasRole(Role::BARMAN->value))->toBeTrue()
+        ->and($this->xavier->fresh()->hasRole(Role::ACCESS->value))->toBeTrue()
+        ->and($this->xavier->fresh()->can(Permission::AccessManage->value))->toBeTrue()
+        ->and($this->xavier->fresh()->can(Permission::AuditLogView->value))->toBeTrue()
         ->and($this->firstUser->fresh()->hasRole(Role::STORE_KEEPER->value))->toBeTrue();
 });
 
@@ -133,5 +137,7 @@ it('gives the same bar when run twice', function (): void {
     $first = $snapshot();
     $this->seed(BarDemoSeeder::class);
 
-    expect($snapshot())->toBe($first);
+    expect($snapshot())->toBe($first)
+        ->and($this->xavier->fresh()->hasRole(Role::ACCESS->value))->toBeTrue()
+        ->and($this->xavier->fresh()->can(Permission::AuditLogView->value))->toBeTrue();
 });

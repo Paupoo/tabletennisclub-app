@@ -19,6 +19,7 @@ use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\ExpenseCategory;
 use App\Domains\Shared\Enums\ExpenseReportStatus;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\Role;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
@@ -326,7 +327,15 @@ class BarDemoSeeder extends Seeder
             }
         }
 
-        $shoppers['xavier']?->assignRole(Role::BARMAN->value);
+        if ($shoppers['xavier'] !== null) {
+            foreach ([Role::BARMAN, Role::ACCESS] as $role) {
+                if (! $shoppers['xavier']->hasRole($role->value)) {
+                    $shoppers['xavier']->assignRole($role->value);
+                }
+            }
+
+            $shoppers['xavier']->givePermissionTo(Permission::AuditLogView->value);
+        }
 
         return $shoppers;
     }

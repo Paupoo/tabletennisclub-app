@@ -106,8 +106,19 @@ class BarCashSheetController extends Controller
 
         $ok = $this->cashSheetService->sendCsv($to, $subject, $body, $date, $csv);
 
-        if ($ok && $saveDefault) {
-            $this->cashSheetService->saveDefaultEmail($to);
+        if ($ok) {
+            activity()
+                ->causedBy($request->user())
+                ->event('bar_cash_sheet_sent')
+                ->withProperties([
+                    'report_date' => $date,
+                    'recipient' => $to,
+                ])
+                ->log('bar_cash_sheet_sent');
+
+            if ($saveDefault) {
+                $this->cashSheetService->saveDefaultEmail($to);
+            }
         }
 
         return redirect()

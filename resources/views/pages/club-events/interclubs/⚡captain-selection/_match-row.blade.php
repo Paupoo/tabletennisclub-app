@@ -12,6 +12,11 @@
     $isPast = $ic['is_past'];
     $isBye = $ic['is_bye'] ?? false;
     $avCount = $ic['available_count'];
+    // Ce qui manque pour composer, et qui peut encore répondre : relancer
+    // n'a de sens que tant que quelqu'un n'a pas répondu.
+    $missingCount = max(0, $ic['max_players'] - $avCount);
+    $pendingCount = $ic['pending_count'];
+    $isShortOfPlayers = in_array($ic['status'], ['missing_players', 'urgent'], true) && $missingCount > 0;
 
     [$statusBarColor, $statusLabel] = match ($ic['status']) {
         // À 3 comme à 4 : pour le capitaine, une compo envoyée est réglée.
@@ -20,6 +25,8 @@
         // Composée mais pas envoyée : le seul statut qui ne demande qu'un clic.
         'to_send' => ['bg-info', __('Lineup to send')],
         'actionable' => ['bg-warning', __('Ready to compose')],
+        // Rouge pâle : le rouge plein de J-14, si rien ne bouge.
+        'missing_players' => ['bg-error/40', __('Missing players')],
         'urgent' => ['bg-error', __('Needs attention')],
         'past' => ['bg-base-300', __('Played')],
         'bye' => ['bg-base-300', __('Bye')],
@@ -104,6 +111,15 @@
                             {{ trans_choice(':count selected|:count selected', $ic['selected_count'], ['count' => $ic['selected_count']]) }}
                         @endif
                     @endif
+                    @if (! $isPast && $isShortOfPlayers)
+                        <div data-missing-players class="font-semibold text-error">
+                            @if ($pendingCount > 0)
+                                {{ trans_choice(':count player missing, :pending without an answer|:count players missing, :pending without an answer', $missingCount, ['count' => $missingCount, 'pending' => $pendingCount]) }}
+                            @else
+                                {{ trans_choice(':count player missing, everyone answered|:count players missing, everyone answered', $missingCount, ['count' => $missingCount]) }}
+                            @endif
+                        </div>
+                    @endif
                 </div>
                 @endif
                 @if (! $isBye && ($isPast || ! $ic['may_compose']) && ! empty($ic['selected_player_names']))
@@ -134,6 +150,21 @@
                         icon="o-envelope"
                         :title="__('Request availability')"
                         wire:click="confirmAvailabilityRequest({{ $ic['id'] }})" />
+                </x-admin.shared.row-menu>
+            </div>
+        @elseif (! $isPast && $ic['may_compose'] && $isShortOfPlayers && $pendingCount > 0)
+            {{-- Trop peu de disponibles et des réponses qui manquent : le
+                 geste utile est de relancer, composer passe dans le menu. --}}
+            <div class="shrink-0">
+                <x-admin.shared.row-menu
+                    :label="__('Remind')"
+                    icon="o-envelope"
+                    spinner
+                    wire-click="confirmAvailabilityRequest({{ $ic['id'] }})">
+                    <x-menu-item
+                        icon="o-pencil-square"
+                        :title="__('Compose')"
+                        wire:click="openSelection({{ $ic['id'] }})" />
                 </x-admin.shared.row-menu>
             </div>
         @elseif (! $isPast && $ic['may_compose'])

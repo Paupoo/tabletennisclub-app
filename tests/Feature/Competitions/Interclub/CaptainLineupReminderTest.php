@@ -124,3 +124,17 @@ it('leaves out a lineup sent between the command and the mail', function (): voi
         fn (CaptainLineupReminderNotification $n): bool => $n->interclubs->pluck('id')->all() === [$pending->id],
     );
 });
+
+it('tells the captain how many players are missing', function (): void {
+    $players = User::factory()->isCompetitor()->count(3)->create();
+    $this->team->users()->attach($players->pluck('id'));
+
+    // Deux joueurs à aligner, un seul dispo, un indisponible, un sans réponse.
+    $match = reminderFixture($this->team, 18);
+    $match->users()->attach($players[0]->id, ['availability' => 'available']);
+    $match->users()->attach($players[1]->id, ['availability' => 'unavailable']);
+
+    $html = (string) new CaptainLineupReminderNotification(collect([$match->fresh()]))->toMail($this->captain)->render();
+
+    expect($html)->toContain(trans_choice(':count player missing, :pending without an answer|:count players missing, :pending without an answer', 1, ['count' => 1, 'pending' => 1]));
+});

@@ -121,7 +121,8 @@ function buildScenario(): void
     scheduleMatch($b, 2, '2026-01-18 19:45:00');
     markAvailable(scheduleMatch($c, 2, '2026-01-18 19:45:00'), $c, 4);
 
-    // Week 3 — thirty days out, actionable meets future, team C does not play.
+    // Week 3 — thirty days out, beyond the 21-day horizon: team A could
+    // compose, but nothing asks for it yet. Team C does not play.
     markAvailable(scheduleMatch($a, 3, '2026-02-14 19:45:00'), $a, 4);
     scheduleMatch($b, 3, '2026-02-14 19:45:00');
 
@@ -150,8 +151,8 @@ it('scores the preparation widget week by week', function (): void {
         1 => 'past',
         // Team B has done nothing three days out.
         2 => 'urgent',
-        // Team A is composable now, and that outranks team B's distant match.
-        3 => 'actionable',
+        // Team A could compose, but thirty days out nothing asks for it yet.
+        3 => 'future',
         4 => 'future',
     ]);
 
@@ -185,7 +186,7 @@ it('colours each cell of the team by week matrix', function (): void {
     expect($summary['matrix'][$id('A')])->toBe([
         1 => 'past',
         2 => 'confirmed',
-        3 => 'actionable',
+        3 => 'future',
         4 => 'future',
     ]);
 
@@ -261,7 +262,7 @@ it('reports a past fixture as past on the team cards', function (): void {
     expect(collect($teamA['matches'])->pluck('status', 'wk')->all())->toBe([
         1 => 'past',
         2 => 'confirmed',
-        3 => 'actionable',
+        3 => 'future',
         4 => 'future',
     ]);
 
@@ -432,11 +433,11 @@ it('counts what needs doing, what is settled and what is merely coming', functio
     buildScenario();
     veteransTeam('A');
 
-    // Semaine 1 jouée, 2 urgente, 3 actionnable, 4 lointaine ; vétérans en 5.
+    // Semaine 1 jouée, 2 urgente, 3 et 4 au-delà des 21 jours ; vétérans en 5.
     expect(summaryFor($this->admin)['kpi'])->toBe([
-        'todo' => 2,
+        'todo' => 1,
         'controlled' => 0,
-        'upcoming' => 2,
+        'upcoming' => 3,
     ]);
 });
 
@@ -449,7 +450,7 @@ it('reports where each category stands', function (): void {
     expect($categories->keys()->all())->toBe(['MEN', 'VETERANS'])
         ->and($categories['MEN']['teams'])->toBe(3)
         ->and($categories['MEN']['played'])->toBe(1)
-        ->and($categories['MEN']['todo'])->toBe(2)
+        ->and($categories['MEN']['todo'])->toBe(1)
         ->and($categories['MEN']['total'])->toBe(4)
         ->and($categories['VETERANS']['teams'])->toBe(1)
         ->and($categories['VETERANS']['todo'])->toBe(0);

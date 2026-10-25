@@ -411,13 +411,13 @@ it('returns past status for a match in the past', function (): void {
     expect(matchStatus($interclub->id, $this->captain, $this->team->id))->toBe('past');
 });
 
-it('returns future status when match is beyond 14 days and no availability or selection', function (): void {
+it('returns future status when match is beyond 21 days and no availability or selection', function (): void {
     $interclub = Interclub::factory()->create([
         'season_id' => $this->season->id,
         'league_id' => $this->league->id,
         'visited_team_id' => $this->team->id,
         'total_players' => 4,
-        'start_date_time' => now()->addDays(20),
+        'start_date_time' => now()->addDays(30),
     ]);
 
     expect(matchStatus($interclub->id, $this->captain, $this->team->id))->toBe('future');

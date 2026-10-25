@@ -247,7 +247,7 @@ it('lists active business days and navigates to payments made after the sale day
         ->assertSee(route('bar.cashSheet.index', ['date' => $previousBusinessDate]), escape: false);
 });
 
-it('excludes offered orders from the total received', function (): void {
+it('excludes offered orders and counts unknown paid methods as other received', function (): void {
     BarOrder::create([
         'created_by' => $this->manager->id,
         'total_price' => 180,
@@ -260,13 +260,24 @@ it('excludes offered orders from the total received', function (): void {
         'is_paid' => true,
         'payment_method' => 'offered',
     ]);
+    BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 250,
+        'is_paid' => true,
+    ]);
 
-    $summary = app(CashSheetService::class)->build(now()->toDateString())[0];
+    $service = app(CashSheetService::class);
+    $summary = $service->build(now()->toDateString())[0];
+    $activeDay = collect($service->activity(now()->toDateString())['days'])
+        ->firstWhere('date', now()->toDateString());
 
-    expect($summary['sold_total_cents'])->toBe(480)
-        ->and($summary['received_total_cents'])->toBe(180)
+    expect($summary['sold_total_cents'])->toBe(730)
+        ->and($summary['received_total_cents'])->toBe(430)
         ->and($summary['by_method_cents']['cash'])->toBe(180)
-        ->and($summary['by_method_cents']['offered'])->toBe(300);
+        ->and($summary['by_method_cents']['other'])->toBe(250)
+        ->and($summary['by_method_cents']['offered'])->toBe(300)
+        ->and($summary['other_payments_cents'])->toBe(250)
+        ->and($activeDay['received_total_cents'])->toBe(430);
 });
 
 it('stores and retrieves the default treasurer email', function (): void {

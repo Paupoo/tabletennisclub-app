@@ -8,7 +8,7 @@
 
     @param \App\Domains\Meetings\Models\Meeting $meeting with agendaItems, decisions, actionItems, minutes
     @param int|null $current the point being discussed
-    @param array{present: int, excused: int, absent: int, pending: int} $counts
+    @param array{present: int, excused: int, absent: int, pending: int, guests: int} $counts
     @param string $outside the key of the "outside the agenda" block
     @param bool $readOnly another member holds the pen
     @param string|null $savedAt time of the last write
@@ -113,9 +113,8 @@
                 <x-button icon="o-paper-airplane"
                     :label="$minutes->sent_to_all_at ? __('Sent to all members') : __('Send to all members')"
                     class="btn-outline btn-sm w-full"
-                    wire:click="sendMinutes(true)" spinner="sendMinutes(true)"
-                    :disabled="(bool) $minutes->sent_to_all_at"
-                    wire:confirm="{{ __('Send the minutes to every active member? It cannot be recalled.') }}" />
+                    x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __('Send the minutes to every active member? It cannot be recalled.'), 'method' => 'sendMinutes', 'params' => [true], 'danger' => false]) }}, id: $wire.$id })" spinner="sendMinutes(true)"
+                    :disabled="(bool) $minutes->sent_to_all_at" />
             @endif
         @endif
     </div>

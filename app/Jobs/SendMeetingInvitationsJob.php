@@ -6,9 +6,7 @@ namespace App\Jobs;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
-use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
-use App\Domains\Shared\Enums\Role;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
@@ -32,13 +30,7 @@ class SendMeetingInvitationsJob implements ShouldQueue
     {
         $meeting = Meeting::with('agendaItems')->findOrFail($this->meetingId);
 
-        $recipients = $meeting->type === MeetingTypeEnum::GENERAL_ASSEMBLY
-            ? User::active()->get()
-            : User::role([Role::ADMINISTRATOR->value, Role::COMMITTEE->value])->get();
-
-        if ($recipients->isEmpty()) {
-            return;
-        }
+        $recipients = $meeting->audience()->get();
 
         // Bulk pivot upsert — single query for all users
         DB::table('meeting_user')->upsert(
@@ -54,8 +46,19 @@ class SendMeetingInvitationsJob implements ShouldQueue
             ['status', 'invitation_sent_at', 'updated_at']
         );
 
-        foreach ($recipients as $recipient) {
-            SendMeetingInvitationJob::dispatch($meeting->id, $recipient->id);
+        // Guests asked before the convocations left get theirs now. The upsert
+        // above never touches them: they are outside the audience.
+        $guestIds = $meeting->users()
+            ->wherePivot('is_guest', true)
+            ->wherePivotNull('invitation_sent_at')
+            ->pluck('users.id');
+        DB::table('meeting_user')
+            ->where('meeting_id', $meeting->id)
+            ->whereIn('user_id', $guestIds)
+            ->update(['invitation_sent_at' => now(), 'updated_at' => now()]);
+
+        foreach ([...$recipients->modelKeys(), ...$guestIds] as $id) {
+            SendMeetingInvitationJob::dispatch($meeting->id, $id);
         }
     }
 }

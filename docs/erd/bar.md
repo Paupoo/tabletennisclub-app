@@ -97,7 +97,7 @@ erDiagram
         string pack_label "nullable"
         int proposed_packs
         bool in_cart
-        int bought_packs "nullable"
+        int bought_units "nullable"
     }
     BarStockMovement {
         int id PK

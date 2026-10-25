@@ -40,8 +40,9 @@ Artisan::command('inspire', function (): void {
 | et n'apporte rien sur une machine unique.
 */
 
-// Expiration des confirmations de liste d'attente (48 h) + inscriptions
-// impayées au-delà de leur échéance + rappels de paiement.
+// Expiration des confirmations de liste d'attente (48 h) + rappels de paiement
+// (deux au plus par inscription : J-3 et lendemain de l'échéance). Un impayé
+// n'est jamais désinscrit.
 Schedule::command('tournament:process-deadlines')
     ->hourly()
     ->withoutOverlapping()
@@ -191,6 +192,15 @@ Schedule::command('queue:check-health')
 // bouclée ; chaque capitaine reçoit la liste de ses compos pas encore envoyées.
 Schedule::command('interclubs:remind-captains')
     ->weeklyOn(0, '18:00')
+    ->withoutOverlapping()
+    ->when(Feature::Interclubs->enabled(...));
+
+// « Sélections de la semaine » (grilling du 2026-10-11) : le jeudi à midi, quand
+// la plupart des compos du week-end sont parties et qu'il reste le temps de
+// prévenir un capitaine. Les sept jours qui suivent, les rencontres du jeudi
+// soir comprises.
+Schedule::command('interclubs:send-weekly-selections')
+    ->weeklyOn(4, '12:00')
     ->withoutOverlapping()
     ->when(Feature::Interclubs->enabled(...));
 

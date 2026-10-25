@@ -4,16 +4,20 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Subscriptions\Attestations\Models;
 
+use App\Domains\Shared\Enums\AttestationKind;
 use App\Domains\Shared\Enums\Mutuality;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 /**
- * One insurer's published form, as the club currently holds it.
+ * One insurer's published form, as the club currently holds it — one per
+ * insurer and kind, since an insurer that covers camps does it on a form of
+ * its own.
  *
  * @property int $id
  * @property Mutuality $mutuality
+ * @property AttestationKind $kind
  * @property string $path
  * @property string $original_name
  * @property int $page_count
@@ -30,12 +34,14 @@ class AttestationTemplate extends Model
 
     protected $casts = [
         'mutuality' => Mutuality::class,
+        'kind' => AttestationKind::class,
         'page_count' => 'integer',
         'unresolved_fields' => 'array',
     ];
 
     protected $fillable = [
         'mutuality',
+        'kind',
         'path',
         'original_name',
         'page_count',

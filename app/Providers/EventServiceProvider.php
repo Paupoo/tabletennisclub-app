@@ -7,14 +7,12 @@ namespace App\Providers;
 use App\Domains\Shared\Events\Interclub\TeamCreated;
 use App\Domains\Shared\Events\Meetings\MeetingCreated;
 use App\Domains\Shared\Events\Subscriptions\SubscriptionCreated;
-use App\Domains\Shared\Events\Tournament\NewTournamentPublished;
 use App\Domains\Shared\Events\Tournament\UserUnregisteredFromTournament;
 use App\Listeners\NotifyParticipantsOfMeeting;
 use App\Listeners\RecordLastLogin;
 use App\Listeners\SendSubscriptionConfirmationEmail;
 use App\Listeners\SendTeamCreatedNotification;
 use App\Listeners\SendWelcomeEmail;
-use App\Listeners\Tournament\SendPublishedTournamentNotification;
 use App\Listeners\Tournament\UserUnregisteredToTournamentToTournament;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Registered;
@@ -44,9 +42,6 @@ class EventServiceProvider extends ServiceProvider
         ],
         Login::class => [
             RecordLastLogin::class,
-        ],
-        NewTournamentPublished::class => [
-            SendPublishedTournamentNotification::class,
         ],
         UserUnregisteredFromTournament::class => [
             UserUnregisteredToTournamentToTournament::class,

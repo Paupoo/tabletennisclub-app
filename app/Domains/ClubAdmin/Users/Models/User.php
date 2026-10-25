@@ -549,6 +549,16 @@ class User extends Authenticatable implements MustVerifyEmail
         };
     }
 
+    /**
+     * Where the member stands in a list of players of the given category:
+     * force list first — none after every listed player — then surname, then
+     * first name. Sort ascending on it.
+     */
+    public function forceListSortKey(LeagueCategory|string|null $category): string
+    {
+        return sprintf('%04d|%s|%s', $this->forceListFor($category) ?? 9999, mb_strtolower((string) $this->last_name), mb_strtolower((string) $this->first_name));
+    }
+
     public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";
@@ -1362,13 +1372,18 @@ class User extends Authenticatable implements MustVerifyEmail
         }
     }
 
+    /**
+     * Members who owe this season's subscription: affiliated, confirmed, not yet
+     * paid. Whoever was never affiliated — a responsible adult — owes nothing,
+     * nor does a pending request, a cancelled or a refunded affiliation.
+     */
     public function scopeUnpaid(EloquentBuilder $query): EloquentBuilder
     {
         $seasonId = Season::current()?->id;
 
-        return $query->whereDoesntHave('subscriptions', fn (EloquentBuilder $q) => $q
+        return $query->whereHas('subscriptions', fn (EloquentBuilder $q) => $q
             ->where('season_id', $seasonId)
-            ->where('status', 'paid')
+            ->where('status', 'confirmed')
         );
     }
 

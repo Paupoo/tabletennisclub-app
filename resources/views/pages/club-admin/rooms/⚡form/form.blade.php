@@ -34,15 +34,17 @@
 
             <div class="col-span-2">
                 <x-header :title="__('Capacity')"
-                    :subtitle="__('Define capacity for matches and trainings to avoid overbooking')"
+                    :subtitle="__('The tables each use fits in the room. Tables out of service are taken off automatically.')"
                     size="text-xl" />
             </div>
             <div class="grid lg:grid-cols-1 gap-4">
                 <x-input icon="o-academic-cap" :label="__('Training Capacity')"
                     wire:model.live="capacity_for_trainings"
-                    :hint="__('This is used mainly to manage training subscriptions')" decimal required />
+                    :hint="__('Tables the room holds for a training. A pack without a cap takes two players per table.')" decimal required />
                 <x-input icon="o-trophy" :label="__('Matches Capacity')" wire:model.live="capacity_for_interclubs"
-                    :hint="__('This is used mainly to manage interclubs and tournament')" decimal required />
+                    :hint="__('Tables the room holds for an official match.')" decimal required />
+                <x-input icon="o-flag" :label="__('Tournament Capacity')" wire:model.live="capacity_for_tournaments"
+                    :hint="__('Tables the room holds for a tournament: ticked by default at the launch.')" decimal required />
             </div>
             <div class="col-span-5">
                 <x-menu-separator class="my-4" />

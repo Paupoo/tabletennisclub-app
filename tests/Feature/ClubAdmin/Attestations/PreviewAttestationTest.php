@@ -9,6 +9,7 @@ use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\MutualAttestation;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\AttestationKind;
 use App\Domains\Shared\Enums\Mutuality;
 use App\Domains\Shared\Enums\Role;
 use Illuminate\Support\Facades\Storage;
@@ -193,4 +194,26 @@ it('leaves the member their own signature to write', function (): void {
     $text = readPdfBytes(app(PreviewAttestation::class)($this->office, Mutuality::MC));
 
     expect($text)->toContain('Signature');
+});
+
+it('rehearses a camp form with a placeholder week, issuing nothing', function (Mutuality $mutuality): void {
+    app(InstallAttestationTemplate::class)(
+        $mutuality,
+        base_path('database/seeders/Data/attestation-templates/camp/' . $mutuality->value . '.pdf'),
+        $mutuality->value . '.pdf',
+        kind: AttestationKind::Camp,
+    );
+
+    $text = readPdfBytes(app(PreviewAttestation::class)($this->office, $mutuality, AttestationKind::Camp));
+
+    expect($text)->toContain('C.T.T Ottignies-Blocry')
+        ->and(readPdfSqueezed(app(PreviewAttestation::class)($this->office, $mutuality, AttestationKind::Camp)))->toContain('80')
+        ->and(MutualAttestation::count())->toBe(0);
+})->with(Mutuality::withCampForm());
+
+it('rehearses the club camp attestation from the office screen', function (): void {
+    Livewire::actingAs($this->office)
+        ->test('pages::club-admin.attestations.index')
+        ->call('preview', Mutuality::Other->value, AttestationKind::Camp->value)
+        ->assertFileDownloaded('specimen-stage-other.pdf');
 });

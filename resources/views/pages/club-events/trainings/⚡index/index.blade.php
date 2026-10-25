@@ -4,1221 +4,250 @@
 
 <div>
     {{-- ── Header ──────────────────────────────────────────────────────────── --}}
-    @if ($selectedPackId)
-        {{-- PACK SHEET HEADER — the subtitle is assembled from what exists: a
-             pack without a level was showing a leading separator. --}}
-        <x-header progress-indicator separator
-            :subtitle="implode(' · ', array_filter([$selectedPack?->level?->label, $selectedPack?->type?->label(), $selectedPack?->season?->name]))"
-            :title="$selectedPack?->name ?? __('Training pack')">
-            <x-slot:actions>
-                @if ($this->mayManage)
-                    <x-button class="btn-primary btn-sm" icon="o-user-plus" :label="__('Add a member')"
-                        wire:click="openAddMember" />
-                    <x-button class="btn-ghost btn-sm" icon="o-pencil" :label="__('Edit')"
-                        wire:click="openEdit({{ $selectedPackId }})" />
-                @endif
-                <x-button class="btn-ghost" icon="o-arrow-left" :label="__('Back')" wire:click="backToList" />
-            </x-slot:actions>
-        </x-header>
-    @else
-        {{-- PACK LIST HEADER --}}
-        <x-header progress-indicator separator :subtitle="$viewSeason?->name ?? __('Select a season')"
-            :title="__('Trainings')">
-            <x-slot:actions>
-                <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-search="false" :show-more="false" />
-                <div class="hidden items-center gap-2 lg:flex">
-                    <x-admin.shared.filters-button :count="count($filterChips)" />
-                </div>
-                @if ($this->mayExportRoster && $viewSeason)
-                    <x-dropdown :id="'roster-export'" right>
-                        <x-slot:trigger>
-                            <x-button class="btn-ghost btn-sm" icon="o-arrow-down-tray" :label="__('Export the enrolled')" />
-                        </x-slot:trigger>
-                        <x-menu-item :title="__('Excel (.xlsx)')" wire:click="exportRoster('xlsx')" />
-                        <x-menu-item :title="__('CSV')" wire:click="exportRoster('csv')" />
-                    </x-dropdown>
-                @endif
-                @if ($this->mayManage)
-                    <x-button class="btn-ghost btn-sm" icon="o-swatch" :label="__('Levels')"
-                        wire:click="$set('levelDrawer', true)" />
-                    <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New pack')" wire:click="openCreate" />
-                @endif
-            </x-slot:actions>
-        </x-header>
+    {{-- PACK LIST HEADER --}}
+    <x-header progress-indicator separator :subtitle="$viewSeason?->name ?? __('Select a season')"
+        :title="__('Trainings')">
+        <x-slot:actions>
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-search="false" :show-more="false" />
+            <div class="hidden items-center gap-2 lg:flex">
+                <x-admin.shared.filters-button :count="count($filterChips)" />
+            </div>
+            @if ($this->mayExportRoster && $viewSeason)
+                <x-dropdown :id="'roster-export'" right>
+                    <x-slot:trigger>
+                        <x-button class="btn-ghost btn-sm" icon="o-arrow-down-tray" :label="__('Export the enrolled')" />
+                    </x-slot:trigger>
+                    <x-menu-item :title="__('Excel (.xlsx)')" wire:click="exportRoster('xlsx')" />
+                    <x-menu-item :title="__('CSV')" wire:click="exportRoster('csv')" />
+                </x-dropdown>
+            @endif
+            @if ($this->mayManage)
+                <x-button class="btn-ghost btn-sm" icon="o-swatch" :label="__('Levels')"
+                    wire:click="$set('levelDrawer', true)" />
+                <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New pack')" :link="route('admin.trainings.create')" />
+            @endif
+        </x-slot:actions>
+    </x-header>
 
-        {{-- ── Season: navigation, not a filter (DS-A) ──────────────────────── --}}
-        <x-admin.shared.season-nav model="viewSeasonId" :options="$seasonOptions" class="mt-4" />
+    {{-- ── Season: navigation, not a filter (DS-A) ──────────────────────── --}}
+    <x-admin.shared.season-nav model="viewSeasonId" :options="$seasonOptions" class="mt-4" />
 
-        {{-- ── Active filter chips ──────────────────────────────────────────── --}}
-        <x-admin.shared.filter-chips :chips="$filterChips" />
+    {{-- ── Active filter chips ──────────────────────────────────────────── --}}
+    <x-admin.shared.filter-chips :chips="$filterChips" />
 
-        {{-- ── Filter drawer ──────────────────────────────────────────────────── --}}
-        <x-admin.shared.filter-drawer :title="__('Filters')">
-            <x-slot:filters>
-                <div>
-                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
-                        {{ __('Availability') }}
-                    </p>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <x-checkbox wire:model.live="showInactive" />
-                        <span class="text-sm">{{ __('Show withdrawn packs') }}</span>
-                    </label>
-                </div>
-            </x-slot:filters>
-        </x-admin.shared.filter-drawer>
-    @endif
+    {{-- ── Filter drawer ──────────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
+                    {{ __('Availability') }}
+                </p>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <x-checkbox wire:model.live="showInactive" />
+                    <span class="text-sm">{{ __('Show withdrawn packs') }}</span>
+                </label>
+            </div>
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
 
     {{-- ── Season guard ────────────────────────────────────────────────────── --}}
-    @if (! $viewSeason && ! $selectedPackId)
-        @if (empty($seasonOptions))
-            <x-admin.shared.missing-season-state
-                :message="__('Training packs belong to a season. Open one to build this year\'s offer.')" />
-        @else
-            <x-alert class="alert-info" icon="o-information-circle"
-                :title="__('Select a season above to view training packs.')" />
-        @endif
-    @elseif ($selectedPackId)
-        {{-- ================================================================
-             PACK SHEET — one screen answers "who is in it, and is it working?"
-             The sessions were the only thing this drill-down showed, so the
-             roster was readable nowhere: the committee went member by member
-             through the affiliations screen to rebuild a list the pack knows.
-        ================================================================ --}}
-        @php
-            $summary = $this->packSummary;
-            $roster = $this->packRoster;
-            $rateTone = fn (?int $rate) => match (true) {
-                $rate === null => 'text-base-content/30',
-                $rate >= 70 => 'text-success',
-                $rate >= 40 => 'text-warning',
-                default => 'text-error',
-            };
-        @endphp
-
-        {{-- ── Identity — until now these facts were only legible in the edit form. --}}
-        <div class="rounded-xl border border-base-300 bg-base-100 p-4">
-            <div class="flex flex-wrap items-center gap-2">
-                @unless ($selectedPack?->is_active)
-                    <x-badge :value="__('Withdrawn')" class="badge-warning badge-soft" icon="o-eye-slash" />
-                @endunless
-                @if ($selectedPack?->is_camp)
-                    <x-badge :value="__('Training camp')" class="badge-primary badge-soft" icon="o-sun" />
-                    @if ($selectedPack->requires_approval)
-                        <x-badge :value="__('Enrolment on approval')" class="badge-neutral badge-soft" icon="o-shield-check" />
-                    @endif
-                @endif
-                <x-badge :value="$selectedPack?->enrollments_open ? __('Enrolments open') : __('Enrolments closed')"
-                    class="{{ $selectedPack?->enrollments_open ? 'badge-success' : 'badge-neutral' }} badge-soft"
-                    :icon="$selectedPack?->enrollments_open ? 'o-lock-open' : 'o-lock-closed'" />
-                @if ($selectedPack?->is_open_enrollment)
-                    <x-badge :value="__('Self-service')" class="badge-info badge-soft" icon="o-hand-raised" />
-                @endif
-                @if ($selectedPack?->eventPost?->status->value === 'PUBLISHED')
-                    <x-badge :value="__('On website')" class="badge-success badge-soft" icon="o-globe-alt" />
-                @endif
-            </div>
-
-            <dl class="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div>
-                    <dt class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Coach') }}</dt>
-                    <dd class="mt-0.5 text-sm">{{ $selectedPack?->trainer?->full_name ?? __('No coach') }}</dd>
-                </div>
-                <div>
-                    <dt class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Room') }}</dt>
-                    <dd class="mt-0.5 text-sm">{{ $selectedPack?->room?->name ?? '—' }}</dd>
-                </div>
-                <div>
-                    <dt class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Schedule') }}</dt>
-                    <dd class="mt-0.5 text-sm">{{ $selectedPack?->scheduleLabel() ?? '—' }}</dd>
-                </div>
-                <div>
-                    <dt class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Price') }}</dt>
-                    <dd class="mt-0.5 text-sm tabular-nums">
-                        {{ number_format((float) $selectedPack?->price, 2, ',', ' ') }} €
-                        @if ($selectedPack?->is_camp)
-                            <span class="text-xs text-subtle">· {{ __('invoiced separately') }}</span>
-                        @elseif (! $selectedPack?->allow_discount)
-                            <span class="text-xs text-subtle">· {{ __('no family discount') }}</span>
-                        @endif
-                    </dd>
-                </div>
-            </dl>
-
-            {{-- Sparrings: free practice has no coach to confirm them, so none there. --}}
-            @if ($selectedPack && $selectedPack->type !== \App\Domains\Shared\Enums\TrainingType::FREE)
-                <div class="mt-4 border-t border-base-300 pt-3">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Sparrings') }}</span>
-                        @forelse ($selectedPack->sparrings as $sparring)
-                            <span class="badge badge-soft badge-neutral gap-1" wire:key="pack-sparring-{{ $sparring->id }}">
-                                {{ $sparring->full_name }}
-                                @if ($this->mayManage)
-                                    <button type="button" class="cursor-pointer" wire:click="detachPackSparring({{ $sparring->id }})"
-                                        aria-label="{{ __('Remove') }}">
-                                        <x-icon name="o-x-mark" class="size-3" />
-                                    </button>
-                                @endif
-                            </span>
-                        @empty
-                            <span class="text-sm text-subtle">{{ __('None') }}</span>
-                        @endforelse
-                        @if ($this->mayManage)
-                            <x-button class="btn-ghost btn-xs" icon="o-plus" :label="__('Add a sparring')"
-                                wire:click="openPackSparring" />
-                        @endif
-                    </div>
-                </div>
-            @endif
-
-            @if (filled($selectedPack?->description))
-                <p class="mt-4 border-t border-base-300 pt-3 text-sm text-base-content/70">
-                    <span class="whitespace-pre-line">{{ $selectedPack->description }}</span>
-                </p>
-            @endif
-        </div>
-
-        {{-- ── The four numbers the committee asks for, in the shared stat card. --}}
-        <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <x-admin.shared.stat-card
-                :label="__('Enrolled')"
-                :value="$summary['capped'] ? $summary['enrolled'] . ' / ' . $summary['max'] : (string) $summary['enrolled']"
-                :hint="$summary['capped']
-                    ? trans_choice(':n spot left|:n spots left', $summary['spotsLeft'], ['n' => $summary['spotsLeft']])
-                    : __('No cap on this pack')"
-                icon="o-users"
-                color="primary" />
-            <x-admin.shared.stat-card
-                :label="__('Waiting list')"
-                :value="(string) $summary['waiting']"
-                :hint="$summary['pending'] > 0
-                    ? trans_choice('{1}:count request to approve|[2,*]:count requests to approve', $summary['pending'], ['count' => $summary['pending']])
-                    : __('Nothing to approve')"
-                icon="o-queue-list"
-                :color="$summary['pending'] > 0 ? 'warning' : 'neutral'" />
-            <x-admin.shared.stat-card
-                :label="__('Sessions')"
-                :value="(string) $summary['sessions']"
-                :hint="__(':held held · :upcoming to come · :cancelled cancelled', [
-                    'held' => $summary['held'],
-                    'upcoming' => $summary['upcoming'],
-                    'cancelled' => $summary['cancelled'],
-                ])"
-                icon="o-calendar-days" />
-            <x-admin.shared.stat-card
-                :label="__('Turnout')"
-                :value="$summary['turnout'] !== null ? $summary['turnout'] . '%' : '—'"
-                :hint="$summary['turnout'] !== null
-                    ? __('Of the enrolled members, over the recorded sessions')
-                    : __('No session recorded yet')"
-                icon="o-chart-bar"
-                :color="match (true) {
-                    $summary['turnout'] === null => 'neutral',
-                    $summary['turnout'] >= 70 => 'success',
-                    $summary['turnout'] >= 40 => 'warning',
-                    default => 'error',
-                }" />
-        </div>
-
-        <x-tabs wire:model="packTab" class="mt-6">
-            {{-- ── Roster — the reason this sheet exists. ───────────────────── --}}
-            <x-tab name="roster" :label="__('Members')" icon="o-user-group">
-                @php
-                    // Four lists, not one status column: the committee does not ask
-                    // the same question of an enrolled member, a request to approve,
-                    // a queue and someone who left.
-                    // La classe est écrite en entier, jamais assemblée : Tailwind lit
-                    // les fichiers comme du texte, et un `badge-{$tone}` ne génère rien.
-                    $groups = [
-                        ['key' => 'pending', 'label' => __('Requests to approve'), 'badge' => 'badge-warning badge-soft badge-sm', 'always' => false],
-                        ['key' => 'enrolled', 'label' => __('Enrolled'), 'badge' => 'badge-success badge-soft badge-sm', 'always' => true],
-                        ['key' => 'waiting', 'label' => __('Waiting list'), 'badge' => 'badge-info badge-soft badge-sm', 'always' => false],
-                        ['key' => 'past', 'label' => __('Left the pack'), 'badge' => 'badge-neutral badge-soft badge-sm', 'always' => false],
-                    ];
-                @endphp
-
-                <div class="space-y-6">
-                    @foreach ($groups as $group)
-                        @continue(! $group['always'] && empty($roster[$group['key']]))
-
-                        <div>
-                            <div class="mb-2 flex items-center gap-2">
-                                <p class="text-xs font-bold uppercase tracking-widest text-muted">
-                                    {{ $group['label'] }}
-                                </p>
-                                <x-badge :value="count($roster[$group['key']])" :class="$group['badge']" />
-                                @if ($group['key'] === 'pending' && $selectedPack?->is_camp && count($roster['pending']) > 1)
-                                    @can('subscriptions.manage')
-                                        <x-button class="btn-ghost btn-xs ml-auto" icon="o-check"
-                                            :label="__('Accept all')" wire:click="acceptAllCampRequests" spinner />
-                                    @endcan
-                                @endif
-                            </div>
-
-                            @if (empty($roster[$group['key']]))
-                                <div class="rounded-xl border border-dashed border-base-300 py-10 text-center text-base-content/40">
-                                    <x-icon class="mx-auto mb-2 h-8 w-8" name="o-user-group" />
-                                    <p>{{ __('Nobody is enrolled in this pack yet.') }}</p>
-                                    @if ($this->mayManage)
-                                        <x-button class="btn-primary btn-sm mt-4" icon="o-user-plus"
-                                            :label="__('Add a member')" wire:click="openAddMember" />
-                                    @endif
-                                </div>
-                            @else
-                                {{-- `overflow-x-auto` rend la table défilable sur un téléphone, mais
-                                     il ouvre aussi un contexte de rognage : le panneau de
-                                     <x-admin.shared.row-menu>, en `lg:absolute`, s'y faisait couper.
-                                     Ce roster est le premier endroit où ce composant rencontre un
-                                     <table> — les onze autres écrans l'emploient dans des listes.
-                                     À partir de lg la table tient dans sa boîte, donc le défilement
-                                     n'a plus rien à protéger et le rognage part avec lui. En dessous,
-                                     le panneau est un `fixed` en feuille du bas, que `overflow` ne
-                                     retient pas. --}}
-                                <div class="overflow-x-auto rounded-xl border border-base-300 bg-base-100 lg:overflow-x-visible">
-                                    <table class="table table-sm">
-                                        <thead>
-                                            <tr>
-                                                @if ($group['key'] === 'waiting')
-                                                    <th class="w-12 text-center">#</th>
-                                                @endif
-                                                <th>{{ __('Member') }}</th>
-                                                <th>{{ __('Ranking') }}</th>
-                                                <th>
-                                                    @if ($group['key'] === 'waiting')
-                                                        {{ __('Confirm before') }}
-                                                    @elseif ($group['key'] === 'past')
-                                                        {{ __('Left on') }}
-                                                    @else
-                                                        {{ __('Since') }}
-                                                    @endif
-                                                </th>
-                                                @if ($group['key'] === 'enrolled')
-                                                    <th class="text-center">{{ __('Attendance') }}</th>
-                                                @endif
-                                                {{-- La colonne n'apparaît que pour qui peut agir : sortir
-                                                     quelqu'un d'un pack touche à l'argent de son affiliation,
-                                                     donc c'est la serrure de l'écran Affiliations qui commande,
-                                                     pas celle qui a ouvert cette page. --}}
-                                                @can('subscriptions.manage')
-                                                    @if ($group['key'] !== 'past')
-                                                        <th class="w-px text-right">{{ __('Actions') }}</th>
-                                                    @endif
-                                                @endcan
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach ($roster[$group['key']] as $row)
-                                                <tr wire:key="roster-{{ $group['key'] }}-{{ $row['id'] }}">
-                                                    @if ($group['key'] === 'waiting')
-                                                        <td class="text-center text-sm font-bold tabular-nums text-base-content/50">
-                                                            {{ $row['position'] ?? '—' }}
-                                                        </td>
-                                                    @endif
-
-                                                    <td class="whitespace-nowrap">
-                                                        {{ $row['name'] }}
-                                                        @if ($row['status'] === 'offered')
-                                                            <x-badge class="badge-info badge-soft badge-xs ml-1"
-                                                                :value="__('spot offered')" />
-                                                        @endif
-                                                        @if ($row['unpaid'])
-                                                            {{-- The pack is booked against a membership nobody has
-                                                                 validated yet: the spot is held, the money is not. --}}
-                                                            <x-badge class="badge-warning badge-soft badge-xs ml-1"
-                                                                :value="__('membership pending')" />
-                                                        @endif
-                                                        @if ($group['key'] === 'enrolled' && $row['isCampLine'])
-                                                            @if ($row['campBalance'] > 0)
-                                                                <x-badge class="badge-warning badge-soft badge-xs ml-1"
-                                                                    :value="__('to pay: :amount €', ['amount' => number_format($row['campBalance'], 2, ',', ' ')])" />
-                                                            @else
-                                                                <x-badge class="badge-success badge-soft badge-xs ml-1" :value="__('paid')" />
-                                                            @endif
-                                                        @endif
-                                                        @if ($row['overrideAmount'] !== null)
-                                                            <x-badge class="badge-ghost badge-xs ml-1"
-                                                                :value="__('price set by hand: :amount €', ['amount' => number_format($row['overrideAmount'], 2, ',', ' ')])"
-                                                                :title="$row['overrideReason']" />
-                                                        @endif
-                                                    </td>
-
-                                                    <td class="font-mono text-xs text-base-content/60">
-                                                        {{ $row['ranking'] ?? '—' }}
-                                                    </td>
-
-                                                    <td class="whitespace-nowrap text-sm text-base-content/70">
-                                                        @php
-                                                            $date = match ($group['key']) {
-                                                                'waiting' => $row['deadline'],
-                                                                'past' => $row['endsOn'],
-                                                                default => $row['startsOn'],
-                                                            };
-                                                        @endphp
-                                                        @if ($date)
-                                                            {{ \Carbon\Carbon::parse($date)->translatedFormat('d/m/Y') }}
-                                                        @elseif ($group['key'] === 'enrolled' || $group['key'] === 'pending')
-                                                            {{-- No date on the pivot means the member has been in
-                                                                 since day one: that is what "the whole pack" is. --}}
-                                                            <span class="text-base-content/40">{{ __('Since the start') }}</span>
-                                                        @else
-                                                            <span class="text-base-content/30">—</span>
-                                                        @endif
-                                                    </td>
-
-                                                    @if ($group['key'] === 'enrolled')
-                                                        <td @class(['text-center text-sm font-bold tabular-nums', $rateTone($row['rate'])])>
-                                                            {{ $row['rate'] !== null ? $row['rate'] . '%' : '—' }}
-                                                        </td>
-                                                    @endif
-
-                                                    @can('subscriptions.manage')
-                                                        @if ($group['key'] === 'enrolled')
-                                                            <td class="w-px">
-                                                                {{-- Déplacer reste dans la ligne, désinscrire passe
-                                                                     dans le menu : c'est le geste qui peut rendre de
-                                                                     l'argent, il ne doit pas se déclencher au frôlement. --}}
-                                                                <x-admin.shared.row-menu
-                                                                    :label="$row['isCampLine'] ? __('Price') : __('Move')"
-                                                                    :icon="$row['isCampLine'] ? 'o-currency-euro' : 'o-arrows-right-left'"
-                                                                    :wire-click="$row['isCampLine'] ? 'openCampPrice(' . $row['id'] . ')' : 'openMoveMember(' . $row['id'] . ')'">
-                                                                    <li>
-                                                                        <button type="button"
-                                                                            class="w-full justify-start gap-2 text-start text-error"
-                                                                            wire:click="openLeaveMember({{ $row['id'] }})">
-                                                                            <x-icon name="o-user-minus" class="h-4 w-4" />
-                                                                            {{ __('Remove from the pack') }}
-                                                                        </button>
-                                                                    </li>
-                                                                </x-admin.shared.row-menu>
-                                                            </td>
-                                                        @elseif ($group['key'] !== 'past')
-                                                            <td class="w-px">
-                                                                {{-- Ni date de sortie, ni euro, ni trace : la ligne est
-                                                                     détachée. Mais une place dans la file ne se retrouve
-                                                                     pas — on la reprend à la fin —, d'où la confirmation. --}}
-                                                                <x-admin.shared.row-menu
-                                                                    :label="$group['key'] === 'pending' && $row['isCampLine'] ? __('Accept') : null"
-                                                                    :icon="$group['key'] === 'pending' && $row['isCampLine'] ? 'o-check' : null"
-                                                                    :wire-click="$group['key'] === 'pending' && $row['isCampLine'] ? 'acceptCampRequest(' . $row['id'] . ')' : null">
-                                                                    <li>
-                                                                        <button type="button"
-                                                                            class="w-full justify-start gap-2 text-start text-error"
-                                                                            wire:click="openRemoveFromRoster({{ $row['id'] }})">
-                                                                            <x-icon name="o-x-mark" class="h-4 w-4" />
-                                                                            {{ $group['key'] === 'pending'
-                                                                                ? ($row['isCampLine'] ? __('Refuse the request') : __('Dismiss the request'))
-                                                                                : __('Remove from the waiting list') }}
-                                                                        </button>
-                                                                    </li>
-                                                                </x-admin.shared.row-menu>
-                                                            </td>
-                                                        @endif
-                                                    @endcan
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            @endif
-                        </div>
-                    @endforeach
-                </div>
-
-                {{-- Les non-membres d'un stage, à part : ils n'ont ni affiliation ni liste d'attente. --}}
-                @if ($selectedPack?->is_camp)
-                    <livewire:admin.trainings.camp-externals :pack-id="$selectedPack->id" :key="'camp-externals-' . $selectedPack->id" />
-                @endif
-            </x-tab>
-
-            {{-- ── Sessions ─────────────────────────────────────────────────── --}}
-            <x-tab name="sessions" :label="__('Sessions')" icon="o-calendar-days">
-                <div class="space-y-3">
-                    @forelse ($sessions as $session)
-                        @php
-                            $cancelled = $session->isCancelled();
-                        @endphp
-                        <div @class([
-                            'flex items-center justify-between rounded-xl border px-4 py-3',
-                            'bg-base-100 border-base-300' => ! $cancelled,
-                            'bg-base-200/50 border-base-300 opacity-60' => $cancelled,
-                        ])>
-                            <div class="flex items-center gap-4">
-                                <div class="text-center">
-                                    <div class="text-xs font-bold uppercase text-base-content/50">
-                                        {{ $session->start->translatedFormat('M') }}
-                                    </div>
-                                    <div class="text-2xl font-bold leading-none">{{ $session->start->format('d') }}</div>
-                                    <div class="text-xs text-base-content/50">{{ $session->start->translatedFormat('D') }}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="font-medium">
-                                        {{ $session->start->format('H:i') }}
-                                        – {{ $session->end->format('H:i') }}
-                                    </div>
-                                    <div class="text-xs text-base-content/60">
-                                        {{ $session->room?->name }}
-                                        @if ($session->trainer)
-                                            · {{ $session->trainer->full_name }}
-                                        @endif
-                                        @if ($session->sparrings->isNotEmpty())
-                                            · {{ __('Sparrings') }}&nbsp;: {{ $session->sparrings->pluck('full_name')->implode(', ') }}
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center gap-3">
-                                @if ($cancelled)
-                                    <x-badge
-                                        value="{{ $session->status === 'cancelled_free' ? __('Free practice') : __('Closed') }}"
-                                        class="badge-error badge-soft" />
-                                @else
-                                    <x-badge value="{{ __('Scheduled') }}" class="badge-success badge-soft" />
-                                    @if ($this->mayManage)
-                                        <x-button class="btn-ghost btn-sm" icon="o-arrow-path"
-                                            :label="__('Hand over')" wire:click="openHandOver({{ $session->id }})" />
-                                        @if ($selectedPack?->type !== \App\Domains\Shared\Enums\TrainingType::FREE)
-                                            <x-button class="btn-ghost btn-sm" icon="o-user-group"
-                                                :label="__('Sparrings')" wire:click="openSessionSparrings({{ $session->id }})" />
-                                        @endif
-                                        <x-button class="btn-ghost btn-sm text-error" icon="o-x-circle"
-                                            :label="__('Cancel')" wire:click="openCancel({{ $session->id }})" />
-                                    @endif
-                                @endif
-                            </div>
-                        </div>
-                    @empty
-                        <div class="rounded-xl border border-dashed border-base-300 py-16 text-center text-base-content/40">
-                            <x-icon class="mx-auto mb-2 h-10 w-10" name="o-calendar" />
-                            <p>{{ __('No sessions generated yet.') }}</p>
-                        </div>
-                    @endforelse
-                </div>
-            </x-tab>
-
-            {{-- ================================================================
-                 ATTENDANCE MATRIX — one grid answers both questions:
-                 a hollow column is a session nobody came to, a hollow row is a
-                 member who pays and never shows up.
-            ================================================================ --}}
-            <x-tab name="attendance" :label="__('Attendance')" icon="o-check-circle">
-                @php $matrix = $this->attendanceMatrix; @endphp
-
-                @if (empty($matrix['sessions']))
-                    <div class="rounded-xl border border-dashed border-base-300 py-16 text-center text-base-content/40">
-                        <x-icon class="mx-auto mb-2 h-10 w-10" name="o-check-circle" />
-                        <p>{{ __('No attendance recorded yet.') }}</p>
-                    </div>
-                @else
-                    <div class="mb-3 flex items-center justify-end">
-                        <label class="flex cursor-pointer items-center gap-2 text-xs text-base-content/60">
-                            <x-checkbox wire:model.live="showAllSessions" />
-                            {{ __('Show the whole season') }}
-                        </label>
-                    </div>
-
-                    <div class="overflow-x-auto rounded-xl border border-base-300 bg-base-100">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th class="sticky left-0 z-10 bg-base-100">{{ __('Member') }}</th>
-                                    @foreach ($matrix['sessions'] as $column)
-                                        <th @class([
-                                            'text-center text-xs font-medium',
-                                            'text-base-content/30 line-through' => $column['cancelled'],
-                                        ])>
-                                            {{ \Carbon\Carbon::parse($column['date'])->format('d/m') }}
-                                        </th>
-                                    @endforeach
-                                    <th class="text-center">{{ __('Rate') }}</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {{-- Membres, puis non-membres du stage (attendus eux aussi), puis
-                                     les présents non inscrits, chaque groupe séparé d'un trait. --}}
-                                @php
-                                    $rows = [
-                                        ...array_map(fn (array $row): array => $row + ['kind' => 'member'], $matrix['members']),
-                                        ...array_map(fn (array $row): array => $row + ['kind' => 'external'], $matrix['externals'] ?? []),
-                                        ...array_map(fn (array $row): array => $row + ['kind' => 'walkIn'], $matrix['walkIns']),
-                                    ];
-                                @endphp
-                                @foreach ($rows as $index => $row)
-                                    @php $startsGroup = $index > 0 && $rows[$index - 1]['kind'] !== $row['kind']; @endphp
-                                    <tr @class([
-                                        'border-t-2 border-accent/40' => $startsGroup && $row['kind'] === 'external',
-                                        'border-t-2 border-warning/40' => $startsGroup && $row['kind'] === 'walkIn',
-                                    ])>
-                                        <td class="sticky left-0 z-10 whitespace-nowrap bg-base-100">
-                                            {{ $row['name'] }}
-                                            @if ($row['kind'] === 'external')
-                                                <x-badge class="badge-accent badge-soft badge-xs ml-1"
-                                                    :value="__('non-member')" />
-                                            @elseif ($row['kind'] === 'walkIn')
-                                                <x-badge class="badge-warning badge-soft badge-xs ml-1"
-                                                    :value="__('not enrolled')" />
-                                            @endif
-                                        </td>
-
-                                        @foreach ($matrix['sessions'] as $column)
-                                            @php $cell = $row['cells'][$column['id']] ?? null; @endphp
-                                            <td class="text-center">
-                                                @if ($column['cancelled'])
-                                                    <span class="text-base-content/20">—</span>
-                                                @elseif (! $column['counted'])
-                                                    {{-- Hachuré : « pas pointé », à ne pas confondre avec « absent ». --}}
-                                                    <span class="inline-block h-3 w-3 rounded-sm bg-base-300/60"
-                                                        title="{{ __('Not recorded') }}"></span>
-                                                @elseif ($cell === 'present')
-                                                    <x-icon class="h-4 w-4 text-success" name="o-check" />
-                                                @elseif ($cell === 'excused')
-                                                    <x-icon class="h-4 w-4 text-warning" name="o-minus" />
-                                                @elseif ($cell === 'absent')
-                                                    <x-icon class="h-4 w-4 text-error" name="o-x-mark" />
-                                                @else
-                                                    <span class="text-base-content/20">·</span>
-                                                @endif
-                                            </td>
-                                        @endforeach
-
-                                        <td @class(['text-center text-sm font-bold', $rateTone($row['rate'] ?? null)])>
-                                            {{ isset($row['rate']) ? $row['rate'] . '%' : '—' }}
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-
-                            <tfoot>
-                                <tr>
-                                    <th class="sticky left-0 z-10 bg-base-100 text-xs font-bold uppercase tracking-wide text-base-content/50">
-                                        {{ __('Turnout') }}
-                                    </th>
-                                    @foreach ($matrix['sessions'] as $column)
-                                        <th @class(['text-center text-xs font-bold', $rateTone($column['rate'])])>
-                                            {{ $column['rate'] !== null ? $column['rate'] . '%' : '—' }}
-                                        </th>
-                                    @endforeach
-                                    <th></th>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-
-                    <div class="mt-2 flex flex-wrap items-center gap-4 text-xs text-base-content/50">
-                        <span class="flex items-center gap-1">
-                            <x-icon class="h-3.5 w-3.5 text-success" name="o-check" /> {{ __('Present') }}
-                        </span>
-                        <span class="flex items-center gap-1">
-                            <x-icon class="h-3.5 w-3.5 text-warning" name="o-minus" /> {{ __('Excused') }}
-                        </span>
-                        <span class="flex items-center gap-1">
-                            <x-icon class="h-3.5 w-3.5 text-error" name="o-x-mark" /> {{ __('Absent') }}
-                        </span>
-                        <span class="flex items-center gap-1">
-                            <span class="inline-block h-3 w-3 rounded-sm bg-base-300/60"></span> {{ __('Not recorded') }}
-                        </span>
-                        <span class="flex items-center gap-1">
-                            <span class="text-base-content/20">—</span> {{ __('Cancelled session') }}
-                        </span>
-                    </div>
-                @endif
-            </x-tab>
-        </x-tabs>
+    @if (! $viewSeason)
+    @if (empty($seasonOptions))
+        <x-admin.shared.missing-season-state
+            :message="__('Training packs belong to a season. Open one to build this year\'s offer.')" />
     @else
-        {{-- ================================================================
-             PACK LIST — grouped by level
-        ================================================================ --}}
-        @php
-            $grouped = $packs->groupBy(fn ($p) => $p->level?->label ?? __('No level'));
-            $levelColor = [
-                'Beginners'       => 'emerald',
-                'Elite'           => 'violet',
-                'Intermediate'    => 'blue',
-                'Kids'            => 'pink',
-                'Open'            => 'gray',
-                'Young potential' => 'amber',
-            ];
-        @endphp
+        <x-alert class="alert-info" icon="o-information-circle"
+            :title="__('Select a season above to view training packs.')" />
+    @endif
+    @else
+    {{-- ================================================================
+         PACK LIST — grouped by level
+    ================================================================ --}}
+    @php
+        $grouped = $packs->groupBy(fn ($p) => $p->level?->label ?? __('No level'));
+        $levelColor = [
+            'Beginners'       => 'emerald',
+            'Elite'           => 'violet',
+            'Intermediate'    => 'blue',
+            'Kids'            => 'pink',
+            'Open'            => 'gray',
+            'Young potential' => 'amber',
+        ];
+    @endphp
 
-        @if ($grouped->isEmpty())
-            <div class="rounded-xl border border-dashed border-base-300 py-16 text-center text-base-content/40">
-                <x-icon class="mx-auto mb-2 h-10 w-10" name="o-academic-cap" />
-                <p>{{ __('No training packs for this season yet.') }}</p>
-                @if ($this->mayManage)
-                    <x-button class="btn-primary mt-4" :label="__('Create first pack')"
-                        wire:click="openCreate" />
-                @endif
-            </div>
-        @else
-            <div class="space-y-6">
-                @foreach ($grouped as $level => $items)
-                    <x-section-accordion
-                        label="{{ $level }}"
-                        :count="$items->count() . ' ' . __('pack(s)')"
-                        :color="$levelColor[$level] ?? 'gray'">
-                        <div class="grid gap-4 pb-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            @foreach ($items as $pack)
-                                @php
-                                    // Un pack sans plafond n'a pas de places à compter : ni
-                                    // celui du pack, ni celui de la salle, que le libre-service ignore.
-                                    $capped = ! $pack->is_open_enrollment && $pack->effectiveMaxParticipants() > 0;
-                                    $enrolled = $pack->enrolledCount();
-                                    $max = $pack->effectiveMaxParticipants();
-                                    $full = $max > 0 && $enrolled >= $max;
-                                @endphp
-                                {{-- No overflow-hidden: it would clip the actions dropdown at the
-                                     bottom of the card. The header rounds its own corners instead. --}}
-                                <div
-                                    class="group flex flex-col rounded-xl border border-base-300 bg-base-100">
-                                    {{-- Card header --}}
-                                    <div class="rounded-t-xl bg-primary/5 px-4 py-3">
-                                        <div class="flex items-start justify-between gap-2">
-                                            <div>
-                                                <p class="font-semibold leading-tight text-primary">
-                                                    {{ $pack->name }}
-                                                </p>
-                                                <p class="mt-0.5 text-xs text-primary/60">
-                                                    {{ $pack->type?->label() }}
-                                                    @if ($pack->day_of_week)
-                                                        · {{ ['', __('Mon'), __('Tue'), __('Wed'), __('Thu'), __('Fri'), __('Sat'), __('Sun')][$pack->day_of_week] }}
-                                                        {{ $pack->start_time ? \Carbon\Carbon::parse($pack->start_time)->format('H:i') : '' }}
-                                                    @endif
-                                                </p>
-                                            </div>
-                                            <div class="flex shrink-0 flex-col items-end gap-1">
-                                                @if ($pack->is_camp)
-                                                    <x-badge value="{{ __('Training camp') }}"
-                                                        class="badge-primary badge-soft badge-xs" icon="o-sun" />
+    @if ($grouped->isEmpty())
+        <div class="rounded-xl border border-dashed border-base-300 py-16 text-center text-base-content/40">
+            <x-icon class="mx-auto mb-2 h-10 w-10" name="o-academic-cap" />
+            <p>{{ __('No training packs for this season yet.') }}</p>
+            @if ($this->mayManage)
+                <x-button class="btn-primary mt-4" :label="__('Create first pack')"
+                    :link="route('admin.trainings.create')" />
+            @endif
+        </div>
+    @else
+        <div class="space-y-6">
+            @foreach ($grouped as $level => $items)
+                <x-section-accordion
+                    label="{{ $level }}"
+                    :count="$items->count() . ' ' . __('pack(s)')"
+                    :color="$levelColor[$level] ?? 'gray'">
+                    <div class="grid gap-4 pb-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        @foreach ($items as $pack)
+                            @php
+                                // Un pack sans plafond n'a pas de places à compter : ni
+                                // celui du pack, ni celui de la salle, que le libre-service ignore.
+                                $capped = ! $pack->is_open_enrollment && $pack->effectiveMaxParticipants() > 0;
+                                $enrolled = $pack->enrolledCount();
+                                $max = $pack->effectiveMaxParticipants();
+                                $full = $max > 0 && $enrolled >= $max;
+                            @endphp
+                            {{-- No overflow-hidden: it would clip the actions dropdown at the
+                                 bottom of the card. The header rounds its own corners instead. --}}
+                            <div
+                                class="group flex flex-col rounded-xl border border-base-300 bg-base-100">
+                                {{-- Card header --}}
+                                <div class="rounded-t-xl bg-primary/5 px-4 py-3">
+                                    <div class="flex items-start justify-between gap-2">
+                                        <div>
+                                            <p class="font-semibold leading-tight text-primary">
+                                                {{ $pack->name }}
+                                            </p>
+                                            <p class="mt-0.5 text-xs text-primary/60">
+                                                {{ $pack->type?->label() }}
+                                                @if ($pack->day_of_week)
+                                                    · {{ ['', __('Mon'), __('Tue'), __('Wed'), __('Thu'), __('Fri'), __('Sat'), __('Sun')][$pack->day_of_week] }}
+                                                    {{ $pack->start_time ? \Carbon\Carbon::parse($pack->start_time)->format('H:i') : '' }}
                                                 @endif
-                                                @unless ($pack->is_active)
-                                                    <x-badge value="{{ __('Withdrawn') }}"
-                                                        class="badge-warning badge-soft badge-xs" icon="o-eye-slash" />
-                                                @endunless
-                                                {{-- Closed is the exception worth spotting while scanning the list;
-                                                     a withdrawn pack already says more with its own badge. --}}
-                                                @if ($pack->is_active && ! $pack->enrollments_open)
-                                                    <x-badge value="{{ __('Closed to enrolments') }}"
-                                                        class="badge-neutral badge-soft badge-xs" icon="o-lock-closed" />
-                                                @endif
-                                                <x-badge value="{{ number_format($pack->price, 0) }}€"
-                                                    class="badge-primary badge-soft" />
-                                                @if ($pack->eventPost?->status->value === 'PUBLISHED')
-                                                    <x-badge value="{{ __('On website') }}"
-                                                        class="badge-success badge-soft badge-xs" icon="o-globe-alt" />
-                                                @elseif ($pack->eventPost)
-                                                    <x-badge value="{{ __('Draft') }}"
-                                                        class="badge-warning badge-soft badge-xs" icon="o-document-text" />
-                                                @endif
-                                            </div>
+                                            </p>
                                         </div>
-                                    </div>
-
-                                    {{-- Card body --}}
-                                    <div class="flex flex-1 flex-col px-4 py-3">
-                                        <div class="mb-3 space-y-1 text-sm text-base-content/70">
-                                            <div class="flex items-center gap-2">
-                                                <x-icon class="h-4 w-4 shrink-0 opacity-40" name="o-user" />
-                                                {{ $pack->trainer?->full_name ?? __('No coach') }}
-                                            </div>
-                                            <div class="flex items-center gap-2">
-                                                <x-icon class="h-4 w-4 shrink-0 opacity-40" name="o-map-pin" />
-                                                {{ $pack->room?->name ?? '—' }}
-                                            </div>
-                                        </div>
-
-                                        {{-- Capacity — only where there is a cap to count against.
-                                             effectiveMaxParticipants() falls back to the room, so an
-                                             open-enrolment pack was showing a limit hasAvailableSpot()
-                                             never applies. --}}
-                                        @if ($capped)
-                                            <div class="mb-3">
-                                                <div class="mb-1 flex justify-between text-xs text-base-content/50">
-                                                    <span>{{ $enrolled }} / {{ $max }} {{ __('enrolled') }}</span>
-                                                    @if ($full)
-                                                        <span class="font-medium text-error">{{ __('Full') }}</span>
-                                                    @endif
-                                                </div>
-                                                <progress
-                                                    class="progress {{ $full ? 'progress-error' : 'progress-primary' }} h-1"
-                                                    max="{{ $max }}" value="{{ $enrolled }}"></progress>
-                                            </div>
-                                        @endif
-
-                                        {{-- Actions --}}
-                                        <div class="mt-auto flex flex-nowrap items-center gap-1 border-t border-base-300 pt-2">
-                                            <x-button class="btn-ghost btn-sm min-w-0 flex-1 text-xs"
-                                                icon="o-eye" :label="__('Details')"
-                                                wire:click="openPack({{ $pack->id }})" />
-                                            @if ($this->mayManage)
-                                            <x-button class="btn-ghost btn-sm shrink-0 text-xs" icon="o-pencil"
-                                                :aria-label="__('Edit')"
-                                                wire:click="openEdit({{ $pack->id }})" />
-                                            <livewire:admin.shared.event-post-button
-                                                :model="$pack"
-                                                event-type="TRAINING"
-                                                icon="🎯"
-                                                :event-date="$pack->pack_start_date?->toDateString()"
-                                                :start-time="$pack->start_time ? \Carbon\Carbon::parse($pack->start_time)->format('H:i:s') : null"
-                                                :end-time="$pack->start_time && $pack->duration_minutes ? \Carbon\Carbon::parse($pack->start_time)->addMinutes($pack->duration_minutes)->format('H:i:s') : null"
-                                                :price="(string) $pack->price"
-                                                :max-participants="$pack->max_participants"
-                                                :default-title="$pack->name"
-                                                :can-publish="true"
-                                                wire:key="ep-training-{{ $pack->id }}"
-                                                @event-post-saved.window="$wire.refreshPacks()" />
-                                            {{-- Icon-only trigger on purpose: four cards fit across an xl
-                                                 screen, and a labelled dropdown wraps its text and bursts out
-                                                 of the card. The labels live on the menu items instead, which
-                                                 also reads better for actions that cancel sessions and move
-                                                 money. --}}
-                                            {{-- The id is not decoration: mary derives the dropdown's
-                                                 wire:key from the serialized component, so identical
-                                                 triggers across cards would collide and confuse Livewire's
-                                                 DOM diffing. --}}
-                                            <x-dropdown class="shrink-0" :id="'pack-actions-' . $pack->id" right
-                                                no-x-anchor>
-                                                <x-slot:trigger>
-                                                    <x-button class="btn-ghost btn-sm shrink-0 text-xs"
-                                                        :id="'pack-actions-trigger-' . $pack->id"
-                                                        icon="o-ellipsis-vertical"
-                                                        :aria-label="__('More actions')" />
-                                                </x-slot:trigger>
-
-                                                <x-menu-item
-                                                    :icon="$pack->enrollments_open ? 'o-lock-closed' : 'o-lock-open'"
-                                                    :title="$pack->enrollments_open ? __('Close enrolments') : __('Reopen enrolments')"
-                                                    wire:click="toggleEnrollments({{ $pack->id }})" />
-
-                                                @if ($pack->is_active)
-                                                    <x-menu-item icon="o-eye-slash" separator
-                                                        :title="__('Withdraw from the offer')"
-                                                        wire:click="openWithdrawPack({{ $pack->id }})" />
-                                                    <x-menu-item class="text-error" icon="o-x-circle" separator
-                                                        :title="__('Stop the pack (cancels and refunds)')"
-                                                        wire:click="openDiscontinuePack({{ $pack->id }})" />
-                                                @else
-                                                    <x-menu-item class="text-success" icon="o-arrow-uturn-left"
-                                                        :title="__('Put back in the offer')"
-                                                        wire:click="restorePack({{ $pack->id }})" />
-                                                @endif
-                                            </x-dropdown>
+                                        <div class="flex shrink-0 flex-col items-end gap-1">
+                                            @if ($pack->is_camp)
+                                                <x-badge value="{{ __('Training camp') }}"
+                                                    class="badge-primary badge-soft badge-xs" icon="o-sun" />
+                                            @endif
+                                            @unless ($pack->is_active)
+                                                <x-badge value="{{ __('Withdrawn') }}"
+                                                    class="badge-warning badge-soft badge-xs" icon="o-eye-slash" />
+                                            @endunless
+                                            {{-- Closed is the exception worth spotting while scanning the list;
+                                                 a withdrawn pack already says more with its own badge. --}}
+                                            @if ($pack->is_active && ! $pack->enrollments_open)
+                                                <x-badge value="{{ __('Closed to enrolments') }}"
+                                                    class="badge-neutral badge-soft badge-xs" icon="o-lock-closed" />
+                                            @endif
+                                            <x-badge value="{{ number_format($pack->price, 0) }}€"
+                                                class="badge-primary badge-soft" />
+                                            @if ($pack->eventPost?->status->value === 'PUBLISHED')
+                                                <x-badge value="{{ __('On website') }}"
+                                                    class="badge-success badge-soft badge-xs" icon="o-globe-alt" />
+                                            @elseif ($pack->eventPost)
+                                                <x-badge value="{{ __('Draft') }}"
+                                                    class="badge-warning badge-soft badge-xs" icon="o-document-text" />
                                             @endif
                                         </div>
                                     </div>
                                 </div>
-                            @endforeach
-                        </div>
-                    </x-section-accordion>
-                @endforeach
-            </div>
-        @endif
-    @endif
 
-    {{-- ================================================================
-         WIZARD MODAL (3 steps)
-    ================================================================ --}}
-    <x-app-modal :title="$packId ? __('Edit pack') : __('New training pack')" wire:model="wizardOpen" separator :open="$wizardOpen">
-        {{-- Step indicators --}}
-        <div class="mb-6 flex items-center justify-center gap-2 text-xs">
-            @foreach ([1 => __('Pack'), 2 => __('Planning'), 3 => __('Price')] as $n => $label)
-                <div @class([
-                    'flex items-center gap-1.5 rounded-full px-3 py-1 font-medium transition',
-                    'bg-primary text-primary-content' => (int) $step === $n,
-                    'bg-base-200 text-base-content/50' => (int) $step !== $n,
-                ])>
-                    <span>{{ $n }}</span>
-                    <span>{{ $label }}</span>
-                </div>
-                @if ($n < 3)
-                    <x-icon class="h-3 w-3 text-base-content/30" name="o-chevron-right" />
-                @endif
+                                {{-- Card body --}}
+                                <div class="flex flex-1 flex-col px-4 py-3">
+                                    <div class="mb-3 space-y-1 text-sm text-base-content/70">
+                                        <div class="flex items-center gap-2">
+                                            <x-icon class="h-4 w-4 shrink-0 opacity-40" name="o-user" />
+                                            {{ $pack->trainer?->full_name ?? __('No coach') }}
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <x-icon class="h-4 w-4 shrink-0 opacity-40" name="o-map-pin" />
+                                            {{ $pack->room?->name ?? '—' }}
+                                        </div>
+                                    </div>
+
+                                    {{-- Capacity — only where there is a cap to count against.
+                                         effectiveMaxParticipants() falls back to the room, so an
+                                         open-enrolment pack was showing a limit hasAvailableSpot()
+                                         never applies. --}}
+                                    @if ($capped)
+                                        <div class="mb-3">
+                                            <div class="mb-1 flex justify-between text-xs text-base-content/50">
+                                                <span>{{ $enrolled }} / {{ $max }} {{ __('enrolled') }}</span>
+                                                @if ($full)
+                                                    <span class="font-medium text-error">{{ __('Full') }}</span>
+                                                @endif
+                                            </div>
+                                            <progress
+                                                class="progress {{ $full ? 'progress-error' : 'progress-primary' }} h-1"
+                                                max="{{ $max }}" value="{{ $enrolled }}"></progress>
+                                        </div>
+                                    @endif
+
+                                    {{-- Actions --}}
+                                    <div class="mt-auto flex flex-nowrap items-center gap-1 border-t border-base-300 pt-2">
+                                        <x-button class="btn-ghost btn-sm min-w-0 flex-1 text-xs"
+                                            icon="o-eye" :label="__('Details')"
+                                            :link="route('admin.trainings.show', $pack)" />
+                                        @if ($this->mayManage)
+                                        <x-button class="btn-ghost btn-sm shrink-0 text-xs" icon="o-pencil"
+                                            :aria-label="__('Edit')"
+                                            :link="route('admin.trainings.edit', $pack)" />
+                                        <livewire:admin.shared.event-post-button
+                                            :model="$pack"
+                                            event-type="TRAINING"
+                                            icon="🎯"
+                                            :event-date="$pack->pack_start_date?->toDateString()"
+                                            :start-time="$pack->start_time ? \Carbon\Carbon::parse($pack->start_time)->format('H:i:s') : null"
+                                            :end-time="$pack->start_time && $pack->duration_minutes ? \Carbon\Carbon::parse($pack->start_time)->addMinutes($pack->duration_minutes)->format('H:i:s') : null"
+                                            :price="(string) $pack->price"
+                                            :max-participants="$pack->max_participants"
+                                            :default-title="$pack->name"
+                                            :can-publish="true"
+                                            wire:key="ep-training-{{ $pack->id }}"
+                                            @event-post-saved.window="$wire.refreshPacks()" />
+                                        {{-- Icon-only trigger on purpose: four cards fit across an xl
+                                             screen, and a labelled dropdown wraps its text and bursts out
+                                             of the card. The labels live on the menu items instead, which
+                                             also reads better for actions that cancel sessions and move
+                                             money. --}}
+                                        {{-- The id is not decoration: mary derives the dropdown's
+                                             wire:key from the serialized component, so identical
+                                             triggers across cards would collide and confuse Livewire's
+                                             DOM diffing. --}}
+                                        <x-dropdown class="shrink-0" :id="'pack-actions-' . $pack->id" right
+                                            no-x-anchor>
+                                            <x-slot:trigger>
+                                                <x-button class="btn-ghost btn-sm shrink-0 text-xs"
+                                                    :id="'pack-actions-trigger-' . $pack->id"
+                                                    icon="o-ellipsis-vertical"
+                                                    :aria-label="__('More actions')" />
+                                            </x-slot:trigger>
+
+                                            <x-menu-item
+                                                :icon="$pack->enrollments_open ? 'o-lock-closed' : 'o-lock-open'"
+                                                :title="$pack->enrollments_open ? __('Close enrolments') : __('Reopen enrolments')"
+                                                wire:click="toggleEnrollments({{ $pack->id }})" />
+
+                                            @if ($pack->is_active)
+                                                <x-menu-item icon="o-eye-slash" separator
+                                                    :title="__('Withdraw from the offer')"
+                                                    wire:click="openWithdrawPack({{ $pack->id }})" />
+                                                <x-menu-item class="text-error" icon="o-x-circle" separator
+                                                    :title="__('Stop the pack (cancels and refunds)')"
+                                                    wire:click="openDiscontinuePack({{ $pack->id }})" />
+                                            @else
+                                                <x-menu-item class="text-success" icon="o-arrow-uturn-left"
+                                                    :title="__('Put back in the offer')"
+                                                    wire:click="restorePack({{ $pack->id }})" />
+                                            @endif
+                                        </x-dropdown>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </x-section-accordion>
             @endforeach
         </div>
-
-        {{-- Step 1 — Pack info --}}
-        @if ($step === '1')
-            <div class="space-y-4">
-                {{-- Season selector --}}
-                <x-select :options="$seasonOptions" :label="__('Season')" wire:model.live="formSeasonId"
-                    :placeholder="__('Select a season…')" />
-
-                <x-input :label="__('Pack name')" :placeholder="__('E.g. Tuesday Elite')"
-                    wire:model="formName" />
-
-                <div class="grid grid-cols-2 gap-4">
-                    <x-select :options="$levelOptions" :label="__('Level')" wire:model="formLevel"
-                        :placeholder="__('Select…')" />
-                    <x-select :options="$typeOptions" :label="__('Type')" wire:model.live="formType"
-                        :placeholder="__('Select…')" />
-                </div>
-
-                {{-- Coach — required for non-free types --}}
-                <div>
-                    <x-select :options="$trainerOptions" :label="__('Coach')" wire:model="formTrainerId"
-                        :placeholder="__('No coach')" />
-                    @if ($formType && $formType !== \App\Domains\Shared\Enums\TrainingType::FREE->value && ! $formTrainerId)
-                        <p class="mt-1 text-xs text-warning-content">
-                            <x-icon class="inline h-3 w-3" name="o-exclamation-triangle" />
-                            {{ __('A coach is required for this training type.') }}
-                        </p>
-                    @elseif ($formType === \App\Domains\Shared\Enums\TrainingType::FREE->value)
-                        <p class="mt-1 text-xs text-base-content/40">
-                            {{ __('Free practice — no coach needed.') }}
-                        </p>
-                    @endif
-                </div>
-
-                <x-select :options="$roomOptions" :label="__('Room')" wire:model="formRoomId"
-                    :placeholder="__('Select…')" />
-
-                <x-textarea :label="__('Description')" :placeholder="__('Optional…')"
-                    wire:model="formDescription" rows="3" />
-
-                {{-- Un stage se facture à part, hors cotisation. La case se fige
-                     dès le premier inscrit : la basculer changerait d'un coup ce
-                     que doivent les inscrits. --}}
-                <div class="rounded-xl border border-base-300 p-3">
-                    <x-toggle :label="__('Training camp (outside the membership fee)')" wire:model.live="formIsCamp"
-                        :disabled="$this->campNatureLocked"
-                        :hint="$this->campNatureLocked
-                            ? __('Members are already enrolled: this can no longer change. Create a new pack if needed.')
-                            : __('Optional and invoiced separately: it never enters the affiliation, nor the attestation for the health insurance.')" />
-
-                    @if ($formIsCamp)
-                        <x-toggle class="mt-3" :label="__('Enrolment on approval')" wire:model="formRequiresApproval"
-                            :hint="__('Members send a request the committee accepts or refuses, e.g. a camp for young players only.')" />
-                    @endif
-                </div>
-            </div>
-        @endif
-
-        {{-- Step 2 — Planning --}}
-        @if ($step === '2')
-            <div class="space-y-4">
-                {{-- Recurrence type toggle --}}
-                <div>
-                    <p class="mb-2 text-sm font-medium">{{ __('Recurrence') }}</p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div @class([
-                            'cursor-pointer rounded-xl border-2 p-3 text-center transition',
-                            'border-primary bg-primary/10' => $formRecurrenceType === 'weekly',
-                            'border-base-300' => $formRecurrenceType !== 'weekly',
-                        ]) wire:click="$set('formRecurrenceType', 'weekly')">
-                            <x-icon class="mx-auto mb-1 h-5 w-5 text-primary" name="o-calendar" />
-                            <p class="text-sm font-semibold">{{ __('Once a week') }}</p>
-                            <p class="text-xs text-base-content/60">{{ __('Same day every week') }}</p>
-                        </div>
-                        <div @class([
-                            'cursor-pointer rounded-xl border-2 p-3 text-center transition',
-                            'border-primary bg-primary/10' => $formRecurrenceType === 'specific_days',
-                            'border-base-300' => $formRecurrenceType !== 'specific_days',
-                        ]) wire:click="$set('formRecurrenceType', 'specific_days')">
-                            <x-icon class="mx-auto mb-1 h-5 w-5 text-primary" name="o-calendar-days" />
-                            <p class="text-sm font-semibold">{{ __('Several days') }}</p>
-                            <p class="text-xs text-base-content/60">{{ __('Pick multiple weekdays') }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Day selection depending on recurrence type --}}
-                @if ($formRecurrenceType === 'weekly')
-                    <x-select :options="$dayOptions" :label="__('Day of week')"
-                        wire:model.live="formDayOfWeek" :placeholder="__('Select…')" />
-                @else
-                    <div>
-                        <p class="mb-2 text-sm font-medium">{{ __('Days of the week') }}</p>
-                        <div class="flex flex-wrap gap-2">
-                            @foreach ($dayOptions as $day)
-                                <label @class([
-                                    'cursor-pointer select-none rounded-full border px-3 py-1 text-xs font-medium transition',
-                                    'border-primary bg-primary text-primary-content' => in_array($day['id'], array_map('intval', $formSpecificDays)),
-                                    'border-base-300 text-base-content/70 hover:border-primary/50' => ! in_array($day['id'], array_map('intval', $formSpecificDays)),
-                                ])>
-                                    <input class="sr-only" type="checkbox" wire:model.live="formSpecificDays"
-                                        value="{{ $day['id'] }}" />
-                                    {{ $day['name'] }}
-                                </label>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
-
-                <div class="grid grid-cols-2 gap-4">
-                    <x-input :label="__('Start time')" type="time" wire:model.live="formStartTime" />
-                    <x-input :label="__('Duration (min)')" type="number" min="15" max="480"
-                        wire:model.live="formDurationMinutes" />
-                </div>
-
-                {{-- Capacity --}}
-                <div>
-                    <x-input :label="__('Maximum participants')" type="number" min="1" max="999"
-                        wire:model.live="formMaxParticipants" :disabled="$formIsOpenEnrollment"
-                        :placeholder="$this->inheritedRoomCapacity
-                            ? __('Room capacity: :count', ['count' => $this->inheritedRoomCapacity])
-                            : __('Room capacity')" />
-
-                    <p class="mt-1 text-xs text-base-content/50">
-                        {{ __('Leave empty to use the training capacity of the selected room.') }}
-                    </p>
-
-                    @if ($formType === \App\Domains\Shared\Enums\TrainingType::FREE->value)
-                        <label class="flex items-center gap-2 mt-3 cursor-pointer">
-                            <x-checkbox wire:model.live="formIsOpenEnrollment" />
-                            <span class="text-sm">{{ __('No participant cap (and therefore no waiting list)') }}</span>
-                        </label>
-                    @endif
-
-                    <label class="mt-3 flex cursor-pointer items-center gap-2">
-                        <x-checkbox wire:model.live="formEnrollmentsOpen" />
-                        <span class="text-sm">{{ __('Open to member sign-ups') }}</span>
-                    </label>
-
-                    <p class="mt-1 text-xs text-base-content/50">
-                        {{ __('Unchecked, the pack stays visible but members cannot sign up on their own. The committee can still add them.') }}
-                    </p>
-                </div>
-
-                {{-- Pack period --}}
-                <div>
-                    <p class="mb-1 text-xs text-base-content/50">
-                        {{ __('Period covered by the pack — prefilled with the season, change it for a camp') }}
-                    </p>
-                    <div class="grid grid-cols-2 gap-4">
-                        <x-input :label="__('From')" type="date" wire:model.live="formPackStartDate" />
-                        <x-input :label="__('To')" type="date" wire:model.live="formPackEndDate" />
-                    </div>
-                </div>
-
-                {{-- Preview --}}
-                @if (count($previewDates) > 0)
-                    <div class="rounded-lg bg-primary/5 p-3">
-                        <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-primary/60">
-                            {{ __(':count sessions will be generated', ['count' => count($previewDates)]) }}
-                        </p>
-                        <div class="flex flex-wrap gap-1.5">
-                            @foreach ($previewDates as $d)
-                                <span class="group relative inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                                    {{ $d->translatedFormat('D d M') }}
-                                    <button
-                                        class="ml-0.5 rounded-full opacity-50 transition hover:opacity-100 hover:text-error"
-                                        :title="__('Exclude this date')"
-                                        wire:click="toggleExcludeDate('{{ $d->toDateString() }}')"
-                                        wire:key="include-{{ $d->toDateString() }}"
-                                        type="button">
-                                        ×
-                                    </button>
-                                </span>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    {{-- Excluded dates (re-includable) --}}
-                    @if (count($formExcludedDates) > 0)
-                        <div class="rounded-lg border border-base-300 p-3">
-                            <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-base-content/40">
-                                {{ __(':count excluded', ['count' => count($formExcludedDates)]) }}
-                            </p>
-                            <div class="flex flex-wrap gap-1.5">
-                                @foreach ($formExcludedDates as $excluded)
-                                    <button
-                                        class="inline-flex items-center gap-1 rounded-md border border-dashed border-base-300 px-2 py-0.5 text-xs text-base-content/40 line-through transition hover:border-primary hover:text-primary hover:no-underline"
-                                        :title="__('Re-include this date')"
-                                        wire:click="toggleExcludeDate('{{ $excluded }}')"
-                                        wire:key="exclude-{{ $excluded }}"
-                                        type="button">
-                                        {{ \Carbon\Carbon::parse($excluded)->translatedFormat('D d M') }}
-                                        <span class="no-underline">↩</span>
-                                    </button>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
-                @elseif ($formDayOfWeek || count($formSpecificDays) > 0)
-                    <x-alert class="alert-warning" icon="o-exclamation-triangle"
-                        :title="__('No dates can be generated for this period.')" />
-                @endif
-            </div>
-        @endif
-
-        {{-- Step 3 — Price --}}
-        @if ($step === '3')
-            <div class="space-y-4">
-                <x-input :label="__('Pack price (€)')" type="number" min="0" step="0.50"
-                    wire:model.live="formPrice" />
-
-                @if ($formIsCamp)
-                    <x-alert class="alert-info" icon="o-information-circle"
-                        :title="__('The training camp is invoiced on its own, without automatic discount. A member\'s own price can be set when enrolling them.')" />
-
-                    {{-- Ouvrir aux externes est un choix par stage : la date est l'opt-in,
-                         et les membres gardent la priorité jusque-là. --}}
-                    <div class="rounded-xl border border-base-300 p-3 space-y-3">
-                        <p class="text-sm font-medium">{{ __('Non-members') }}</p>
-                        <x-datetime :label="__('Open to non-members from')" wire:model="formExternalsOpenOn"
-                            :hint="__('Empty: members only. Until that day, members have priority.')" />
-                        <x-input :label="__('Price for non-members (€)')" type="number" min="0" step="1"
-                            wire:model="formExternalPrice" :placeholder="number_format((float) $formPrice, 0)"
-                            :hint="__('Empty: the same price as members.')" />
-                    </div>
-                @else
-                    <x-toggle
-                        :label="__('Allow family/multi-pack discount')"
-                        wire:model.live="formAllowDiscount"
-                        :hint="__('When enabled, a 10€ discount applies per pack for members taking multiple packs or families.')" />
-
-                    <x-alert class="alert-info" icon="o-information-circle"
-                        :title="__('The pack price is added to the subscription price.')" />
-                @endif
-
-                {{-- Summary --}}
-                <div class="rounded-xl border border-base-300 bg-base-100 p-4 text-sm">
-                    <h3 class="mb-3 font-semibold">{{ __('Summary') }}</h3>
-                    <div class="space-y-1 text-base-content/70">
-                        <div class="flex justify-between">
-                            <span>{{ __('Season') }}</span>
-                            <span class="font-medium text-base-content">
-                                {{ collect($seasonOptions)->firstWhere('id', $formSeasonId)['name'] ?? '—' }}
-                            </span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>{{ __('Name') }}</span>
-                            <span class="font-medium text-base-content">{{ $formName }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>{{ __('Level / Type') }}</span>
-                            <span class="font-medium text-base-content">{{ $formLevel }} / {{ $formType }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>{{ __('Sessions') }}</span>
-                            <span class="font-medium text-base-content">{{ count($previewDates) }}
-                                {{ __('sessions') }}</span>
-                        </div>
-                        @if (count($formExcludedDates) > 0)
-                            <div class="flex justify-between">
-                                <span>{{ __('Excluded') }}</span>
-                                <span class="font-medium text-base-content/50">
-                                    {{ count($formExcludedDates) }} {{ __('date(s)') }}
-                                </span>
-                            </div>
-                        @endif
-                        <div class="flex justify-between">
-                            <span>{{ __('Price') }}</span>
-                            <span class="font-semibold text-primary">{{ number_format($formPrice, 2) }} €</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>{{ __('Discount') }}</span>
-                            <span class="font-medium text-base-content">
-                                {{ $formAllowDiscount && ! $formIsCamp ? __('Enabled (−10€)') : __('Disabled') }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        <x-slot:actions>
-            @if ($step === '1')
-                <x-button :label="__('Cancel')" wire:click="closeWizard" />
-                <x-button class="btn-primary" :label="__('Next →')" wire:click="nextStep" />
-            @elseif ($step === '2')
-                <x-button :label="__('← Back')" wire:click="prevStep" />
-                <x-button class="btn-primary" :label="__('Next →')" wire:click="nextStep" />
-            @else
-                <x-button :label="__('← Back')" wire:click="prevStep" />
-                <x-button class="btn-primary" icon="o-check"
-                    label="{{ $packId ? __('Update') : __('Create pack') }}" wire:click="save" />
-            @endif
-        </x-slot:actions>
-    </x-app-modal>
-
-    {{-- ================================================================
-         CANCELLATION MODAL
-    ================================================================ --}}
-    <x-app-modal :title="__('Add a sparring')" wire:model="packSparringModal" separator :open="$packSparringModal">
-        <p class="text-sm text-base-content/70">
-            {{ __('A regular sparring is expected at every coming session of the pack. The coach confirms their presence when taking attendance.') }}
-        </p>
-
-        <x-choices-offline class="mt-4" :label="__('Sparring')" wire:model="packSparringUserId"
-            :options="$this->anyMemberOptions" option-label="name" single searchable />
-
-        <x-slot:actions>
-            <x-button :label="__('Abandon')" wire:click="$set('packSparringModal', false)" />
-            <x-button :label="__('Add')" class="btn-primary" wire:click="attachPackSparring" spinner />
-        </x-slot:actions>
-    </x-app-modal>
-
-    <x-app-modal :title="__('Sparrings of this session')" wire:model="sessionSparringsModal" separator :open="$sessionSparringsModal">
-        <div class="space-y-2">
-            @forelse ($this->sessionSparrings as $sparring)
-                <div class="flex items-center justify-between rounded-lg border border-base-300 px-3 py-2"
-                    wire:key="session-sparring-{{ $sparring->id }}">
-                    <span>{{ $sparring->full_name }}</span>
-                    <x-button class="btn-ghost btn-xs text-error" icon="o-x-mark" :label="__('Remove')"
-                        wire:click="removeSessionSparring({{ $sparring->id }})" />
-                </div>
-            @empty
-                <p class="text-sm text-subtle">{{ __('No sparring expected at this session.') }}</p>
-            @endforelse
-        </div>
-
-        <x-choices-offline class="mt-4" :label="__('Add a sparring')" wire:model="sessionSparringUserId"
-            :options="$this->anyMemberOptions" option-label="name" single searchable />
-
-        <x-slot:actions>
-            <x-button :label="__('Close')" wire:click="$set('sessionSparringsModal', false)" />
-            <x-button :label="__('Add')" class="btn-primary" wire:click="addSessionSparring" spinner />
-        </x-slot:actions>
-    </x-app-modal>
-
-    <x-app-modal :title="__('Hand this session over')" wire:model="handOverModal" separator :open="$handOverModal">
-        <p class="text-sm text-base-content/70">
-            {{ __('This person coaches this session only: they record attendance and reach the enrolled members. The pack keeps its coach.') }}
-        </p>
-
-        <x-choices-offline class="mt-4" :label="__('Coach for this session')" wire:model="handOverCoachId"
-            :options="$this->anyMemberOptions" option-label="name" single searchable />
-
-        <x-slot:actions>
-            <x-button :label="__('Abandon')" wire:click="$set('handOverModal', false)" />
-            <x-button :label="__('Hand over')" class="btn-primary" wire:click="confirmHandOver" spinner />
-        </x-slot:actions>
-    </x-app-modal>
-
-    <x-app-modal :title="__('Cancel this session')" wire:model="cancelModal" separator :open="$cancelModal">
-        <div class="space-y-4">
-            <div class="grid grid-cols-2 gap-3">
-                <div @class([
-                    'cursor-pointer rounded-xl border-2 p-3 text-center transition',
-                    'border-warning bg-warning/10' => $cancelType === 'FREE',
-                    'border-base-300' => $cancelType !== 'FREE',
-                ]) wire:click="$set('cancelType', 'FREE')">
-                    <x-icon class="mx-auto mb-1 h-6 w-6 text-warning-content" name="o-sun" />
-                    <p class="text-sm font-semibold">{{ __('Free practice') }}</p>
-                    <p class="text-xs text-base-content/60">{{ __('Room open, no coach') }}</p>
-                </div>
-                <div @class([
-                    'cursor-pointer rounded-xl border-2 p-3 text-center transition',
-                    'border-error bg-error/10' => $cancelType === 'CLOSED',
-                    'border-base-300' => $cancelType !== 'CLOSED',
-                ]) wire:click="$set('cancelType', 'CLOSED')">
-                    <x-icon class="mx-auto mb-1 h-6 w-6 text-error" name="o-lock-closed" />
-                    <p class="text-sm font-semibold">{{ __('Room closed') }}</p>
-                    <p class="text-xs text-base-content/60">{{ __('Inaccessible') }}</p>
-                </div>
-            </div>
-
-            <x-textarea :label="__('Note (optional)')"
-                :placeholder="__('E.g. Bank holiday, maintenance…')" wire:model="cancelNote" rows="2" />
-        </div>
-
-        <x-slot:actions>
-            <x-button :label="__('Abandon')" wire:click="$set('cancelModal', false)" />
-            <x-button class="btn-error" icon="o-x-circle" :label="__('Confirm cancellation')"
-                wire:click="confirmCancel" />
-        </x-slot:actions>
-    </x-app-modal>
+    @endif
+    @endif
 
     <x-confirm-modal model="withdrawPackModal" :title="__('Withdraw this pack from the offer?')"
         :confirmLabel="__('Withdraw')" confirmClass="btn-warning" confirmAction="confirmWithdrawPack" :open="$withdrawPackModal">
@@ -1230,33 +259,6 @@
             {{ __('Reversible: tick « Show withdrawn packs » to find it and put it back.') }}
         </p>
     </x-confirm-modal>
-
-    <x-app-modal wire:model="regenerateModal" :title="__('Rebuild the sessions?')" separator :open="$regenerateModal">
-        <p>{{ __('You changed when or where this pack takes place. Its existing sessions do not move on their own.') }}</p>
-
-        <div class="p-3 mt-3 text-sm rounded-lg bg-warning/10">
-            <p>{{ __(':count session(s) still to come will be deleted and generated again on the new slot.', ['count' => $regenerationImpact['deleting']]) }}</p>
-            <p>{{ __(':count past or already cancelled session(s) are left untouched.', ['count' => $regenerationImpact['keeping']]) }}</p>
-        </div>
-
-        <p class="mt-2 text-xs text-base-content/60">
-            {{ __('Past sessions carry the attendance you recorded, and a cancelled session was announced with its own wording — neither is rebuilt.') }}
-        </p>
-
-        @if ($regenerationImpact['members'] > 0)
-            <label class="flex items-center gap-2 mt-3 cursor-pointer">
-                <x-checkbox wire:model="notifyMembersOfChange" />
-                <span class="text-sm">
-                    {{ __('Email the :count enrolled member(s) about the new schedule', ['count' => $regenerationImpact['members']]) }}
-                </span>
-            </label>
-        @endif
-
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" wire:click="$set('regenerateModal', false)" />
-            <x-button :label="__('Rebuild the sessions')" class="btn-warning" wire:click="confirmRegeneration" spinner />
-        </x-slot:actions>
-    </x-app-modal>
 
     <x-app-modal wire:model="discontinuePackModal" :title="__('Stop this pack?')" separator :open="$discontinuePackModal">
         <p>{{ __('The remaining sessions are cancelled and the members are told the training will not happen.') }}</p>
@@ -1279,122 +281,6 @@
         <x-slot:actions>
             <x-button :label="__('Cancel')" wire:click="$set('discontinuePackModal', false)" />
             <x-button :label="__('Stop the pack')" class="btn-error" wire:click="confirmDiscontinuePack" spinner />
-        </x-slot:actions>
-    </x-app-modal>
-
-    {{-- ── Add a member by hand ─────────────────────────────────────────────── --}}
-    <x-app-modal :title="__('Add a member to this pack')" wire:model="addMemberModal" separator
-        :open="$addMemberModal">
-        <p class="text-sm text-base-content/70">
-            {{ __('The spot is validated straight away — no request to approve. The member is notified and their balance is updated.') }}
-        </p>
-
-        @if ($this->addMemberOverCapacity)
-            <x-alert class="alert-warning mt-3" icon="o-exclamation-triangle">
-                {{ __('This pack is full. Adding someone takes it over its cap.') }}
-            </x-alert>
-        @endif
-
-        <x-choices-offline class="mt-4" :label="__('Member')" wire:model="addMemberUserId"
-            :options="$this->addMemberOptions" option-label="name" single searchable />
-
-        @if ($selectedPack?->is_camp)
-            {{-- Un stage n'a ni pro rata ni remise : une présence partielle est un
-                 prix fixé pour ce membre, avec son motif. --}}
-            <x-input class="mt-3" type="number" min="0" step="0.50" wire:model="addMemberPrice"
-                :label="__('Price for this member (€)')"
-                :placeholder="number_format((float) $selectedPack->price, 2, '.', '')"
-                :hint="__('Leave empty for the training camp price.')" />
-            <x-input class="mt-3" wire:model="addMemberPriceReason" :label="__('Reason')"
-                :placeholder="__('E.g. one day only')" />
-        @else
-        {{-- Seulement sur un pack entamé : avant son début, tout le monde paie
-             plein tarif et la case ne changerait rien. --}}
-        @if ($this->addMemberPackStarted)
-            <x-checkbox class="mt-3" wire:model.live="addMemberWholePack"
-                :label="__('Here since the start of the pack')"
-                :hint="__('Bills the whole pack, not just the months left.')" />
-        @endif
-
-        @unless ($addMemberWholePack && $this->addMemberPackStarted)
-            <x-input class="mt-3" type="date" :label="__('Enrolled since')" wire:model="addMemberStartsOn" />
-
-            <p class="mt-1 text-xs text-base-content/50">
-                {{ __('Leave empty to start today. Set an earlier date to bill the months already attended.') }}
-            </p>
-        @endunless
-
-        <div class="mt-4">
-            <x-admin.shared.inline-discount :mode="$inlineDiscountMode" />
-        </div>
-        @endif
-
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" wire:click="$set('addMemberModal', false)" />
-            <x-button :label="__('Add the member')" class="btn-primary" wire:click="addMemberToPack" spinner />
-        </x-slot:actions>
-    </x-app-modal>
-
-    {{-- ── Dismiss a request, or leave the waiting list ─────────────────────── --}}
-    <x-confirm-modal model="removeFromRosterModal"
-        :title="$removeFromRosterStatus === 'pending'
-            ? ($selectedPack?->is_camp ? __('Refuse this request?') : __('Dismiss this request?'))
-            : __('Take this member off the waiting list?')"
-        :confirmLabel="__('Remove')" confirmAction="confirmRemoveFromRoster" :open="$removeFromRosterModal">
-        <p>{{ $removeFromRosterName }}</p>
-        <p class="mt-2 text-sm opacity-70">
-            {{ $removeFromRosterStatus === 'pending'
-                ? __('Nothing was validated and nothing was billed: the line is simply detached, and the member can ask again.')
-                : __('The queue is renumbered behind them. Coming back means starting at the end of it.') }}
-        </p>
-    </x-confirm-modal>
-
-    {{-- ── A member's own price on a training camp ──────────────────────────── --}}
-    <x-app-modal :title="__('Price for this member')" wire:model="campPriceModal" separator :open="$campPriceModal">
-        <p class="text-sm text-base-content/70">
-            {{ __('The training camp invoice follows: an unpaid request is adjusted, money already paid beyond the new price is refunded.') }}
-        </p>
-        <x-input class="mt-3" type="number" min="0" step="0.50" wire:model="campPriceAmount"
-            :label="__('Price for this member (€)')"
-            :placeholder="number_format((float) $selectedPack?->price, 2, '.', '')"
-            :hint="__('Leave empty for the training camp price.')" />
-        <x-input class="mt-3" wire:model="campPriceReason" :label="__('Reason')"
-            :placeholder="__('E.g. one day only')" />
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" wire:click="$set('campPriceModal', false)" />
-            <x-button :label="__('Save')" class="btn-primary" wire:click="saveCampPrice" spinner />
-        </x-slot:actions>
-    </x-app-modal>
-
-    {{-- ── Take an enrolled member out of the pack ──────────────────────────── --}}
-    {{-- Départ daté ou erreur d'encodage : la modale est partagée avec l'écran Affiliations. --}}
-    @can('subscriptions.manage')
-        <livewire:admin.shared.training-pack-exit />
-    @endcan
-
-    {{-- ── Move an enrolled member to another pack ──────────────────────────── --}}
-    <x-app-modal :title="__('Move :member to another pack', ['member' => $moveMemberName])"
-        wire:model="moveMemberModal" separator :open="$moveMemberModal">
-        {{-- Le champ d'abord, les explications ensuite. La liste de Mary bascule
-             au-dessus du champ quand elle ne tient pas dessous, et elle débordait
-             alors par le haut de la modale, rognée. Un paragraphe posé avant le
-             champ le pousse vers le bas et lui retire précisément la place dont
-             la liste a besoin. `height` plafonne la liste en second rideau. --}}
-        <x-choices-offline :label="__('Destination pack')" wire:model="moveTargetPackId"
-            :options="$this->moveTargetOptions" option-label="name" single searchable
-            height="max-h-52" />
-
-        <p class="mt-4 text-sm text-base-content/70">
-            {{ __('The pack left behind stays billed up to today, and the new one starts billing next month — so this month is never paid twice. At equal price, moving costs nothing.') }}
-        </p>
-
-        <p class="mt-1 text-xs text-base-content/50">
-            {{ __('Packs withdrawn from the offer are not listed. A full pack still is — marked, and yours to override.') }}
-        </p>
-
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" wire:click="$set('moveMemberModal', false)" />
-            <x-button :label="__('Move the member')" class="btn-primary" wire:click="confirmMoveMember" spinner />
         </x-slot:actions>
     </x-app-modal>
 

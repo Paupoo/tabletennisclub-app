@@ -9,6 +9,8 @@ use App\Domains\Shared\Enums\InvitationTarget;
 use App\Http\Controllers\Attestations\AttestationDownloadController;
 use App\Http\Controllers\Attestations\AttestationVerificationController;
 use App\Http\Controllers\Bar\PublicBarMenuController;
+use App\Http\Controllers\ClubAdmin\Club\TableScanController;
+use App\Http\Controllers\ClubAdmin\Club\TableStickersController;
 use App\Http\Controllers\ClubAdmin\Communications\InvitationRedirectController;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\GuardianInvitationController;
@@ -107,6 +109,12 @@ Route::prefix('admin/my-space/')
         // The yearly survey — always the signed-in seat (no {user}): one link per
         // family in the invitation, the « answering for » switch does the rest.
         Route::livewire('survey', 'pages::club-admin.users.user-space.survey')->name('admin.user.survey');
+        // « Sélections de la semaine » (2026-10-11) : always the signed-in seat, so the
+        // Thursday mail links one address for everybody. Readable by whoever reads
+        // the directory.
+        Route::livewire('weekly-selections', 'pages::club-admin.users.user-space.weekly-selections')
+            ->middleware('feature:interclubs')
+            ->name('admin.user.weekly-selections');
         Route::livewire('{user}/profile', 'pages::club-admin.users.user-space.profile')->name('admin.user.profile');
         Route::livewire('{user}/settings', 'pages::club-admin.users.user-space.settings')->name('admin.user.settings');
         Route::livewire('{user}/teams', 'pages::club-admin.users.user-space.user-teams')->name('admin.user.teams');
@@ -174,6 +182,11 @@ Route::prefix('admin/club-admin/users/')
         Route::livewire('list', 'pages::club-admin.users.index')
             ->middleware('can:users.view')
             ->name('admin.users.index');
+        // Every responsible adult on file, read-only: the committee reads what a
+        // child's file already shows, gathered in one list.
+        Route::livewire('guardians', 'pages::club-admin.users.guardians')
+            ->middleware('can:users.view')
+            ->name('admin.users.guardians');
         Route::livewire('create', 'pages::club-admin.users.form')
             ->middleware('can:users.create')
             ->name('admin.users.create');
@@ -393,6 +406,8 @@ Route::prefix('admin/club-admin/rooms/')
 Route::prefix('admin/club-admin/tables/')
     ->middleware(['auth', 'verified', 'can:tables.manage'])
     ->group(function (): void {
+        Route::get('stickers', TableStickersController::class)->name('admin.tables.stickers');
+
         Route::middleware('can:update,table')
             ->group(function (): void {
                 Route::livewire('{table}/edit', 'pages::club-admin.tables.form')->name('admin.tables.edit');
@@ -413,6 +428,10 @@ Route::prefix('admin/club-events/interclubs/')
         Route::livewire('trainings/staff', 'pages::club-events.trainings.staff')
             ->middleware('can:view-training-staff')
             ->name('admin.trainings.staff');
+        // The wizard authorises itself: `trainings.manage`, checked on mount.
+        Route::livewire('trainings/create', 'pages::club-events.trainings.form')->name('admin.trainings.create');
+        Route::livewire('trainings/{pack}/edit', 'pages::club-events.trainings.form')->name('admin.trainings.edit');
+        Route::livewire('trainings/{pack}', 'pages::club-events.trainings.show')->name('admin.trainings.show');
     });
 
 // Coach's personal sessions — coaches (and admins for oversight).
@@ -430,6 +449,9 @@ Route::prefix('admin/club-events/meetings')
         Route::livewire('/create', 'pages::club-events.meetings.create')
             ->middleware('can:meetings.manage')
             ->name('admin.meetings.create');
+        // Before {meeting}: the owner's own actions, from every meeting.
+        Route::livewire('/my-actions', 'pages::club-events.meetings.my-actions')->name('admin.meetings.my-actions');
+        Route::livewire('/register', 'pages::club-events.meetings.register')->name('admin.meetings.register');
         Route::livewire('/{meeting}', 'pages::club-events.meetings.show')->name('admin.meetings.show');
         Route::livewire('/{meeting}/minutes', 'pages::club-events.meetings.minutes')->name('admin.meetings.minutes');
     });
@@ -626,6 +648,9 @@ Route::get('/tournament/{tournament}/calendar.ics', [TournamentController::class
 // Tournament QR table score (auth, URL stable = imprimable/affichable sur table)
 Route::middleware(['auth', 'verified'])
     ->group(function (): void {
+        // L'adresse permanente imprimée sur l'autocollant de chaque table.
+        Route::get('/table/{table}', TableScanController::class)->name('table.scan');
+
         Route::get('/tournament/{tournament}/table/{table}/score', [TableScoreController::class, 'show'])
             ->name('tournament.table.score');
         Route::post('/tournament/{tournament}/table/{table}/score', [TableScoreController::class, 'submit'])

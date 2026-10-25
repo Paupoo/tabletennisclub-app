@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Feature;
 
 /*
  * The block under the member space, grouped by intent: what concerns the
@@ -23,6 +24,7 @@ it('orders the general menu in three groups', function (): void {
         __('Notifications'),
         'separator-people',
         __('Member directory'),
+        __('Weekly selections'),
         __('Who does what'),
         __('Your feedback'),
         'separator-reference',
@@ -65,4 +67,15 @@ it('leads the committee to the feedback, and keeps a member out', function (): v
     $this->actingAs($member);
     $html = (string) $this->blade('<x-admin.navigation :user="$user" />', ['user' => $member]);
     expect($html)->not->toContain(route('admin.feedback.index'));
+});
+
+it('leaves « Weekly selections » out while the interclubs module is off', function (): void {
+    $member = activeMember(makeActiveSeason());
+    $this->actingAs($member);
+    config(['features.' . Feature::Interclubs->value => false]);
+
+    $html = (string) $this->blade('<x-admin.navigation :user="$user" />', ['user' => $member]);
+
+    expect($html)->toContain(e(__('Member directory')))
+        ->not->toContain(route('admin.user.weekly-selections'));
 });

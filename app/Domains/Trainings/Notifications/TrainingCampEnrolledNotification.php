@@ -7,6 +7,7 @@ namespace App\Domains\Trainings\Notifications;
 use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -18,7 +19,7 @@ use Illuminate\Notifications\Notification;
  * season total a family may already have paid. The payment request itself
  * leaves in its own mail, with the QR code.
  */
-class TrainingCampEnrolledNotification extends Notification
+class TrainingCampEnrolledNotification extends Notification implements ShouldQueue
 {
     use LinksToMemberSpace, Queueable;
 

@@ -60,6 +60,69 @@ class GuardianDuplicates
     }
 
     /**
+     * An existing guardian sharing the email or the phone number about to be typed in.
+     *
+     * Phone numbers are stored as typed, so the comparison runs on the
+     * normalized value in PHP: `+32 475 12 34 56` and `0475123456` are the
+     * same person. The table holds one row per guardian of the club, so the
+     * scan stays cheap.
+     *
+     * The address is also looked up among the members, because a parent typed
+     * by hand is often somebody the club already has on file: `users.email` is
+     * unique, so creating a second identity for them would only surface later,
+     * as a failure on the invitation link the club sent them. Recognising the
+     * person here returns the guardian sheet keyed to their account — the same
+     * one `ManagesGuardians::attachMemberAsGuardian()` would have made.
+     */
+    public function existingFor(string $phone, ?string $email): ?Guardian
+    {
+        if (filled($email)) {
+            $byEmail = Guardian::whereRaw('LOWER(email) = ?', [mb_strtolower(trim($email))])->first();
+
+            if ($byEmail instanceof Guardian) {
+                return $byEmail;
+            }
+
+            $member = User::whereRaw('LOWER(email) = ?', [mb_strtolower(trim($email))])->first();
+
+            if ($member instanceof User) {
+                return Guardian::firstOrCreate(
+                    ['user_id' => $member->id],
+                    [
+                        'first_name' => $member->first_name,
+                        'last_name' => $member->last_name,
+                        'phone' => $member->phone_number,
+                        'email' => $member->email,
+                        'iban' => $member->iban,
+                    ],
+                );
+            }
+        }
+
+        $normalizedPhone = ValidPhone::normalize($phone);
+
+        if ($normalizedPhone === null) {
+            return null;
+        }
+
+        return Guardian::query()
+            ->whereNotNull('phone')
+            ->get()
+            ->first(fn (Guardian $guardian): bool => ValidPhone::normalize($guardian->phone) === $normalizedPhone);
+    }
+
+    /**
+     * Every sheet that has a counterpart, both halves of each pair: what the
+     * office looks at, where {@see self::toMerge()} is what it has to do.
+     *
+     * @return Collection<int, Guardian>
+     */
+    public function onFileTwice(): Collection
+    {
+        return $this->externals()->filter(fn (Guardian $guardian): bool => $this->counterpartOf($guardian) !== null)->values();
+    }
+
+    /**
      * Every sheet to fold into another, one per extra copy: three sheets for
      * the same mother are two to merge, not three.
      *

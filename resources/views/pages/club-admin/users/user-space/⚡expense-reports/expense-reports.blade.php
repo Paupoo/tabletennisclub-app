@@ -180,8 +180,7 @@
             <x-slot:actions>
                 @can('withdraw', $shown)
                     <x-button :label="__('Withdraw')" class="btn-ghost text-error"
-                        wire:click="withdraw({{ $shown->id }})"
-                        wire:confirm="{{ __('Withdraw this expense report?') }}" spinner="withdraw" />
+                        x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __('Withdraw this expense report?'), 'method' => 'withdraw', 'params' => [$shown->id], 'danger' => true]) }}, id: $wire.$id })" spinner="withdraw" />
                     <x-button :label="__('Edit')" icon="o-pencil" wire:click="openEdit({{ $shown->id }})" />
                 @endcan
                 @can('resume', $shown)

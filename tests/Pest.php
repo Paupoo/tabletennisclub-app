@@ -2,11 +2,15 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
+use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingCampAction;
 use App\Data\User\FederationRow;
 use App\Domains\ClubAdmin\Fines\Actions\IssueFine;
 use App\Domains\ClubAdmin\Fines\Models\Fine;
 use App\Domains\ClubAdmin\Fines\Services\FineCreditor;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -15,14 +19,17 @@ use App\Domains\Shared\Enums\FineReason;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Shared\Enums\TrainingType;
+use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingLevel;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Services\TrainingCampBilling;
 use Carbon\CarbonImmutable;
 use GuzzleHttp\Promise\PromiseInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
+use Symfony\Component\Process\Process;
 use Tests\TestCase;
 use Tests\Trait\RefusesParallelExecution;
 
@@ -488,4 +495,89 @@ function knownOpponents(array $except = []): void
     foreach (array_diff($licences, $except) as $licence) {
         Club::factory()->create(['licence' => $licence, 'is_own_club' => false]);
     }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Camp attestations
+|--------------------------------------------------------------------------
+|
+| A finished camp, an affiliation in order and a line paid in full: the state
+| a family is in when it asks for the document.
+*/
+
+function campAttestationAffiliation(Season $season, float $paid = 125.0): Subscription
+{
+    $affiliation = Subscription::factory()->for(User::factory())->create([
+        'season_id' => $season->id,
+        'status' => 'paid',
+        'amount_due' => 125,
+    ]);
+
+    Payment::factory()->create([
+        'payable_type' => Subscription::class,
+        'payable_id' => $affiliation->id,
+        'amount_due' => 125,
+        'amount_paid' => $paid,
+        'status' => $paid >= 125 ? 'paid' : 'pending',
+    ]);
+
+    return $affiliation->refresh();
+}
+
+/**
+ * A camp from 20 to 24 October 2026, 9:00 to 16:00 every day.
+ *
+ * @param  array<int, array{0: string, 1: string, 2?: string}>  $sessions  [start, end, status]
+ */
+function campAttestationCamp(Season $season, ?array $sessions = null, float $price = 80.0): TrainingPack
+{
+    $camp = TrainingPack::factory()->camp()->create([
+        'season_id' => $season->id,
+        'price' => $price,
+        'pack_start_date' => '2026-10-20',
+        'pack_end_date' => '2026-10-24',
+    ]);
+
+    $sessions ??= array_map(
+        fn (int $day): array => ["2026-10-{$day} 09:00", "2026-10-{$day} 16:00"],
+        [20, 21, 22, 23, 24],
+    );
+
+    foreach ($sessions as $session) {
+        Training::factory()->create([
+            'training_pack_id' => $camp->id,
+            'season_id' => $season->id,
+            'start' => $session[0],
+            'end' => $session[1],
+            'status' => $session[2] ?? 'scheduled',
+        ]);
+    }
+
+    return $camp;
+}
+
+function campAttestationLine(Subscription $affiliation, TrainingPack $camp, bool $paid = true): SubscriptionTrainingPack
+{
+    (new EnrollInTrainingCampAction)($affiliation, $camp, byClub: true);
+
+    $line = (new TrainingCampBilling)->line($affiliation, $camp);
+
+    if ($paid) {
+        $claim = $line->payments()->where('status', 'pending')->latest('id')->first();
+        (new AllocateTransactionAction)->credit($claim, (float) $claim->amount_due, 'cash');
+    }
+
+    return $line->refresh();
+}
+
+/**
+ * A PDF read back as text, fill rules and runs of whitespace collapsed.
+ */
+function campAttestationPdfText(string $path): string
+{
+    $process = new Process(['pdftotext', '-layout', $path, '-']);
+    $process->run();
+
+    return (string) preg_replace('/\s+/u', ' ', (string) preg_replace('/[._\x{2026}]{2,}/u', ' ', $process->getOutput()));
 }

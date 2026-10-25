@@ -17,6 +17,7 @@ use App\Domains\ClubAdmin\Subscriptions\Attestations\Services\BuildAttestationDa
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\AttestationKind;
 use App\Domains\Shared\Enums\Mutuality;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -50,7 +51,7 @@ final readonly class PreviewAttestation
     /**
      * @return string The finished PDF, for streaming straight back.
      */
-    public function __invoke(User $viewer, Mutuality $mutuality): string
+    public function __invoke(User $viewer, Mutuality $mutuality, AttestationKind $kind = AttestationKind::Affiliation): string
     {
         $season = Season::where('is_active', true)->first();
 
@@ -59,14 +60,20 @@ final readonly class PreviewAttestation
         }
 
         $settings = AttestationSetting::current();
-        $data = $this->dataFor($viewer, $season);
+        // A camp rehearsal always uses a placeholder week: the viewer's own
+        // camps are rarely over, paid and theirs to look at.
+        $data = $kind === AttestationKind::Camp
+            ? $this->builder->sampleForCamp($viewer, $season)
+            : $this->dataFor($viewer, $season);
 
         // A reference that cannot be confused with an issued one, and a
         // verification link that leads nowhere: nothing was recorded to verify.
         $reference = 'SPÉCIMEN';
-        $identifiers = new MemberIdentifiers('00.00.00-000.00');
+        $identifiers = $kind === AttestationKind::Camp
+            ? new MemberIdentifiers('00.00.00-000.00', '000-000', recognisedDisabled: false)
+            : new MemberIdentifiers('00.00.00-000.00');
 
-        $template = $this->availability->officialFormFor($mutuality);
+        $template = $this->availability->officialFormFor($mutuality, $kind);
 
         if (! $template instanceof AttestationTemplate) {
             return $this->clubAttestation->render(
@@ -85,6 +92,7 @@ final readonly class PreviewAttestation
             $this->values->for($data, $mutuality, $identifiers, $reference),
             $settings,
             specimen: true,
+            kind: $kind,
         );
     }
 

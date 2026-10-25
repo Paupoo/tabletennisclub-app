@@ -69,7 +69,7 @@ Le montant peut couvrir des mois déjà écoulés si vous suiviez l'entraînemen
 Les stages que le club organise ponctuellement — une semaine de vacances, un week-end — ne sont pas dans cette liste. Ils se trouvent dans **Mon espace → Inscriptions**, à côté des tournois.
 
 - **S'inscrire** vous donne la place tout de suite ; certains stages passent par **Demander une place**, que le comité accepte ou refuse (un stage réservé aux jeunes, par exemple). Complet, le bouton vous met en liste d'attente.
-- Le stage est **facturé à part** : vous recevez sa propre demande de paiement, avec sa communication structurée. Il ne change rien à votre cotisation et n'entre pas dans votre attestation mutuelle.
+- Le stage est **facturé à part** : vous recevez sa propre demande de paiement, avec sa communication structurée. Il ne change rien à votre cotisation et n'entre pas dans l'attestation mutuelle de votre affiliation : une fois terminé et payé, il a la sienne.
 - Il faut être affilié pour **la saison du stage** — même en attente de validation.
 - Une demande ou une place en liste d'attente se retire depuis la même page. Une place confirmée reste due : pour vous désinscrire, contactez le club.
 

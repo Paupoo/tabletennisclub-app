@@ -20,7 +20,7 @@ it('offers the translated types in the pack wizard', function (): void {
     // Même défaut que levelOptions() : le sélecteur listait la valeur anglaise
     // de l'enum alors que la traduction existait déjà.
     $options = Livewire::actingAs(User::factory()->isAdmin()->create())
-        ->test('pages::club-events.trainings.index')
+        ->test('pages::club-events.trainings.form')
         ->get('typeOptions');
 
     expect(collect($options)->pluck('name'))->toContain('Dirigé')

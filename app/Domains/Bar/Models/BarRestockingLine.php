@@ -13,7 +13,9 @@ use Illuminate\Support\Carbon;
  *
  * `section` dit d'où vient la ligne : `to_buy` (au min ou dessous), `if_room`
  * (entre min et max) ou `extra` (ajoutée à la clôture, « ils avaient des Chimay
- * en promo »). Stock, conditionnement et quantité proposée sont ceux du départ.
+ * en promo »). Stock, conditionnement et quantité proposée (en conditionnements)
+ * sont ceux du départ. Ce qui a été acheté se compte en unités : le magasin n'a
+ * pas toujours le conditionnement prévu.
  *
  * @property int $id
  * @property int $restocking_id
@@ -24,7 +26,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $pack_label
  * @property int $proposed_packs
  * @property bool $in_cart
- * @property int|null $bought_packs
+ * @property int|null $bought_units
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read BarProduct $product
@@ -43,7 +45,7 @@ class BarRestockingLine extends Model
         'pack_size' => 'integer',
         'proposed_packs' => 'integer',
         'in_cart' => 'boolean',
-        'bought_packs' => 'integer',
+        'bought_units' => 'integer',
     ];
 
     protected $fillable = [
@@ -55,7 +57,7 @@ class BarRestockingLine extends Model
         'pack_label',
         'proposed_packs',
         'in_cart',
-        'bought_packs',
+        'bought_units',
     ];
 
     protected $table = 'bar_restocking_lines';

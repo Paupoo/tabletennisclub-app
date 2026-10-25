@@ -121,7 +121,7 @@ Effectuez le virement bancaire manuellement. Le trésorier rapproche les paiemen
 
 ### Stages
 
-Les stages organisés par le club (vacances, week-ends) se trouvent ici, pas dans la cotisation. Chaque carte se lit comme celle d'un pack d'entraînement : horaire et dates, salle, niveau, entraîneur, prix et places restantes. Cliquez sur **S'inscrire** (ou **Demander une place** si le comité valide les inscriptions). Un stage est **facturé à part** : vous recevez sa propre demande de paiement, et il n'entre pas dans le montant de votre attestation mutuelle. Il faut être affilié pour la saison du stage.
+Les stages organisés par le club (vacances, week-ends) se trouvent ici, pas dans la cotisation. Chaque carte se lit comme celle d'un pack d'entraînement : horaire et dates, salle, niveau, entraîneur, prix et places restantes. Cliquez sur **S'inscrire** (ou **Demander une place** si le comité valide les inscriptions). Un stage est **facturé à part** : vous recevez sa propre demande de paiement, et il n'entre pas dans le montant de l'attestation mutuelle de votre affiliation — une fois terminé et payé, il a la sienne. Il faut être affilié pour la saison du stage.
 
 ### RSVP pour les réunions
 
@@ -189,6 +189,12 @@ En mode **Tout le club**, chaque tuile de match du calendrier s'ouvre aussi, mê
 
 La page du match rassemble tout ce qu'il faut recopier le jour J : le **n° de match** de la fédération, la catégorie, la division et la série, la semaine, et les deux clubs avec leur **matricule**. La composition y est triée dans l'ordre de la feuille — indice de force, puis nom et prénom — avec le classement et la licence de chaque joueur, et la mention **WO** pour un joueur inscrit mais absent.
 
+### Sélections de la semaine
+
+**Sélections de la semaine**, dans le menu sous l'annuaire, montre les rencontres du club des sept prochains jours, une tuile par rencontre, groupées par jour : l'heure, à domicile ou la commune, l'équipe, l'adversaire et les joueurs. Les joueurs n'apparaissent qu'une fois la composition envoyée ; avant, la tuile indique « Compo pas encore envoyée ». Les tuiles où vous jouez sont encadrées en bleu, et chaque tuile ouvre la page du match.
+
+Chaque jeudi à midi, s'il y a au moins une rencontre dans les sept jours, les joueurs des équipes du club, les capitaines et le comité reçoivent ce récapitulatif par e-mail — un seul par adresse. Il n'est pas renvoyé si une composition change ensuite : la page, elle, est toujours à jour.
+
 ### Disponibilités
 
 Avant chaque journée d'interclubs, le capitaine peut demander vos disponibilités. Répondez **Disponible / Indisponible** directement depuis la notification email ou depuis la section interclubs.
@@ -241,7 +247,7 @@ Il n'existe pas de chat d'aide intégré à l'application pour le moment.
 
 ## 12. Attestation mutuelle
 
-Votre mutualité rembourse une partie de votre cotisation de club sportif. **Mon espace → Attestation mutuelle** produit le document, déjà rempli, cachetté et signé par le club.
+Votre mutualité rembourse une partie de votre cotisation de club sportif, et souvent des stages sportifs de vos enfants. **Mon espace → Attestations mutuelle** produit le document, déjà rempli, cachetté et signé par le club. Si vous avez participé à un stage, l'écran vous demande d'abord quel document vous voulez : l'affiliation de la saison, ou un stage.
 
 **Conditions.** Deux, et seulement deux : votre affiliation de la saison est validée par le comité, et elle est payée en totalité (cotisation et entraînements). Une amende, une inscription à un tournoi ou un repas impayés ne bloquent pas la demande.
 
@@ -253,6 +259,8 @@ Votre mutualité rembourse une partie de votre cotisation de club sportif. **Mon
 **Ce que le club atteste.** La période court du jour de validation de l'affiliation jusqu'à la fin de la saison — pas depuis le 1er septembre si l'inscription date de janvier. Le montant est ce qui a réellement été versé, remise famille déduite.
 
 **Une seule par saison**, mais retéléchargeable autant de fois que nécessaire. En cas d'erreur (mauvaise mutualité, montant modifié en cours de saison), le secrétariat peut la révoquer et en délivrer une nouvelle.
+
+**Stages.** Chaque stage des douze derniers mois a sa carte, et sa propre attestation, une fois le stage terminé, payé en totalité, et votre affiliation de la saison du stage en ordre. Partenamut et Solidaris ont leur propre formulaire de stage (Partenamut demande si le participant est reconnu handicapé ; la réponse n'est pas conservée). L'attestation de stage du club est toujours proposée et ne nomme aucun destinataire : envoyez-la à une autre mutualité, à un employeur ou à un CPAS. Le club atteste les jours où une séance a eu lieu, séances annulées exclues ; un jour de moins de quatre heures compte pour un demi-jour. Une seule par stage.
 
 **Pour vos enfants.** Connectez-vous en tant que votre pupille et suivez les mêmes étapes ; le numéro de registre national demandé est celui de l'enfant.
 

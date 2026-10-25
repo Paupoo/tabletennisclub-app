@@ -7,6 +7,7 @@ namespace App\Domains\ClubAdmin\Club\Models;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Enums\TableStateEnum;
 use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
@@ -31,7 +32,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $access_description
  * @property int $capacity_for_trainings
  * @property int $capacity_for_interclubs
- * @property int $total_playable_tables
+ * @property int $capacity_for_tournaments
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Collection<int, Club> $clubs
@@ -107,6 +108,7 @@ class Room extends Model
         'access_description',
         'capacity_for_trainings',
         'capacity_for_interclubs',
+        'capacity_for_tournaments',
     ];
 
     public function clubs(): BelongsToMany
@@ -122,6 +124,19 @@ class Room extends Model
     public function interclubs(): HasMany
     {
         return $this->hasMany(Interclub::class);
+    }
+
+    /**
+     * The tables of the room that can be played on: all but those out of service.
+     *
+     * Read from the tables themselves, so it can never drift from what the
+     * rooms screen shows. A table that needs repair still plays.
+     */
+    public function playableTablesCount(): int
+    {
+        return $this->relationLoaded('tables')
+            ? $this->tables->filter(fn (Table $table): bool => $table->state->isPlayable())->count()
+            : $this->tables()->whereNot('state', TableStateEnum::OUT_OF_SERVICE)->count();
     }
 
     public function scopeSearch(Builder $query, string $value): void
@@ -151,5 +166,46 @@ class Room extends Model
     public function trainings(): HasMany
     {
         return $this->hasMany(Training::class);
+    }
+
+    /**
+     * The players a training pack takes when it sets no cap of its own: two
+     * per table the room offers for a training.
+     *
+     * A room with no table recorded has nothing to cross the room typed in
+     * with: that one is trusted as it stands.
+     */
+    public function trainingSeats(): int
+    {
+        $this->loadMissing('tables:id,room_id,state');
+
+        $tables = $this->tables->isEmpty() ? $this->capacity_for_trainings : $this->usableTrainingCapacity();
+
+        return 2 * $tables;
+    }
+
+    /**
+     * What the room really offers for an official match.
+     */
+    public function usableMatchCapacity(): int
+    {
+        return min($this->capacity_for_interclubs, $this->playableTablesCount());
+    }
+
+    /**
+     * What the room really offers for a tournament.
+     */
+    public function usableTournamentCapacity(): int
+    {
+        return min($this->capacity_for_tournaments, $this->playableTablesCount());
+    }
+
+    /**
+     * What the room really offers for a training: the room typed in, or fewer
+     * when tables are out of service.
+     */
+    public function usableTrainingCapacity(): int
+    {
+        return min($this->capacity_for_trainings, $this->playableTablesCount());
     }
 }

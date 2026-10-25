@@ -234,13 +234,13 @@ describe('guardians on file twice', function (): void {
         expect(pendingTaskCount(User::factory()->withRole(Role::MEMBERS)->create(), 'guardian_duplicates'))->toBe(1);
     });
 
-    it('opens the file of a member the extra copy answers for', function (): void {
-        User::factory()->create()->guardians()->attach(Guardian::factory()->create(['email' => 'mother@example.com']));
-        $ward = User::factory()->create();
-        $ward->guardians()->attach(Guardian::factory()->create(['email' => 'mother@example.com']));
+    it('opens the list of responsible adults on the sheets on file twice', function (): void {
+        // Sheets answering for no child: there is no child's file to open them from.
+        Guardian::factory()->create(['email' => 'mother@example.com']);
+        Guardian::factory()->create(['email' => 'mother@example.com']);
 
         $task = (new PendingTasks)->for(User::factory()->withRole(Role::MEMBERS)->create())['guardian_duplicates'];
 
-        expect($task->route)->toBe(route('admin.users.show', $ward));
+        expect($task->route)->toBe(route('admin.users.guardians', ['onFileTwice' => 1]));
     });
 });

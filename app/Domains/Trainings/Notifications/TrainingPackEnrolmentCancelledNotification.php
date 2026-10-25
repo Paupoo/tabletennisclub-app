@@ -9,6 +9,7 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -22,7 +23,7 @@ use Illuminate\Notifications\Notification;
  *
  * @see CancelTrainingPackEnrolmentAction
  */
-class TrainingPackEnrolmentCancelledNotification extends Notification
+class TrainingPackEnrolmentCancelledNotification extends Notification implements ShouldQueue
 {
     use LinksToMemberSpace, Queueable;
 

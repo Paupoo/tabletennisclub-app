@@ -9,9 +9,11 @@ Un **pack** est l'entraînement tel qu'on le vend : « Jeunes du mardi », un ni
 
 Tout se passe dans **Entraînements**. Construire l'offre revient à la délégation **Entraînements** ; le reste du comité consulte les packs, leurs inscrits et les présences, sans les boutons.
 
+**Détails** sur la carte d'un pack ouvre sa **fiche**, une page à part avec trois onglets : **Membres**, **Séances** et **Présence**. L'onglet ouvert fait partie de l'adresse : un lien copié rouvre le même onglet.
+
 ## Créer un pack
 
-Bouton **Créer**, puis trois étapes. L'application vous empêche de passer à la suivante tant que la précédente est incomplète.
+Bouton **Nouveau pack**, puis trois étapes sur une page à part. L'application vous empêche de passer à la suivante tant que la précédente est incomplète. **Modifier**, sur la carte ou sur la fiche du pack, rouvre la même page.
 
 ### 1. Le pack
 
@@ -27,7 +29,7 @@ Par défaut le pack couvre toute la saison. Les champs **De / À** permettent de
 
 L'application affiche alors **la liste des dates générées**. Relisez-la : c'est le moment de **décocher les dates à exclure** (congés scolaires, week-end de tournoi). Une date décochée ne produira pas de séance.
 
-**La capacité** est le point qu'on oublie. Laissez le champ vide et le plafond devient **la capacité d'entraînement de la salle** — le champ vous l'affiche en gris pour que vous sachiez sur quel nombre vous partez. Remplissez-le pour fixer un plafond propre au pack, plus bas que la salle.
+**La capacité** est le point qu'on oublie. Laissez le champ vide et le plafond devient **deux joueurs par table que la salle offre en entraînement** — sa capacité saisie, moins les tables hors service. Le champ vous l'affiche en gris pour que vous sachiez sur quel nombre vous partez. Remplissez-le pour fixer un plafond propre au pack, plus bas que la salle.
 
 La case **sans plafond de participants** n'apparaît que sur les packs de type **Libre**. Sur un entraînement dirigé, elle supprimerait à la fois le plafond et la liste d'attente : le coach découvrirait la surcharge le soir même. L'application la refuse donc ailleurs, même si vous forcez.
 
@@ -76,12 +78,14 @@ Un **sparring** joue avec les élèves aux côtés du coach ; il ne le remplace 
 
 ## Annuler une séance isolée
 
-Depuis **Séances** sur la ligne du pack, puis l'icône d'annulation. Choisissez le bon type, les membres reçoivent l'un ou l'autre message :
+Sur la fiche du pack, onglet **Séances**, bouton **Annuler** de la séance. Choisissez le bon type, les membres reçoivent l'un ou l'autre message :
 
 - **Libre** — pas de coach, mais la salle reste ouverte pour jouer.
 - **Fermée** — la salle est inaccessible, inutile de venir.
 
 Le motif que vous saisissez part dans l'e-mail. Écrivez-le pour un membre, pas pour vous.
+
+Les e-mails partent dans les minutes qui suivent, pas pendant que vous attendez : l'écran confirme l'annulation tout de suite.
 
 ## Ouvrir et fermer les inscriptions
 
@@ -105,7 +109,7 @@ Dans la liste des packs, un pack fermé porte le badge **Inscriptions closes**.
 
 ## Ajouter un membre à la main
 
-Ouvrez **Séances** sur le pack, puis **Ajouter un membre**.
+Ouvrez la fiche du pack (**Détails**), puis **Ajouter un membre** en haut de la page.
 
 Contrairement à une demande de membre, **la place arrive validée** : rien à approuver ensuite, ce serait valider votre propre décision. Le membre est prévenu par e-mail que le club l'a inscrit. Si un complément est réclamé, il reçoit aussi une invitation au paiement pour ce seul complément.
 
@@ -121,7 +125,7 @@ Il faut une **affiliation en cours** pour la saison du pack. Sans elle, il n'y a
 
 Un stage — une semaine de vacances, un week-end — se crée comme un pack, avec la case **Stage (hors cotisation)** cochée à l'étape 1. Il garde tout ce qui fait un pack : séances générées, coach, inscrits, présences, liste d'attente. Ce qui change, c'est l'argent :
 
-- **il est facturé à part.** Chaque inscription porte sa propre demande de paiement, avec sa communication structurée. Elle ne touche jamais l'affiliation : un stage impayé ne bloque pas l'attestation mutuelle, et un stage payé n'en gonfle pas le montant ;
+- **il est facturé à part.** Chaque inscription porte sa propre demande de paiement, avec sa communication structurée. Elle ne touche jamais l'affiliation : un stage impayé ne bloque pas l'attestation mutuelle de l'affiliation, et un stage payé n'en gonfle pas le montant. Le stage a sa propre attestation, une fois terminé et payé ;
 - **pas de prorata, pas de remise automatique.** Le prix est celui du stage. Pour quelqu'un qui ne vient qu'un jour, fixez **son prix**, avec un motif : à l'ajout, ou plus tard via **Prix** sur sa ligne. Une demande non payée est ajustée ; ce qui a déjà été payé au-delà part en remboursement ;
 - **la saison** proposée est celle qui contient la date de début du stage. Seuls les affiliés de cette saison peuvent s'inscrire.
 
@@ -158,7 +162,7 @@ Un non-membre n'apparaît dans aucune liste de membres, aucune communication, au
 
 ## Lire les présences
 
-Sous la liste des séances d'un pack, une **grille membres × séances** rassemble tout ce que les coachs ont pointé.
+Sur la fiche du pack, l'onglet **Présence** montre une **grille membres × séances** qui rassemble tout ce que les coachs ont pointé.
 
 Elle se lit dans les deux sens, et c'est pour cela qu'il n'y a qu'un écran :
 
@@ -175,9 +179,11 @@ Ce que disent les cases :
 
 Les **taux en marge** — en bas par séance, à droite par membre — valent **—** et non 0 % tant que rien n'a été pointé. La nuance est voulue : « on n'en sait rien » n'est pas « personne ne vient ».
 
+Le taux d'un membre porte sur **toutes les séances pointées du pack**, pas seulement sur les colonnes affichées : c'est le même chiffre que dans l'onglet **Membres** et dans l'espace du coach.
+
 Sous la grille, les **venus sans être inscrits** : ceux que les coachs ont vus à la séance sans qu'ils soient au pack. Ils sont tenus à l'écart du taux de la séance — ils n'y étaient pas attendus, les compter gonflerait la participation. C'est de là que part une régularisation par *Ajouter un membre*.
 
-La grille montre les **12 dernières séances** ; **Voir toute la saison** déplie le reste.
+La grille montre les **12 dernières séances déjà tenues** ; **Voir toute la saison** ajoute les plus anciennes et celles à venir.
 
 ## Gérer les niveaux
 

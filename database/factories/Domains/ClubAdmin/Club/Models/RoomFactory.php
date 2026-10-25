@@ -35,6 +35,7 @@ class RoomFactory extends Factory
             'access_description' => fake()->text(150),
             'capacity_for_trainings' => fake()->numberBetween(2, 10),
             'capacity_for_interclubs' => fake()->numberBetween(2, 10),
+            'capacity_for_tournaments' => fake()->numberBetween(2, 10),
         ];
 
     }

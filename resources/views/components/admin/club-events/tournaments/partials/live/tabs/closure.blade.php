@@ -169,8 +169,12 @@
                                     @if ($entry['qr_confirmed'])
                                         <x-badge value="{{ __('QR seen') }}" class="badge-info badge-xs" icon="o-eye"
                                             :tooltip="__('QR payment visually confirmed at reception — pending bank reconciliation')" />
-                                    @else
-                                        <span class="text-xs text-base-content/40">{{ $entry['user']->email }}</span>
+                                    @endif
+                                    @if ($this->canManageTournament)
+                                        <x-button :label="__('Cash')" icon="o-currency-euro" class="btn-outline btn-xs text-success"
+                                            x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __('Record a cash payment for :name?', ['name' => $entry['user']->full_name]), 'method' => 'recordCashPayment', 'params' => [$entry['user']->id], 'danger' => false]) }}, id: $wire.$id })" spinner="recordCashPayment({{ $entry['user']->id }})" />
+                                        <x-button icon="o-qr-code" class="btn-outline btn-xs" :aria-label="__('QR / bank transfer')"
+                                            wire:click="openQrPayment({{ $entry['user']->id }})" spinner="openQrPayment({{ $entry['user']->id }})" />
                                     @endif
                                 </div>
                             @endforeach
@@ -181,6 +185,22 @@
         @endif
 
       
+
+        <x-app-modal wire:model="showQrModal" :title="__('Payment by QR code')" class="backdrop-blur" :open="$showQrModal">
+            @if ($qrPaymentDetails !== [])
+                <div class="space-y-3 text-center">
+                    <p class="font-semibold">{{ $qrPaymentDetails['name'] }}</p>
+                    @if ($qrCodeData !== '')
+                        <img src="{{ $qrCodeData }}" alt="{{ __('Payment QR code') }}" class="mx-auto h-56 w-56" />
+                    @endif
+                    <p class="text-2xl font-black">{{ number_format($qrPaymentDetails['amount_due'], 2, ',', ' ') }} €</p>
+                    <p class="font-mono text-sm">{{ $qrPaymentDetails['reference'] }}</p>
+                </div>
+            @endif
+            <x-slot:actions>
+                <x-button :label="__('Close')" @click="$wire.showQrModal = false" />
+            </x-slot:actions>
+        </x-app-modal>
 
         {{-- ── Close button ────────────────────────────────────────────── --}}
         <div class="flex justify-end pt-2 pb-8" x-data="{ confirm: false }">

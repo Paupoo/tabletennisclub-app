@@ -54,19 +54,44 @@ class TournamentPair extends Model
         'registered_by',
     ];
 
+    /**
+     * The pair as a screen names it: « J. Dupont / L. Dupont ».
+     *
+     * Last names alone made a parent and a child « Dupont/Dupont », and two
+     * pairs of siblings could not be told apart.
+     */
     public function displayName(): string
     {
-        $p1 = $this->player1?->last_name ?? '?';
-        $p2 = $this->player2?->last_name ?? '?';
-
-        return "{$p1}/{$p2}";
+        return $this->shortName($this->player1) . ' / ' . $this->shortName($this->player2);
     }
 
+    /**
+     * The pair in full, for a mail or a ranking: « Jean Dupont & Léa Dupont ».
+     */
+    public function fullName(): string
+    {
+        return ($this->player1?->full_name ?? '?') . ' & ' . ($this->player2?->full_name ?? '?');
+    }
+
+    /**
+     * The other player of the pair.
+     */
+    public function partnerOf(User $player): User
+    {
+        return $this->player1_id === $player->id ? $this->player2 : $this->player1;
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function player1(): BelongsTo
     {
         return $this->belongsTo(User::class, 'player1_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function player2(): BelongsTo
     {
         return $this->belongsTo(User::class, 'player2_id');
@@ -114,5 +139,16 @@ class TournamentPair extends Model
     public function tournament(): BelongsTo
     {
         return $this->belongsTo(Tournament::class);
+    }
+
+    private function shortName(?User $player): string
+    {
+        if (! $player instanceof User) {
+            return '?';
+        }
+
+        $initial = mb_substr(trim((string) $player->first_name), 0, 1);
+
+        return trim(($initial === '' ? '' : $initial . '. ') . $player->last_name);
     }
 }

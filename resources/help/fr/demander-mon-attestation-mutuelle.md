@@ -1,13 +1,13 @@
 ---
 title: Demander mon attestation mutuelle
-summary: Votre mutualité rembourse une partie de votre cotisation. Voici comment obtenir le document, et ce que le club atteste exactement.
+summary: Votre mutualité rembourse une partie de votre cotisation et de vos stages. Voici comment obtenir le document, et ce que le club atteste exactement.
 audience: member
 order: 21
 ---
 
 La plupart des mutualités belges remboursent une partie de la cotisation d'un club sportif — entre 40 € et 100 € par an selon l'organisme et votre âge. Il leur faut une attestation du club. L'application la génère pour vous, déjà remplie, cachetée et signée.
 
-Allez dans **Mon espace → Attestation mutuelle**.
+Allez dans **Mon espace → Attestations mutuelle**. Si vous avez participé à un stage, l'écran vous demande d'abord quel document vous voulez : l'affiliation de la saison, ou un stage (voir plus bas).
 
 ## Ce qu'il faut avant
 
@@ -38,6 +38,25 @@ Comme les mutualités plafonnent leur intervention bien en dessous du prix d'une
 Une fois délivrée, l'attestation ne peut pas être demandée une deuxième fois. Vous pouvez en revanche **la retélécharger autant de fois que vous voulez** depuis la même page : si vous perdez le fichier, revenez le chercher.
 
 Vous vous êtes trompé de mutualité, ou votre situation a changé en cours de saison ? Le secrétariat peut révoquer l'attestation et vous en délivrer une nouvelle.
+
+## Pour un stage
+
+Beaucoup de mutualités interviennent aussi dans les **stages sportifs** des enfants, au jour près. C'est un document distinct de celui de l'affiliation, avec son propre montant : le prix du stage.
+
+Chaque stage des douze derniers mois apparaît sur sa propre carte. Elle devient disponible quand trois conditions sont réunies :
+
+- le stage est **terminé** — la carte indique la date à partir de laquelle il le sera ;
+- le stage est **payé en totalité** ;
+- votre **affiliation de la saison du stage** est validée et payée, comme pour l'attestation d'affiliation.
+
+Le choix de la mutualité propose :
+
+- **Partenamut** et **Solidaris**, sur leur propre formulaire de stage, quand le club l'a installé. Partenamut demande si le participant est reconnu handicapé : la réponse part sur le document et n'est pas conservée ;
+- **l'attestation du club**, toujours disponible. Elle ne nomme aucun destinataire : vous pouvez l'envoyer à une autre mutualité, à un employeur ou à un CPAS.
+
+Le club atteste **les jours où une séance a eu lieu**, séances annulées exclues, que l'enfant ait été présent ou non. Un jour de moins de quatre heures compte pour un demi-jour. L'attestation du club liste les dates, pour que le nombre de jours puisse être vérifié.
+
+Une seule attestation par stage. Comme pour l'affiliation, vous pouvez la retélécharger à volonté, et le secrétariat peut la révoquer si vous vous êtes trompé de mutualité.
 
 ## Pour vos enfants
 

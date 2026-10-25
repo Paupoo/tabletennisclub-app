@@ -172,8 +172,7 @@ describe('what a sparring is told', function (): void {
 
         // Sans ce mail, le sparring se déplace pour une salle fermée.
         Livewire::actingAs($this->actor)
-            ->test('pages::club-events.trainings.index')
-            ->call('openPack', $pack->id)
+            ->test('pages::club-events.trainings.pack-sessions', ['packId' => $pack->id])
             ->call('openCancel', $session->id)
             ->call('confirmCancel');
 
@@ -204,8 +203,7 @@ describe('the committee sets the sparrings', function (): void {
         $jean = User::factory()->create(['first_name' => 'Jean', 'last_name' => 'Sparre']);
 
         $sheet = Livewire::actingAs($this->actor)
-            ->test('pages::club-events.trainings.index')
-            ->call('openPack', $pack->id)
+            ->test('pages::club-events.trainings.show', ['pack' => $pack->id])
             ->call('openPackSparring')
             ->set('packSparringUserId', $jean->id)
             ->call('attachPackSparring')
@@ -225,8 +223,7 @@ describe('the committee sets the sparrings', function (): void {
         $paul = User::factory()->create(['first_name' => 'Paul', 'last_name' => 'Renfort']);
 
         $sheet = Livewire::actingAs($this->actor)
-            ->test('pages::club-events.trainings.index')
-            ->call('openPack', $pack->id)
+            ->test('pages::club-events.trainings.pack-sessions', ['packId' => $pack->id])
             ->call('openSessionSparrings', $next->id)
             ->set('sessionSparringUserId', $paul->id)
             ->call('addSessionSparring')
@@ -245,7 +242,7 @@ describe('the committee sets the sparrings', function (): void {
         $paul = User::factory()->create();
 
         Livewire::actingAs($coach)
-            ->test('pages::club-events.trainings.index')
+            ->test('pages::club-events.trainings.pack-sessions', ['packId' => $pack->id])
             ->set('sessionSparringsId', $next->id)
             ->set('sessionSparringUserId', $paul->id)
             ->call('addSessionSparring')

@@ -34,7 +34,11 @@ final readonly class ClubAttestationRenderer
         string $verificationUrl,
         bool $specimen = false,
     ): string {
-        $html = View::make('attestations.club-attestation', [
+        // A camp is the same certificate about a different fact: the days the
+        // member took part in and what the camp cost, not a season's affiliation.
+        $isCamp = $data->campDays !== null;
+
+        $html = View::make($isCamp ? 'attestations.camp-attestation' : 'attestations.club-attestation', [
             'data' => $data,
             'identifiers' => $identifiers,
             'reference' => $reference,
@@ -56,7 +60,7 @@ final readonly class ClubAttestationRenderer
             'tempDir' => storage_path('app/mpdf'),
         ]);
 
-        $mpdf->SetTitle(__('Attestation of sporting affiliation'));
+        $mpdf->SetTitle($isCamp ? __('Attestation of participation in a sports camp') : __('Attestation of sporting affiliation'));
         $mpdf->WriteHTML($html);
 
         if ($specimen) {

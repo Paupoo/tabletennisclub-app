@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Meetings\Notifications;
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Services\IcsGenerator;
@@ -52,7 +53,7 @@ class MeetingCancelledNotification extends Notification implements ShouldQueue
         // ICS avec METHOD:CANCEL pour supprimer l'événement du calendrier
         $meeting = $this->meeting;
         $meeting->loadMissing('agendaItems');
-        $ics = app(IcsGenerator::class)->forMeeting($meeting, cancel: true);
+        $ics = app(IcsGenerator::class)->forMeeting($meeting, cancel: true, for: $notifiable instanceof User ? $notifiable : null);
 
         return $mail
             ->attachData($ics, 'meeting-cancel.ics', ['mime' => 'text/calendar'])

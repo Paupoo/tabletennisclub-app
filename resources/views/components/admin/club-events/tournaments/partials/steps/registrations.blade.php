@@ -17,8 +17,10 @@
                         class="btn-primary btn-sm"
                         wire:click="openToggleRegistrationsModal"
                         :disabled="!$tournamentId" />
-                    @if (! $this->registrationClosed && ! ($maxUsers > 0 && $this->registrations->count() >= $maxUsers))
-                        <x-button
+                    {{-- Le comité inscrit jusqu'au lancement, inscriptions closes et plafond
+                         atteint compris : un joueur de plus le matin complète une paire. --}}
+                    @if (in_array($this->currentTournament?->status, [\App\Domains\Shared\Enums\TournamentStatusEnum::PUBLISHED, \App\Domains\Shared\Enums\TournamentStatusEnum::SETUP], true))
+                        <x-button data-register-member
                             :label="__('Register member')"
                             icon="o-user-plus"
                             class="btn-ghost btn-sm"
@@ -47,6 +49,29 @@
             $headers[] = ['key' => 'has_paid', 'label' => __('Payment'), 'sortable' => false];
         }
     @endphp
+    {{-- Chercher un nom, et un onglet par question de l'accueil : qui pointer, qui doit encore payer. --}}
+    @php
+        $tabCounts = $this->registrationTabCounts;
+        $tabs = ['all' => __('All'), 'to_check' => __('To check in'), 'present' => __('Checked in'), 'absent' => __('No-shows')];
+        if ($isPaidTournament) {
+            $tabs['unpaid'] = __('Unpaid');
+        }
+    @endphp
+    <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center" data-registration-filters>
+        <x-input wire:model.live.debounce.300ms="registrationSearch" icon="o-magnifying-glass"
+            :placeholder="__('Search a player…')" clearable class="lg:max-w-xs" />
+        <div role="tablist" class="tabs tabs-box overflow-x-auto">
+            @foreach ($tabs as $tabKey => $tabLabel)
+                <button type="button" role="tab" wire:click="$set('registrationTab', '{{ $tabKey }}')"
+                    aria-selected="{{ $registrationTab === $tabKey ? 'true' : 'false' }}"
+                    @class(['tab whitespace-nowrap', 'tab-active' => $registrationTab === $tabKey])>
+                    {{ $tabLabel }}
+                    <span class="ml-1.5 tabular-nums text-base-content/70">{{ $tabCounts[$tabKey] }}</span>
+                </button>
+            @endforeach
+        </div>
+    </div>
+
     {{--
         Vue mobile : le tableau partait en défilement latéral -- le overflow-x-auto
         de Mary prenait le relais et emportait les entêtes avec lui. C'est
@@ -66,13 +91,8 @@
                         <p class="truncate text-sm font-semibold">{{ $row['name'] }}</p>
 
                         <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-base-content/55">
-                            <x-badge :value="$row['status']"
-                                :class="match ($row['status']) {
-                                    'confirmed' => 'badge-success',
-                                    'no_show' => 'badge-warning',
-                                    'cancelled' => 'badge-error',
-                                    default => 'badge-ghost',
-                                }" class="badge-xs" />
+                            <x-badge :value="$row['status_badge']['label']" :icon="$row['status_badge']['icon']"
+                                :class="$row['status_badge']['class'] . ' badge-xs'" />
                             <span class="tabular-nums">{{ $row['ranking'] }}</span>
                             @if ($row['registered_at'])
                                 <span>{{ \Carbon\Carbon::parse($row['registered_at'])->format('d/m H:i') }}</span>
@@ -93,13 +113,25 @@
                 @if (! $this->isLaunched)
                     <div class="mt-2.5 flex flex-wrap gap-1.5">
                         @if (in_array($row['status'], ['registered', 'spot_offered'], true))
-                            <x-button :label="__('Confirm')" icon="o-check" class="btn-outline btn-xs text-success"
+                            <x-button :aria-label="__('Confirm')" :tooltip="__('Confirm')" icon="o-check" class="btn-outline btn-xs btn-square text-success"
                                 wire:click="confirmPresence({{ $row['id'] }})" />
-                            <x-button :label="__('No show')" icon="o-no-symbol" class="btn-outline btn-xs"
-                                wire:click="markNoShow({{ $row['id'] }})" />
+                        @endif
+                        @if (in_array($row['status'], ['registered', 'confirmed', 'spot_offered'], true))
+                            @if ($isPaidTournament && ! $row['has_paid'])
+                                <x-button :aria-label="__('Excused absence')" :tooltip="__('Excused absence')" :icon="$this::ICON_EXCUSED" class="btn-outline btn-xs btn-square"
+                                    wire:click="markAbsent({{ $row['id'] }}, true)" />
+                                <x-button :aria-label="__('Unexcused absence')" :tooltip="__('Unexcused absence')" :icon="$this::ICON_UNEXCUSED" class="btn-outline btn-xs btn-square text-warning-content"
+                                    x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __('The entry fee stays due and the player receives a mail explaining why. Continue?'), 'method' => 'markAbsent', 'params' => [$row['id'], false], 'danger' => false]) }}, id: $wire.$id })" />
+                            @else
+                                <x-button :aria-label="__('Absent')" :tooltip="__('Absent')" :icon="$this::ICON_ABSENT" class="btn-outline btn-xs btn-square"
+                                    wire:click="markAbsent({{ $row['id'] }}, true)" />
+                            @endif
+                        @elseif ($row['status'] === 'no_show' && ! $this->poolsGenerated)
+                            <x-button :aria-label="__('Present after all')" :tooltip="__('Present after all')" icon="o-arrow-uturn-left" class="btn-outline btn-xs btn-square text-success"
+                                wire:click="confirmPresence({{ $row['id'] }})" />
                         @endif
                         @if ($isPaidTournament && ! $row['has_paid'])
-                            <x-button :label="__('Cash')" icon="o-currency-euro" class="btn-outline btn-xs text-success"
+                            <x-button :aria-label="__('Cash')" :tooltip="__('Cash')" icon="o-currency-euro" class="btn-outline btn-xs btn-square text-success"
                                 wire:click="openCashConfirmModal({{ $row['id'] }})" />
                             <x-button icon="o-qr-code" class="btn-outline btn-xs" :aria-label="__('QR / bank transfer')"
                                 wire:click="openQrModal({{ $row['id'] }})" />
@@ -127,20 +159,35 @@
                                 :tooltip="__('Confirm')"
                                 wire:click="confirmPresence({{ $row['id'] }})"
                                 wire:loading.attr="disabled" :aria-label="__('Confirm')" />
-                            <x-button
-                                icon="o-no-symbol"
-                                class="btn-ghost btn-xs text-warning-content"
-                                :tooltip="__('No show')"
-                                wire:click="markNoShow({{ $row['id'] }})" :aria-label="__('No show')" />
+                            @if (($this->currentTournament?->isPaid() ?? false) && ! $row['has_paid'])
+                                <x-button
+                                    :icon="$this::ICON_EXCUSED"
+                                    class="btn-ghost btn-xs"
+                                    :tooltip="__('Excused absence')"
+                                    wire:click="markAbsent({{ $row['id'] }}, true)" :aria-label="__('Excused absence')" />
+                                <x-button
+                                    :icon="$this::ICON_UNEXCUSED"
+                                    class="btn-ghost btn-xs text-warning-content"
+                                    :tooltip="__('Unexcused absence')"
+                                    x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __('The entry fee stays due and the player receives a mail explaining why. Continue?'), 'method' => 'markAbsent', 'params' => [$row['id'], false], 'danger' => false]) }}, id: $wire.$id })"
+                                    :aria-label="__('Unexcused absence')" />
+                            @else
+                                <x-button
+                                    :icon="$this::ICON_ABSENT"
+                                    class="btn-ghost btn-xs"
+                                    :tooltip="__('Absent')"
+                                    wire:click="markAbsent({{ $row['id'] }}, true)" :aria-label="__('Absent')" />
+                            @endif
                         </div>
+                    @elseif (! $this->isLaunched && $row['status'] === 'no_show' && ! $this->poolsGenerated)
+                        <x-button
+                            icon="o-arrow-uturn-left"
+                            class="btn-ghost btn-xs text-success"
+                            :tooltip="__('Present after all')"
+                            wire:click="confirmPresence({{ $row['id'] }})" :aria-label="__('Present after all')" />
                     @else
-                        <x-badge :value="$row['status']"
-                            :class="match($row['status']) {
-                                'confirmed' => 'badge-success',
-                                'no_show'   => 'badge-warning',
-                                'cancelled' => 'badge-error',
-                                default     => 'badge-ghost',
-                            }" class="badge-sm" />
+                        <x-badge :value="$row['status_badge']['label']" :icon="$row['status_badge']['icon']"
+                            :class="$row['status_badge']['class'] . ' badge-sm'" />
                     @endif
                 @endscope
 
@@ -189,7 +236,7 @@
     </x-card>
 
     @php
-        $registrationCount = $this->registrations->count();
+        $registrationCount = $this->registrationTabCounts['all'];
         $waitlistCount = $this->waitlist->count();
     @endphp
 
@@ -197,7 +244,7 @@
         <x-stat :title="__('Registered players')" :value="$registrationCount . ($maxUsers > 0 ? ' / ' . $maxUsers : '')" icon="o-user-group" />
         <x-stat :title="__('Spots left')" :value="$maxUsers > 0 ? max(0, $maxUsers - $registrationCount) : '∞'" icon="o-receipt-percent" />
         <x-stat :title="__('Confirmed')"
-            :value="$this->registrations->filter(fn ($r) => $r['status'] === 'confirmed')->count()"
+            :value="$this->registrationTabCounts['present']"
             icon="o-check-badge" />
     </div>
 
@@ -251,7 +298,7 @@
                                 <x-button icon="o-arrow-up-circle" class="btn-ghost btn-xs text-success"
                                     :tooltip="__('Promote to registered')"
                                     wire:click="promoteFromWaitlist({{ $entry['id'] }})"
-                                    :disabled="$maxUsers > 0 && $this->registrations->count() >= $maxUsers" :aria-label="__('Promote to registered')" />
+                                    :disabled="$maxUsers > 0 && $this->registrationTabCounts['all'] >= $maxUsers" :aria-label="__('Promote to registered')" />
                                 <x-button icon="o-x-mark" class="btn-ghost btn-xs text-error"
                                     :tooltip="__('Remove from waitlist')"
                                     wire:click="removeFromWaitlist({{ $entry['id'] }})" :aria-label="__('Remove from waitlist')" />
@@ -265,56 +312,6 @@
 
 </div>
 
-{{-- ── Pair composition (doubles only, club mode) ─────────────────── --}}
-@if ($this->currentTournament?->match_type === 'double' && $this->currentTournament?->doubles_registration_mode === 'club')
-    <x-card :title="__('Pair composition')" shadow class="mt-6">
-        <x-slot:menu>
-            @if (! $this->isLaunched)
-                <span class="text-xs text-base-content/50">{{ count($this->pairs) }} {{ __('pairs') }} &mdash; {{ count($this->unpaired) }} {{ __('unpaired') }}</span>
-            @endif
-        </x-slot:menu>
-
-        {{-- Existing pairs --}}
-        @if (! empty($this->pairs))
-            <div class="space-y-1 mb-4">
-                @foreach ($this->pairs as $pair)
-                    <div wire:key="pair-{{ $pair['id'] }}" class="flex items-center justify-between p-2 rounded-lg bg-base-200/50 text-sm">
-                        <div class="flex items-center gap-2">
-                            <x-icon name="o-user-group" class="w-4 h-4 text-primary shrink-0" />
-                            <span class="font-medium">{{ $pair['p1_name'] }}</span>
-                            <span class="text-base-content/40">&amp;</span>
-                            <span class="font-medium">{{ $pair['p2_name'] }}</span>
-                        </div>
-                        @if (! $this->isLaunched)
-                            <x-button icon="o-x-mark" class="btn-ghost btn-xs text-error"
-                                :tooltip="__('Delete pair')"
-                                wire:click="deletePair({{ $pair['id'] }})" :aria-label="__('Delete pair')" />
-                        @endif
-                    </div>
-                @endforeach
-            </div>
-        @endif
-
-        {{-- Create pair form --}}
-        @if (! $this->isLaunched && ! empty($this->unpaired))
-            <div class="flex items-end gap-3 mt-2">
-                <x-select :label="__('Player 1')" wire:model.live="pairPlayer1Id"
-                    :options="$this->unpaired" :placeholder="__('Select…')" class="flex-1" />
-                <x-select :label="__('Player 2')" wire:model.live="pairPlayer2Id"
-                    :options="$this->unpaired" :placeholder="__('Select…')" class="flex-1" />
-                <x-button :label="__('Create pair')" icon="o-user-group" class="btn-primary btn-sm mb-0.5"
-                    wire:click="createPair" spinner="createPair"
-                    :disabled="! $pairPlayer1Id || ! $pairPlayer2Id" />
-            </div>
-        @elseif (! $this->isLaunched && empty($this->unpaired) && empty($this->pairs))
-            <p class="text-sm text-base-content/50">{{ __('No registered players yet.') }}</p>
-        @elseif (! $this->isLaunched && empty($this->unpaired))
-            <p class="text-sm text-success/80 flex items-center gap-1.5">
-                <x-icon name="o-check-circle" class="w-4 h-4" /> {{ __('All registered players are paired.') }}
-            </p>
-        @endif
-    </x-card>
-@endif
 
 {{-- Manual register modal --}}
 <x-app-modal wire:model="showRegisterModal" :title="__('Register a member')" class="backdrop-blur" :open="$showRegisterModal">
@@ -326,10 +323,10 @@
             :placeholder="__('Search a member…')"
             searchable />
 
-        @if ($memberToRegister && $this->currentTournament?->max_users > 0 && $this->registrations->count() >= $this->currentTournament->max_users)
+        @if ($memberToRegister && $this->currentTournament?->max_users > 0 && $this->registrationTabCounts['all'] >= $this->currentTournament->max_users)
             <x-alert
                 :title="__('Tournament is full')"
-                :description="__('This player will be added to the waiting list.')"
+                :description="__('The committee enters this player above the cap.')"
                 icon="o-exclamation-triangle"
                 class="alert-warning alert-soft" />
         @endif

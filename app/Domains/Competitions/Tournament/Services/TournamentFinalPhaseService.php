@@ -8,6 +8,7 @@ use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
 use Exception;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class TournamentFinalPhaseService
 {
@@ -31,6 +32,7 @@ class TournamentFinalPhaseService
             ->whereNotNull('player1_id')
             ->whereNotNull('player2_id')
             ->orderBy('match_order')
+            ->with(['pair1', 'pair2'])
             ->get();
 
         foreach ($unassigned as $target) {
@@ -47,8 +49,9 @@ class TournamentFinalPhaseService
         // All players who participated in pool matches
         $poolPlayerIds = TournamentMatch::where('tournament_id', $tournament->id)
             ->whereNotNull('pool_id')
+            ->with(['pair1', 'pair2'])
             ->get()
-            ->flatMap(fn (TournamentMatch $m): array => [$m->player1_id, $m->player2_id])
+            ->flatMap(fn (TournamentMatch $m): array => $m->sidePlayerIds(1)->merge($m->sidePlayerIds(2))->all())
             ->filter()
             ->unique()
             ->values();
@@ -57,8 +60,9 @@ class TournamentFinalPhaseService
         $qualifiedIds = TournamentMatch::where('tournament_id', $tournament->id)
             ->whereNotNull('round')
             ->whereNotNull('player1_id')
+            ->with(['pair1', 'pair2'])
             ->get()
-            ->flatMap(fn (TournamentMatch $m): array => [$m->player1_id, $m->player2_id])
+            ->flatMap(fn (TournamentMatch $m): array => $m->sidePlayerIds(1)->merge($m->sidePlayerIds(2))->all())
             ->filter()
             ->unique()
             ->values();
@@ -78,6 +82,7 @@ class TournamentFinalPhaseService
             ->whereNotNull('player1_id')
             ->whereNotNull('player2_id')
             ->orderBy('match_order')
+            ->with(['pair1', 'pair2'])
             ->get();
 
         if ($bracketMatches->isEmpty()) {
@@ -88,7 +93,7 @@ class TournamentFinalPhaseService
         $refereeCounts = array_fill_keys($candidates->toArray(), 0);
 
         foreach ($bracketMatches as $match) {
-            $playingIds = collect([$match->player1_id, $match->player2_id])->filter();
+            $playingIds = $match->sidePlayerIds(1)->merge($match->sidePlayerIds(2));
             $eligible = $candidates->diff($playingIds)->values();
 
             if ($eligible->isEmpty()) {
@@ -194,6 +199,12 @@ class TournamentFinalPhaseService
             }
         }
 
+        // Un match qui vient de recevoir son second joueur part avec son
+        // handicap, comme en poule.
+        foreach (array_filter([$match->next_match_id, $match->round === 'semifinal' ? $match->bronze_match_id : null]) as $readyId) {
+            $this->applyHandicap(TournamentMatch::find($readyId));
+        }
+
         // Assign referee AFTER next-match players are set, so the query can
         // exclude candidates who are playing in that now-complete match slot.
         $this->assignBracketReferee($match);
@@ -208,6 +219,10 @@ class TournamentFinalPhaseService
      */
     public function configureKnockoutPhase(Tournament $tournament, string $startingRound): bool
     {
+        if ($tournament->pools->isEmpty()) {
+            throw new Exception(__('Pool found without match.'));
+        }
+
         if ($this->checkIfAllPoolsContainsMatches($tournament) === false) {
             throw new Exception(__('Pool found without match.'));
         }
@@ -225,10 +240,62 @@ class TournamentFinalPhaseService
         // Create bracket structure
         $result = $this->createBracket($tournament, $qualifiedPlayers, $startingRound);
 
+        foreach (TournamentMatch::where('tournament_id', $tournament->id)->fromBracket()->get() as $bracketMatch) {
+            $this->applyHandicap($bracketMatch);
+        }
+
         // Assign referees to the first-round bracket matches using pool non-qualifiers
         $this->assignInitialBracketReferees($tournament);
 
         return $result;
+    }
+
+    /**
+     * Correct the score of a bracket match already played.
+     *
+     * Allowed while what it fed — the next match, and for a semi-final the
+     * match for third place — has not started: then a new winner replaces the
+     * old one in the next match, a new loser the old one in the match for
+     * third place, and their starting points follow.
+     *
+     * @param  array<int, array{player1_score: int, player2_score: int}>  $setResults
+     *
+     * @throws \LogicException once a match it fed has started
+     */
+    public function correctMatch(TournamentMatch $match, array $setResults): void
+    {
+        $fed = collect([$match->next_match_id, $match->round === 'semifinal' ? $match->bronze_match_id : null])
+            ->filter()
+            ->map(fn (int $id): ?TournamentMatch => TournamentMatch::find($id))
+            ->filter();
+
+        if ($fed->contains(fn (TournamentMatch $next): bool => $next->status !== 'scheduled')) {
+            throw new \LogicException('A match this one fed has already started.');
+        }
+
+        $oldWinner = $match->winner_id;
+        $oldLoser = $oldWinner === $match->player1_id ? $match->player2_id : $match->player1_id;
+
+        DB::transaction(function () use ($match, $setResults, $oldWinner, $oldLoser): void {
+            $match->recordResult($setResults);
+            $match->update(['is_forfeit' => false]);
+
+            if ($match->winner_id === $oldWinner) {
+                return;
+            }
+
+            // The winner changed: the two sides swap places downstream.
+            $newWinnerPair = $match->winner_id === $match->player1_id ? $match->pair1_id : $match->pair2_id;
+            $newLoserPair = $match->winner_id === $match->player1_id ? $match->pair2_id : $match->pair1_id;
+
+            if ($match->next_match_id !== null) {
+                $this->replaceEntrant(TournamentMatch::find($match->next_match_id), $oldWinner, $match->winner_id, $newWinnerPair);
+            }
+
+            if ($match->round === 'semifinal' && $match->bronze_match_id !== null) {
+                $this->replaceEntrant(TournamentMatch::find($match->bronze_match_id), $oldLoser, $oldWinner, $newLoserPair);
+            }
+        });
     }
 
     /**
@@ -333,52 +400,41 @@ class TournamentFinalPhaseService
     }
 
     /**
-     * Get qualified players from pools
+     * Who goes to the bracket.
+     *
+     * The first `nb_qualifiers_per_pool` of every pool go straight in. The
+     * places left in the bracket go to the best of the rank just below — never
+     * further down — compared on averages: share of matches won, then of sets,
+     * then of points, then a draw that stays the same. Raw totals would favour
+     * whoever played in the biggest pool.
      */
     public function getQualifiedPlayers(Tournament $tournament, string $startingRound): Collection
     {
-        $totalPlayers = $this->getRoundPlayerCount($startingRound);
+        $bracketSize = $this->getRoundPlayerCount($startingRound);
         $pools = $tournament->pools;
+        $direct = max(1, $tournament->nb_qualifiers_per_pool);
         $qualifiedPlayers = collect();
-        $playersPerPool = intdiv($totalPlayers, $pools->count());
-        $remainingSpots = $totalPlayers % $pools->count();
+        $candidates = collect();
 
-        // Get top players from each pool
         foreach ($pools as $pool) {
-            $standings = $this->tournamentMatchService->calculatePoolStandings($pool);
-            for ($i = 0; $i < $playersPerPool; $i++) {
-                if (isset($standings[$i])) {
-                    $qualifiedPlayers->push($this->buildQualifiedEntry($standings[$i], $pool, $i + 1));
-                }
+            $standings = $this->tournamentMatchService->calculatePoolStandings($pool)->values();
+
+            for ($i = 0; $i < $direct && $i < $standings->count(); $i++) {
+                $qualifiedPlayers->push($this->buildQualifiedEntry($standings[$i], $pool, $i + 1));
+            }
+
+            if (isset($standings[$direct]) && ! $standings[$direct]['no_show']) {
+                $candidates->push($this->buildQualifiedEntry($standings[$direct], $pool, $direct + 1));
             }
         }
 
-        // Handle remaining spots with repêchage (best non-qualified players)
-        if ($remainingSpots > 0) {
-            $repechageCandidates = collect();
+        $spotsLeft = max(0, $bracketSize - $qualifiedPlayers->count());
 
-            foreach ($pools as $pool) {
-                $standings = $this->tournamentMatchService->calculatePoolStandings($pool);
-                $counter = count($standings);
-                for ($i = $playersPerPool; $i < $counter; $i++) {
-                    $repechageCandidates->push($this->buildQualifiedEntry($standings[$i], $pool, $i + 1));
-                }
-            }
+        $repechage = $candidates
+            ->sort(fn (array $a, array $b): int => $this->repechageKey($b, $tournament) <=> $this->repechageKey($a, $tournament))
+            ->take($spotsLeft);
 
-            // Sort by matches won, sets won, and points
-            $sortedCandidates = $repechageCandidates->sortByDesc(fn (array $item): string => sprintf('%06d%06d%06d',
-                $item['stats']['matches_won'],
-                $item['stats']['sets_won'],
-                $item['stats']['total_points']
-            ))->values();
-
-            // Add best remaining players to fill spots
-            for ($i = 0; $i < $remainingSpots && $i < count($sortedCandidates); $i++) {
-                $qualifiedPlayers->push($sortedCandidates[$i]);
-            }
-        }
-
-        return $qualifiedPlayers;
+        return $qualifiedPlayers->concat($repechage)->take($bracketSize)->values();
     }
 
     /**
@@ -445,7 +501,7 @@ class TournamentFinalPhaseService
         $poolGroups = $qualifiedPlayers->groupBy('pool.id');
 
         if ($poolGroups->count() < 2) {
-            return $qualifiedPlayers;
+            return $this->seedSinglePool($qualifiedPlayers->sortBy('position')->values());
         }
 
         $orderedPoolIds = $poolGroups->keys()->sort()->values();
@@ -504,6 +560,26 @@ class TournamentFinalPhaseService
         return $seededPlayers;
     }
 
+    /**
+     * Give a bracket match the starting points its two sides call for.
+     *
+     * The bracket was built at 0-0: a tournament played with handicap lost it
+     * from the quarter-finals on, without a word.
+     */
+    private function applyHandicap(?TournamentMatch $match): void
+    {
+        if (! $match instanceof TournamentMatch || $match->status === 'completed') {
+            return;
+        }
+
+        $handicap = $this->tournamentMatchService->handicapFor($match->fresh());
+
+        $match->update([
+            'player1_handicap_points' => $handicap['player1'],
+            'player2_handicap_points' => $handicap['player2'],
+        ]);
+    }
+
     /** @param  array<string, mixed>  $seededPlayer */
     private function buildMatchAssignment(int $i, array $seededPlayer): array
     {
@@ -535,14 +611,76 @@ class TournamentFinalPhaseService
         return $entry;
     }
 
+    /**
+     * The averages a repêchage compares, highest first; the draw last, reversed
+     * so that it sorts the same way as the rest.
+     *
+     * @param  array<string, mixed>  $entry
+     * @return list<float|int>
+     */
+    private function repechageKey(array $entry, Tournament $tournament): array
+    {
+        $stats = $entry['stats'];
+
+        return [
+            $stats['matches_played'] > 0 ? $stats['matches_won'] / $stats['matches_played'] : 0.0,
+            TournamentMatchService::ratio($stats['sets_won'], $stats['sets_lost']),
+            TournamentMatchService::ratio($stats['total_points'], $stats['points_lost']),
+            -TournamentMatchService::stableDraw($tournament->id, $entry['player']->id),
+        ];
+    }
+
+    /**
+     * In a match fed by a corrected one, put the new entrant where the old one stood.
+     */
+    private function replaceEntrant(?TournamentMatch $target, ?int $oldId, ?int $newId, ?int $newPairId): void
+    {
+        if (! $target instanceof TournamentMatch || $oldId === null) {
+            return;
+        }
+
+        foreach ([1, 2] as $slot) {
+            if ($target->{"player{$slot}_id"} === $oldId) {
+                $target->update(array_filter([
+                    "player{$slot}_id" => $newId,
+                    "pair{$slot}_id" => $newPairId,
+                ], fn (?int $value): bool => $value !== null));
+            }
+        }
+
+        $this->applyHandicap($target->fresh());
+    }
+
+    /**
+     * One pool feeding the bracket: the usual draw, so the first meets the last
+     * and the two best can only meet in the final.
+     *
+     * Kept in ranking order, the first and the second met in the first round.
+     */
+    private function seedSinglePool(Collection $ranked): Collection
+    {
+        $slots = [1, 2];
+
+        while (count($slots) < $ranked->count()) {
+            $size = count($slots) * 2;
+            $slots = collect($slots)->flatMap(fn (int $seed): array => [$seed, $size + 1 - $seed])->all();
+        }
+
+        return collect($slots)
+            ->map(fn (int $seed): ?array => $ranked->get($seed - 1))
+            ->filter()
+            ->values();
+    }
+
     private function tryAssignBracketReferee(int $tournamentId, TournamentMatch $target): void
     {
         // All players who have lost a bracket match in this tournament
         $loserIds = TournamentMatch::where('tournament_id', $tournamentId)
             ->whereNotNull('round')
             ->whereNotNull('winner_id')
+            ->with(['pair1', 'pair2'])
             ->get()
-            ->map(fn (TournamentMatch $m) => $m->player1_id === $m->winner_id ? $m->player2_id : $m->player1_id)
+            ->flatMap(fn (TournamentMatch $m): array => $m->sidePlayerIds($m->player1_id === $m->winner_id ? 2 : 1)->all())
             ->filter()
             ->unique()
             ->values();
@@ -551,7 +689,7 @@ class TournamentFinalPhaseService
             return;
         }
 
-        $playingIds = collect([$target->player1_id, $target->player2_id])->filter();
+        $playingIds = $target->sidePlayerIds(1)->merge($target->sidePlayerIds(2));
         $candidates = $loserIds->diff($playingIds)->values();
 
         if ($candidates->isEmpty()) {

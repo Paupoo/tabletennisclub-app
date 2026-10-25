@@ -18,5 +18,6 @@ readonly class TournamentConfig
         public float $congestionCoefficient = 0.80,
         public bool $deuceEnabled = true,
         public bool $hasHandicapPoints = true,
+        public ?int $bracketSize = null,
     ) {}
 }

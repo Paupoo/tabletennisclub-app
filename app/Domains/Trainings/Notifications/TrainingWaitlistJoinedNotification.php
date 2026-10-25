@@ -7,10 +7,11 @@ namespace App\Domains\Trainings\Notifications;
 use App\Domains\Shared\Traits\LinksToMemberSpace;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class TrainingWaitlistJoinedNotification extends Notification
+class TrainingWaitlistJoinedNotification extends Notification implements ShouldQueue
 {
     use LinksToMemberSpace, Queueable;
 

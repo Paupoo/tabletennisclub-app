@@ -7,10 +7,12 @@ namespace App\Domains\Meetings\Services;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingActionItem;
+use App\Domains\Meetings\Models\MeetingActionReview;
 use App\Domains\Meetings\Models\MeetingAgendaItem;
 use App\Domains\Meetings\Models\MeetingDecision;
 use App\Domains\Meetings\Models\MeetingMinutes;
 use App\Domains\Meetings\Models\MeetingUser;
+use App\Domains\Shared\Enums\MeetingActionReviewOutcomeEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use Illuminate\Support\Carbon;
@@ -28,11 +30,14 @@ use Illuminate\Support\Collection;
  * so the absent are only counted — who was there is recorded, who stayed home
  * is nobody else's business. When nobody recorded attendance, the confirmed
  * replies stand in, and the report says so.
+ *
+ * Guests stand apart: those who came are listed on their own, those who did
+ * not are nobody's absence, and none of them counts towards the quorum.
  */
 final readonly class MinutesReport
 {
     /** Overdue first, done last. */
-    private const array URGENCY = ['overdue' => 0, 'todo' => 1, 'done' => 2];
+    private const array URGENCY = ['overdue' => 0, 'todo' => 1, 'done' => 2, 'abandoned' => 3];
 
     /**
      * @param  Collection<int, MeetingDecision>  $decisions  numbered D1… in this order
@@ -42,6 +47,9 @@ final readonly class MinutesReport
      * @param  Collection<int, User>  $present
      * @param  Collection<int, User>  $excused
      * @param  Collection<int, User>  $absent  empty for a general assembly, see $absentCount
+     * @param  Collection<int, User>  $guests  those who came, outside the audience
+     * @param  Collection<int, MeetingActionReview>  $followUp  what a committee said of earlier actions
+     * @param  int  $notReviewedCount  earlier actions the committee never reached
      */
     private function __construct(
         public Meeting $meeting,
@@ -57,6 +65,9 @@ final readonly class MinutesReport
         public int $absentCount,
         public bool $attendanceRecorded,
         public Carbon $asOf,
+        public Collection $guests,
+        public Collection $followUp,
+        public int $notReviewedCount,
     ) {}
 
     /**
@@ -64,19 +75,23 @@ final readonly class MinutesReport
      */
     public static function for(Meeting $meeting, ?User $reader = null): self
     {
-        $meeting->loadMissing(['minutes.publisher', 'agendaItems', 'decisions.agendaItem', 'actionItems.assignedTo', 'actionItems.agendaItem', 'users']);
+        $meeting->loadMissing(['minutes.publisher', 'agendaItems.carriedFrom.meeting', 'decisions.agendaItem', 'actionItems.assignedTo', 'actionItems.agendaItem', 'users']);
 
         $minutes = $meeting->minutes;
         abort_if($minutes === null, 404);
 
         $today = now()->startOfDay();
-        $byStatus = $meeting->users->groupBy(fn (User $user): string => self::registrationOf($user)->status->value);
-        $of = fn (MeetingUserStatusEnum ...$statuses): Collection => collect($statuses)
-            ->flatMap(fn (MeetingUserStatusEnum $status): Collection => $byStatus->get($status->value, collect()))
+        [$guestUsers, $memberUsers] = $meeting->users->partition(fn (User $user): bool => self::registrationOf($user)->is_guest);
+        $grouped = fn (Collection $users): Collection => $users->groupBy(fn (User $user): string => self::registrationOf($user)->status->value);
+        $byStatus = $grouped($memberUsers);
+        $guestsByStatus = $grouped($guestUsers);
+        $pick = fn (Collection $groups, MeetingUserStatusEnum ...$statuses): Collection => collect($statuses)
+            ->flatMap(fn (MeetingUserStatusEnum $status): Collection => $groups->get($status->value, collect()))
             ->sortBy(fn (User $user): string => $user->last_name . ' ' . $user->first_name)
             ->values();
+        $of = fn (MeetingUserStatusEnum ...$statuses): Collection => $pick($byStatus, ...$statuses);
 
-        $attendanceRecorded = $of(MeetingUserStatusEnum::ATTENDED, MeetingUserStatusEnum::ABSENT)->isNotEmpty();
+        $attendanceRecorded = $pick($meeting->users->groupBy(fn (User $user): string => self::registrationOf($user)->status->value), MeetingUserStatusEnum::ATTENDED, MeetingUserStatusEnum::ABSENT)->isNotEmpty();
         $present = $attendanceRecorded
             ? $of(MeetingUserStatusEnum::ATTENDED)
             : $of(MeetingUserStatusEnum::CONFIRMED, MeetingUserStatusEnum::ATTENDED);
@@ -92,6 +107,7 @@ final readonly class MinutesReport
                     item: $item,
                     status: match (true) {
                         $item->is_completed => 'done',
+                        $item->abandoned_at !== null => 'abandoned',
                         $days !== null && $days < 0 => 'overdue',
                         default => 'todo',
                     },
@@ -107,6 +123,17 @@ final readonly class MinutesReport
 
         $isAssembly = $meeting->type === MeetingTypeEnum::GENERAL_ASSEMBLY;
 
+        // Frozen at publication; until then — the preview — the reviews so far,
+        // and whatever the meeting has not reached yet.
+        $reviews = MeetingActionReview::query()
+            ->where('meeting_id', $meeting->id)
+            ->with(['actionItem.meeting', 'actionItem.assignedTo', 'assignedTo'])
+            ->get()
+            ->sortBy('actionItem.id')
+            ->values();
+        $notReviewed = $reviews->filter(fn (MeetingActionReview $review): bool => $review->outcome === MeetingActionReviewOutcomeEnum::NOT_REVIEWED);
+        $notReviewedCount = $notReviewed->count() + ($minutes->is_published ? 0 : ActionFollowUp::unreviewed($meeting)->count());
+
         return new self(
             meeting: $meeting,
             minutes: $minutes,
@@ -121,6 +148,11 @@ final readonly class MinutesReport
             absentCount: $absent->count(),
             attendanceRecorded: $attendanceRecorded,
             asOf: now(),
+            followUp: $reviews->diff($notReviewed)->values(),
+            notReviewedCount: $notReviewedCount,
+            guests: $attendanceRecorded
+                ? $pick($guestsByStatus, MeetingUserStatusEnum::ATTENDED)
+                : $pick($guestsByStatus, MeetingUserStatusEnum::CONFIRMED, MeetingUserStatusEnum::ATTENDED),
         );
     }
 

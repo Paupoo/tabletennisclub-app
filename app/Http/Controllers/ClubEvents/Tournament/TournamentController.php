@@ -11,7 +11,6 @@ use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Throwable;
@@ -109,10 +108,7 @@ class TournamentController extends Controller
 
         // spot_offered: user was promoted from waitlist, this is their confirmation click.
         if ($existingPivot?->registration_status === 'spot_offered') {
-            DB::table('tournament_user')
-                ->where('tournament_id', $tournament->id)
-                ->where('user_id', $user->id)
-                ->update(['registration_status' => 'registered', 'confirmation_deadline' => null]);
+            $this->tournamentService->acceptOfferedSpot($tournament, $user);
 
             return redirect()
                 ->route('tournament.registration.confirmed', $tournament)

@@ -84,6 +84,76 @@ describe('sendInvitations', function (): void {
         Notification::assertNothingSent();
     });
 
+    /*
+     * The invitation is the only mailing a tournament sends to the club now
+     * that opening the registrations announces nothing: it carries the
+     * "new tournaments" opt-out the announcement used to honour.
+     */
+    it('leaves out the members who asked not to hear about new tournaments', function (): void {
+        Bus::fake();
+
+        $tournament = wizardTournament(['registration_deadline' => now()->addWeek()]);
+        $willing = User::factory()->create();
+        $optedOut = User::factory()->create(['notification_preferences' => ['new_tournaments' => false]]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('selectedMembers', [$willing->id, $optedOut->id])
+            ->call('sendInvitations');
+
+        Bus::assertBatched(fn (PendingBatch $batch): bool => $batch->jobs
+            ->map(fn (SendTournamentInvitationJob $job): int => $job->userId)
+            ->all() === [$willing->id]);
+        expect(DB::table('tournament_invitations')->where('tournament_id', $tournament->id)->value('user_count'))->toBe(1);
+    });
+
+    it('marks those members in the list, and selecting everybody passes them over', function (): void {
+        $season = makeActiveSeason();
+        $tournament = wizardTournament(['registration_deadline' => now()->addWeek()]);
+        $willing = activeMember($season);
+        $optedOut = activeMember($season, ['notification_preferences' => ['new_tournaments' => false]]);
+
+        $wizard = Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('selectAllMembers');
+
+        $members = collect($wizard->get('members'))->keyBy('id');
+
+        expect($members[$willing->id]['declinesInvitations'])->toBeFalse()
+            ->and($members[$optedOut->id]['declinesInvitations'])->toBeTrue()
+            ->and($wizard->get('selectedMembers'))->toContain($willing->id)
+            ->not->toContain($optedOut->id);
+    });
+
+    it('will not tick such a member by hand either', function (): void {
+        $season = makeActiveSeason();
+        $tournament = wizardTournament(['registration_deadline' => now()->addWeek()]);
+        $optedOut = activeMember($season, ['notification_preferences' => ['new_tournaments' => false]]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->call('toggleMember', $optedOut->id)
+            ->assertSet('selectedMembers', [])
+            ->set('selectedMembers', [$optedOut->id])
+            ->assertSet('selectedMembers', [])
+            ->assertSee(__('Does not wish to hear about new tournaments'));
+    });
+
+    it('sends nothing when every selected member declined', function (): void {
+        Bus::fake();
+
+        $tournament = wizardTournament(['registration_deadline' => now()->addWeek()]);
+        $optedOut = User::factory()->create(['notification_preferences' => ['new_tournaments' => false]]);
+
+        Livewire::actingAs(wizardAdmin())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('selectedMembers', [$optedOut->id])
+            ->call('sendInvitations');
+
+        Bus::assertNothingBatched();
+        expect(DB::table('tournament_invitations')->where('tournament_id', $tournament->id)->exists())->toBeFalse();
+    });
+
     it('creates a tournament_invitations record', function (): void {
         $tournament = wizardTournament();
         $users = competitiveUsers(4);
@@ -715,8 +785,8 @@ describe('cancelling a tournament', function (): void {
 /*
  * Le champ existait dans le formulaire depuis le début, sans wire:model ni
  * propriété : ce que le comité y tapait disparaissait au premier aller-retour
- * Livewire, sans le moindre signal. La colonne `description`, elle, existait
- * déjà sur la table — elle manquait seulement au $fillable.
+ * Livewire, sans le moindre signal. La colonne `description` existait sur les
+ * bases recréées, pas en prod : voir AddDescriptionToTournamentsMigrationTest.
  */
 describe('additional information', function (): void {
 
@@ -748,6 +818,21 @@ describe('additional information', function (): void {
             ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
             ->set('step', '1')
             ->assertSeeHtml('wire:model="description"');
+    });
+
+    /*
+     * La colonne est un varchar(255). SQLite ne vérifie pas la longueur, MariaDB
+     * en mode strict si : la validation seule protège la prod.
+     */
+    it('refuses more than the column holds', function (): void {
+        $tournament = wizardTournament();
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('step', '1')
+            ->set('description', str_repeat('a', 256))
+            ->call('save')
+            ->assertHasErrors(['description' => 'max']);
     });
 });
 

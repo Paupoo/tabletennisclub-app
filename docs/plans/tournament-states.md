@@ -79,7 +79,7 @@ Au-delà de l'affichage, sept endroits font dépendre un comportement du statut 
 - `UserCalendarService:164` — le calendrier ne montre que `published`
 - `DashboardController:307` — exclut `cancelled`
 - `⚡event-subscription:336` — « Mes inscriptions » ne montre que `published`
-- `TournamentObserver` — annonce la première ouverture (`draft|locked → published`) ; corrigé par #81
+- `TournamentObserver` — annonçait la première ouverture (`draft|locked → published`) ; corrigé par #81, **supprimé le 2026-10-22** : l'ouverture ne prévient plus personne, le comité invite depuis l'étape Invitations
 
 ### 2.4 Le code mort (vérifié : zéro appelant en production)
 

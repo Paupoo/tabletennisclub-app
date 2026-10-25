@@ -207,12 +207,6 @@ parameters:
 			path: app/Domains/Competitions/Tournament/Models/Pool.php
 
 		-
-			message: '#^PHPDoc tag @property has invalid value \(mixed \$0\)\: Unexpected token "\$0", expected variable at offset 2523 on line 58$#'
-			identifier: phpDoc.parseError
-			count: 1
-			path: app/Domains/Competitions/Tournament/Models/Tournament.php
-
-		-
 			message: '#^Property App\\Domains\\Competitions\\Tournament\\Models\\Tournament\:\:\$casts \(array\<string, string\>\) does not accept default value of type array\<int\|string, string\>\.$#'
 			identifier: property.defaultValue
 			count: 1
@@ -237,33 +231,9 @@ parameters:
 			path: app/Domains/Competitions/Tournament/Services/TournamentMatchService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Domains/Competitions/Tournament/Services/TournamentService.php
-
-		-
-			message: '#^Method App\\Domains\\Competitions\\Tournament\\Services\\TournamentService\:\:ensurePaymentExists\(\) should return App\\Domains\\ClubAdmin\\Payment\\Models\\Payment but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Domains/Competitions/Tournament/Services/TournamentService.php
-
-		-
-			message: '#^Parameter \$payment of class App\\Domains\\Competitions\\Tournament\\Notifications\\TournamentPaymentRequestNotification constructor expects App\\Domains\\ClubAdmin\\Payment\\Models\\Payment, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Domains/Competitions/Tournament/Services/TournamentService.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:tables\(\)\.$#'
 			identifier: method.notFound
 			count: 2
-			path: app/Domains/Competitions/Tournament/Services/TournamentTableService.php
-
-		-
-			message: '#^Cannot call method isPlayable\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
 			path: app/Domains/Competitions/Tournament/Services/TournamentTableService.php
 
 		-

@@ -25,6 +25,7 @@ use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Models\MeetingActionItem;
 use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Shared\Enums\ExpenseReportDisplayStatus;
 use App\Domains\Shared\Enums\ExpenseReportStatus;
@@ -134,6 +135,7 @@ class PendingTasks
 
         foreach ([
             $this->myPayments($user),
+            $this->myMeetingActions($user),
             $this->affiliationsAwaitingDecision($user),
             $this->campRequestsAwaitingDecision($user),
             $this->unpaidAffiliations($user),
@@ -185,7 +187,7 @@ class PendingTasks
 
         return $this->task('camp_requests', $count,
             '1 demande de stage à décider', ':count demandes de stage à décider',
-            'o-sun', route('admin.trainings.index', $camps->count() === 1 ? ['pack' => $camps->first()] : []));
+            'o-sun', $camps->count() === 1 ? route('admin.trainings.show', ['pack' => $camps->first()]) : route('admin.trainings.index'));
     }
 
     private function draftArticles(User $user): ?PendingTask
@@ -287,8 +289,9 @@ class PendingTasks
 
     /**
      * Responsible adults on file twice, often found by a member correcting a
-     * number from their profile. Merging is done from the file of a member the
-     * duplicate answers for, so the task opens the first one.
+     * number from their profile. The task opens the list of responsible adults
+     * on both sheets of every pair: a sheet may answer for no child, and then no
+     * child's file leads to it.
      */
     private function guardianDuplicates(User $user): ?PendingTask
     {
@@ -296,12 +299,9 @@ class PendingTasks
             return null;
         }
 
-        $duplicates = (new GuardianDuplicates)->toMerge();
-        $ward = $duplicates->flatMap->users->first();
-
-        return $this->task('guardian_duplicates', $duplicates->count(),
+        return $this->task('guardian_duplicates', (new GuardianDuplicates)->toMerge()->count(),
             '1 adulte responsable encodé deux fois', ':count adultes responsables encodés deux fois',
-            'o-users', $ward instanceof User ? route('admin.users.show', $ward) : route('admin.users.index'), 'info');
+            'o-users', route('admin.users.guardians', ['onFileTwice' => 1]), 'info');
     }
 
     private function incompleteProfiles(User $user): ?PendingTask
@@ -402,6 +402,18 @@ class PendingTasks
      * The member's own bills, and those of the accounts they pay for: the
      * same list « My payments » opens on.
      */
+    /** Handed to the reader at a meeting, neither done nor abandoned. */
+    private function myMeetingActions(User $user): ?PendingTask
+    {
+        if (! Feature::Meetings->enabled() || ! $user->can(Permission::MeetingsView->value)) {
+            return null;
+        }
+
+        return $this->task('my_actions', MeetingActionItem::query()->open()->where('assigned_to_id', $user->id)->count(),
+            '1 action de réunion à votre nom', ':count actions de réunion à votre nom',
+            'o-clipboard-document-check', route('admin.meetings.my-actions'));
+    }
+
     private function myPayments(User $user): ?PendingTask
     {
         $count = Payment::where('status', 'pending')

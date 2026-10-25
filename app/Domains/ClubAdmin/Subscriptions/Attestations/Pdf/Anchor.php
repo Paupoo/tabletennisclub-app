@@ -47,5 +47,14 @@ final readonly class Anchor
          * taken from the table rather than from the words.
          */
         public ?float $column = null,
+        /**
+         * A rule drawn through the form's own words, this many millimetres long.
+         *
+         * Solidaris offers « nuitées/jours/demi-jour » after the count and asks
+         * for the useless ones to be struck. They are one word to the text
+         * layer, so the rule starts at the column given and runs for the width
+         * of the part it cancels.
+         */
+        public ?float $strike = null,
     ) {}
 }

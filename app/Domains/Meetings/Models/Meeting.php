@@ -13,6 +13,7 @@ use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\Meetings\Models\MeetingFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
@@ -167,6 +168,22 @@ class Meeting extends Model
         return $this->hasMany(MeetingActionItem::class);
     }
 
+    /**
+     * What of the agenda this person is told. The audience reads all of it; a
+     * guest reads the one point they were asked for, or nothing when they were
+     * asked for the whole meeting — a committee agenda can name a member in debt.
+     *
+     * @return Collection<int, MeetingAgendaItem>
+     */
+    public function agendaFor(User $user): Collection
+    {
+        $registration = $this->guestRegistrationOf($user);
+
+        return $registration === null
+            ? $this->agendaItems
+            : $this->agendaItems->where('id', $registration->guest_agenda_item_id)->values();
+    }
+
     public function agendaItems(): HasMany
     {
         return $this->hasMany(MeetingAgendaItem::class)->orderBy('sort_order');
@@ -194,6 +211,20 @@ class Meeting extends Model
         return $this->users()->wherePivot('status', MeetingUserStatusEnum::ATTENDED->value);
     }
 
+    /**
+     * The people this meeting convenes by right: the active members for a
+     * general assembly, the committee otherwise. Anybody else on the list is a
+     * guest, asked in person.
+     *
+     * @return EloquentBuilder<User>
+     */
+    public function audience(): EloquentBuilder
+    {
+        return $this->type === MeetingTypeEnum::GENERAL_ASSEMBLY
+            ? User::active()
+            : User::role([Role::ADMINISTRATOR->value, Role::COMMITTEE->value]);
+    }
+
     /** Archivable once it can no longer take place: completed, cancelled or postponed. */
     public function canBeArchived(): bool
     {
@@ -214,9 +245,11 @@ class Meeting extends Model
         return ! $this->users()->whereNotNull('invitation_sent_at')->exists();
     }
 
+    /** Members only: a guest who said yes never makes the quorum. */
     public function confirmedCount(): int
     {
         return $this->users()
+            ->wherePivot('is_guest', false)
             ->wherePivotIn('status', [MeetingUserStatusEnum::CONFIRMED->value, MeetingUserStatusEnum::ATTENDED->value])
             ->count();
     }
@@ -263,6 +296,12 @@ class Meeting extends Model
     public function isArchived(): bool
     {
         return $this->archived_at !== null;
+    }
+
+    /** Asked in person, outside the audience: told only what they came for. */
+    public function isGuest(User $user): bool
+    {
+        return $this->guestRegistrationOf($user) !== null;
     }
 
     public function isInPollPhase(): bool
@@ -378,7 +417,7 @@ class Meeting extends Model
     {
         return $this->belongsToMany(User::class)
             ->using(MeetingUser::class)
-            ->withPivot(['id', 'status', 'invitation_sent_at', 'response_at', 'meal_reserved', 'meal_responded_at'])
+            ->withPivot(['id', 'status', 'is_guest', 'guest_agenda_item_id', 'invitation_sent_at', 'response_at', 'meal_reserved', 'meal_responded_at'])
             ->as('registration')
             ->withTimestamps();
     }
@@ -390,5 +429,14 @@ class Meeting extends Model
         static::deleting(function (Meeting $meeting): void {
             $meeting->eventPost()->delete();
         });
+    }
+
+    private function guestRegistrationOf(User $user): ?MeetingUser
+    {
+        return MeetingUser::query()
+            ->where('meeting_id', $this->id)
+            ->where('user_id', $user->id)
+            ->where('is_guest', true)
+            ->first();
     }
 }

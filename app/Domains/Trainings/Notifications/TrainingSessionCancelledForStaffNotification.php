@@ -6,6 +6,7 @@ namespace App\Domains\Trainings\Notifications;
 
 use App\Domains\Trainings\Models\Training;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -13,7 +14,7 @@ use Illuminate\Notifications\Notification;
  * Prévient l'encadrement d'une séance annulée — sparrings, coach remplaçant —
  * qui se déplacerait sinon pour rien. Les inscrits ont leur propre message.
  */
-class TrainingSessionCancelledForStaffNotification extends Notification
+class TrainingSessionCancelledForStaffNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 

@@ -75,6 +75,7 @@ new class extends Component
         $end = (clone $start)->addWeeks(2);
 
         return Room::withCount('tables')
+            ->with('tables:id,room_id,state')
             ->withCount([
                 'trainings' => fn ($query) => $query->whereBetween('start', [$start, $end]),
                 'interclubs' => fn ($query) => $query->whereBetween('start_date_time', [$start, $end]),

@@ -350,8 +350,7 @@ it('discounts a pack the committee adds by hand', function (): void {
     ]);
 
     Livewire::actingAs(User::factory()->isAdmin()->create())
-        ->test('pages::club-events.trainings.index')
-        ->set('selectedPackId', $pack->id)
+        ->test('pages::club-events.trainings.show', ['pack' => $pack->id])
         ->set('addMemberUserId', $member->id)
         ->set('inlineDiscountMode', 'amount')
         ->set('inlineDiscountValue', 30.0)
@@ -396,8 +395,7 @@ it('takes a percentage of the pack the committee adds, not of the whole affiliat
     ]);
 
     Livewire::actingAs(User::factory()->isAdmin()->create())
-        ->test('pages::club-events.trainings.index')
-        ->set('selectedPackId', $pack->id)
+        ->test('pages::club-events.trainings.show', ['pack' => $pack->id])
         ->set('addMemberUserId', $member->id)
         ->set('inlineDiscountMode', 'percent')
         ->set('inlineDiscountValue', 10.0)
@@ -465,8 +463,7 @@ it('shows the inline discount field when the committee adds a member to a pack',
     $pack = TrainingPack::factory()->create(['price' => 90]);
 
     Livewire::actingAs(User::factory()->isAdmin()->create())
-        ->test('pages::club-events.trainings.index')
-        ->set('selectedPackId', $pack->id)
+        ->test('pages::club-events.trainings.show', ['pack' => $pack->id])
         ->set('addMemberModal', true)
         ->assertSeeHtml('wire:model="inlineDiscountReason"');
 })->group('subscriptions', 'discount');

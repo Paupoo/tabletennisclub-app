@@ -47,6 +47,10 @@ final readonly class AttestationData
         public string $federation,
         public string $signatoryName,
         public Carbon $issuedOn,
+        /** The camp's name, for a camp attestation. */
+        public ?string $campName = null,
+        /** The days the member took part in, for a camp attestation. */
+        public ?CampDays $campDays = null,
     ) {}
 
     /** The season written the way ML/MutPlus asks for it: two separate years. */

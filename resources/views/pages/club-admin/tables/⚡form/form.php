@@ -69,7 +69,11 @@ new class extends Component
 
         $table->fill($validated)->save();
 
-        $this->success('Table enregistrée avec succès.');
+        // Ouvert depuis le QR de la table, le formulaire ramène à la salle qui
+        // la contient : c'est là qu'on voit le parc après une correction.
+        $this->success(__('Table saved.'), redirectTo: $table->room_id !== null
+            ? route('admin.rooms.show', $table->room_id)
+            : route('admin.rooms.index'));
     }
 
     public function with(): array

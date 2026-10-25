@@ -300,12 +300,14 @@
                             <span class="text-muted font-normal">· {{ $shown->restocking->closed_at?->format('d/m/Y H:i') }}</span>
                         </p>
                         <ul class="divide-y divide-base-200">
-                            @foreach ($shown->restocking->lines->where('bought_packs', '>', 0) as $line)
+                            @foreach ($shown->restocking->lines->where('bought_units', '>', 0) as $line)
                                 <li class="flex justify-between gap-4 p-3" wire:key="restocking-line-{{ $line->id }}">
                                     <span>{{ $line->product->name }}</span>
                                     <span class="tabular-nums">
-                                        {{ \App\Domains\Bar\Services\RestockingList::packsLabel($line->bought_packs, $line->pack_size, $line->pack_label) }}
-                                        <span class="text-muted">({{ __(':units units', ['units' => $line->bought_packs * $line->pack_size]) }})</span>
+                                        {{ \App\Domains\Bar\Services\RestockingList::boughtLabel($line->bought_units, $line->pack_size, $line->pack_label) }}
+                                        @if ($line->bought_units % max(1, $line->pack_size) === 0)
+                                            <span class="text-muted">({{ __(':units units', ['units' => $line->bought_units]) }})</span>
+                                        @endif
                                     </span>
                                 </li>
                             @endforeach
@@ -349,8 +351,7 @@
             <x-slot:actions>
                 @can('cancelAcceptance', $shown)
                     <x-button :label="__('Undo the acceptance')" icon="o-arrow-uturn-left" class="btn-ghost"
-                        wire:click="cancelAcceptance"
-                        wire:confirm="{{ __('Cancel the refund and send this report back to be decided?') }}"
+                        x-on:click="$dispatch('app-confirm', { ...{{ Js::from(['message' => __('Cancel the refund and send this report back to be decided?'), 'method' => 'cancelAcceptance', 'params' => [], 'danger' => false]) }}, id: $wire.$id })"
                         spinner="cancelAcceptance" />
                 @endcan
                 @can('decide', $shown)

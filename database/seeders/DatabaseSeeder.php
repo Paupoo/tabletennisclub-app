@@ -16,7 +16,6 @@ use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
-use App\Domains\Competitions\Tournament\Services\TournamentTableService;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueCategory;
@@ -34,10 +33,6 @@ use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
-    public function __construct(
-        private TournamentTableService $tableService,
-    ) {}
-
     /**
      * Seed the application's database.
      */
@@ -347,11 +342,6 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        $rooms = Room::all();
-        foreach ($rooms as $room) {
-            $this->tableService->updateTablesCount($room);
-        }
-
         // Quatre membres sur cinq ont leur IBAN en fiche. Huit sur deux cent
         // soixante-neuf en portaient un, et la branche « IBAN du membre » du
         // barème de rapprochement restait donc aussi muette que l'était la
@@ -424,6 +414,10 @@ class DatabaseSeeder extends Seeder
         // Development only. It installs a seal and a signature watermarked
         // SPECIMEN — NE PAS UTILISER; they must never reach a production seed.
         $this->call(AttestationDemoSeeder::class);
+
+        // Quatre stages sur le compte admin, un par état de l'écran membre
+        // « Attestations mutuelle ». Relançable seul.
+        $this->call(CampAttestationDemoSeeder::class);
 
         // En dernier : la force list se calcule sur la population définitive,
         // et InterclubSeeder crée encore des compétiteurs.

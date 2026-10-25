@@ -102,9 +102,9 @@ describe('generateMatches', function (): void {
     });
 });
 
-// ── forfeitPoolMatchesForPlayer ───────────────────────────────────────────────
+// ── forfeitRemainingMatches ───────────────────────────────────────────────
 
-describe('forfeitPoolMatchesForPlayer', function (): void {
+describe('forfeitRemainingMatches', function (): void {
     it('marks all scheduled pool matches as completed with opponent as winner', function (): void {
         $pool = matchPool();
         $player = User::factory()->create(['ranking' => 'NC']);
@@ -122,12 +122,12 @@ describe('forfeitPoolMatchesForPlayer', function (): void {
             'match_order' => 1,
         ]);
 
-        $count = (new TournamentMatchService)->forfeitPoolMatchesForPlayer(
+        $count = (new TournamentMatchService)->forfeitRemainingMatches(
             $pool->tournament,
             $player
         );
 
-        expect($count)->toBe(1);
+        expect($count)->toHaveCount(1);
 
         $match = TournamentMatch::where('pool_id', $pool->id)->first();
         expect($match->status)->toBe('completed');
@@ -139,12 +139,12 @@ describe('forfeitPoolMatchesForPlayer', function (): void {
         $pool = matchPool();
         $player = User::factory()->create(['ranking' => 'NC']);
 
-        $count = (new TournamentMatchService)->forfeitPoolMatchesForPlayer(
+        $count = (new TournamentMatchService)->forfeitRemainingMatches(
             $pool->tournament,
             $player
         );
 
-        expect($count)->toBe(0);
+        expect($count)->toHaveCount(0);
     });
 
     it('does not forfeit already completed matches', function (): void {
@@ -165,12 +165,12 @@ describe('forfeitPoolMatchesForPlayer', function (): void {
             'match_order' => 1,
         ]);
 
-        $count = (new TournamentMatchService)->forfeitPoolMatchesForPlayer(
+        $count = (new TournamentMatchService)->forfeitRemainingMatches(
             $pool->tournament,
             $player
         );
 
-        expect($count)->toBe(0);
+        expect($count)->toHaveCount(0);
     });
 });
 

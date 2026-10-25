@@ -88,6 +88,21 @@
                                 @endif
                             </div>
                         </button>
+
+                        {{-- L'arbitre est une suggestion : on le remplace, ou on joue sans. --}}
+                        @if ($entry['ready'] && ! $entry['side1Blocked'] && ! $entry['side2Blocked'] && ($entry['refereeBlocked'] || $match->referee_id === null))
+                            <div class="mt-1 flex items-center gap-2 px-1" x-data="{ pick: '' }" data-referee-choice>
+                                <x-icon name="o-eye" class="h-3.5 w-3.5 shrink-0 text-base-content/50" />
+                                <select x-model="pick" class="select select-bordered select-xs grow"
+                                    @change="$wire.changeReferee({{ $match->id }}, pick === '' ? null : Number(pick))"
+                                    aria-label="{{ __('Referee') }}">
+                                    <option value="">{{ __('No referee: the players count') }}</option>
+                                    @foreach ($this->refereeChoices($match) as $choice)
+                                        <option value="{{ $choice['id'] }}">{{ $choice['name'] }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
                     </div>
                 @endforeach
             </div>

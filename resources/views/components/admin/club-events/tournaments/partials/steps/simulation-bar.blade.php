@@ -62,7 +62,7 @@
 
         <div>
             <p class="text-xs font-bold uppercase tracking-wider text-base-content/40">{{ __('Capacity') }}</p>
-            <p class="text-sm font-semibold tabular-nums">{{ $sim->totalPlayers }}</p>
+            <p class="text-sm font-semibold tabular-nums">{{ $sim->totalPlayers }}@if ($matchType === 'double') {{ __('pairs') }}@endif</p>
         </div>
     </div>
 </div>

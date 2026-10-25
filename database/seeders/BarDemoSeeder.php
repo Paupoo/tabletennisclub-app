@@ -375,7 +375,7 @@ class BarDemoSeeder extends Seeder
                 'pack_label' => $product->pack_label,
                 'proposed_packs' => $packs,
                 'in_cart' => true,
-                'bought_packs' => $packs,
+                'bought_units' => $packs * $product->pack_size,
             ]);
             $stockService->addIncomingStock($product->id, $packs * $product->pack_size, "Shopping trip #{$trip->id}", $shopper->id, $shopper->id, $trip->id);
         }

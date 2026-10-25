@@ -107,6 +107,7 @@ class InterclubSeeder extends Seeder
         $this->seedVeterans();
         $this->seedWomen();
         $this->seedAlertMatches();
+        $this->seedCurrentWeekLineups();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -196,6 +197,34 @@ class InterclubSeeder extends Seeder
         return $user;
     }
 
+    /**
+     * @param  array{0: int, 1: string}  $slot  day of the week and time
+     */
+    private function createCurrentWeekFixture(Team $team, array $slot, bool $isHome): ?Interclub
+    {
+        $opponent = Team::query()
+            ->where('league_id', $team->league_id)
+            ->whereHas('club', fn ($q) => $q->where('is_own_club', false)->where('name', 'not like', 'TT Demo%'))
+            ->orderBy('id')
+            ->first();
+
+        if ($opponent === null) {
+            return null;
+        }
+
+        [$day, $time] = $slot;
+        [$hour, $minute] = array_map(intval(...), explode(':', $time));
+        $at = now()->next($day)->setTime($hour, $minute);
+
+        // Semé un vendredi à 19 h, « vendredi prochain 20 h » tombe hors des sept
+        // jours : c'est alors ce soir.
+        if ($at->gt(now()->addDays(7))) {
+            $at->subWeek();
+        }
+
+        return $this->createInterclub($team, $opponent, $at->format('Y-m-d H:i'), $isHome);
+    }
+
     private function createInterclub(Team $ourTeam, Team $opponentTeam, string $dateTime, bool $isHome): Interclub
     {
         $visitedId = $isHome ? $ourTeam->id : $opponentTeam->id;
@@ -215,6 +244,19 @@ class InterclubSeeder extends Seeder
             'season_id' => $this->season->id,
             'league_id' => $ourTeam->league_id,
         ]);
+    }
+
+    private function currentWeekFixture(Team $team): ?Interclub
+    {
+        return Interclub::query()
+            ->where(fn ($query) => $query->where('visited_team_id', $team->id)->orWhere('visiting_team_id', $team->id))
+            ->whereBetween('start_date_time', [now(), now()->addDays(7)])
+            ->whereNull('forfeit')
+            ->where('is_bye', false)
+            ->whereDoesntHave('visitedTeam.club', fn ($query) => $query->where('name', 'like', 'TT Demo%'))
+            ->whereDoesntHave('visitingTeam.club', fn ($query) => $query->where('name', 'like', 'TT Demo%'))
+            ->orderBy('start_date_time')
+            ->first();
     }
 
     /**
@@ -357,6 +399,49 @@ class InterclubSeeder extends Seeder
                 foreach ($strongestAvailable->take($maxPlayers - 1) as $player) {
                     $interclub->select($player);
                 }
+            }
+        }
+    }
+
+    /**
+     * « Sélections de la semaine » se teste sur une base semée : chaque équipe
+     * du club joue dans les sept jours qui suivent le semis, avec une compo
+     * complète déjà envoyée. Les dates en dur du calendrier ne couvrent pas
+     * toutes les équipes chaque semaine : il manque, on crée la rencontre.
+     * Les rencontres « TT Demo » restent sans compo, pour le bandeau d'alerte.
+     */
+    private function seedCurrentWeekLineups(): void
+    {
+        $teams = Team::whereHas('club', fn ($q) => $q->where('is_own_club', true))
+            ->where('season_id', $this->season->id)
+            ->with(['league', 'users'])
+            ->orderBy('id')
+            ->get();
+
+        // Vendredi soir, samedi après-midi, dimanche matin : la semaine type.
+        $slots = [
+            [Carbon::FRIDAY, '20:00'],
+            [Carbon::SATURDAY, '14:00'],
+            [Carbon::SATURDAY, '19:00'],
+            [Carbon::SUNDAY, '10:00'],
+        ];
+
+        foreach ($teams->values() as $index => $team) {
+            $interclub = $this->currentWeekFixture($team) ?? $this->createCurrentWeekFixture($team, $slots[$index % count($slots)], $index % 2 === 0);
+
+            if ($interclub === null) {
+                continue;
+            }
+
+            $lineup = $team->users
+                ->sortBy(fn (User $player): int => $this->strength($player->ranking))
+                ->take($interclub->total_players);
+
+            $interclub->users()->updateExistingPivot($interclub->users()->pluck('users.id')->all(), ['is_selected' => false, 'selection_confirmed_at' => null]);
+
+            foreach ($lineup as $player) {
+                $interclub->markAvailability($player, InterclubAvailability::AVAILABLE);
+                $interclub->users()->updateExistingPivot($player->id, ['is_selected' => true, 'selection_confirmed_at' => now()]);
             }
         }
     }

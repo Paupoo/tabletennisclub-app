@@ -26,6 +26,22 @@ use App\Support\LocaleSort;
 class RestockingList
 {
     /**
+     * Ce qui a été acheté : en conditionnements quand le compte tombe juste
+     * (« 2 × casier »), en unités sinon (« 20 unités ») — le magasin n'avait pas
+     * forcément le conditionnement prévu, on ne le décompose pas.
+     */
+    public static function boughtLabel(int $units, int $packSize, ?string $packLabel): string
+    {
+        $packSize = max(1, $packSize);
+
+        if ($units % $packSize !== 0) {
+            return __(':units units', ['units' => $units]);
+        }
+
+        return self::packsLabel(intdiv($units, $packSize), $packSize, $packLabel);
+    }
+
+    /**
      * « 2 × casier », « 2 × 24 », ou « 7 » pour un produit qui s'achète à l'unité.
      *
      * Une seule écriture pour l'écran des courses et le digest du samedi.

@@ -291,3 +291,155 @@ describe('a guardian on file twice', function (): void {
         expect(Guardian::find($this->tomsMother->id))->not->toBeNull();
     });
 });
+
+/*
+ * Creating a responsible adult from the list of them. A sheet is only ever
+ * typed in for a child: one answering for no one reaches no one, and is how
+ * the club ended up with adults on file twice.
+ */
+
+describe('the office creating a guardian', function (): void {
+
+    it('creates the sheet for the children it answers for', function (): void {
+        $lucas = User::factory()->create();
+        $emma = User::factory()->create();
+
+        Livewire::actingAs($this->createFakeAdmin())
+            ->test('admin.users.guardian-editor')
+            ->call('create')
+            ->set('firstName', 'Nathalie')
+            ->set('lastName', 'Wouters')
+            ->set('phone', '0475 12 34 56')
+            ->set('email', 'nathalie@example.com')
+            ->call('addChild', $lucas->id)
+            ->call('addChild', $emma->id)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $guardian = Guardian::query()->where('email', 'nathalie@example.com')->sole();
+        expect($guardian->users->modelKeys())->toEqualCanonicalizing([$lucas->id, $emma->id]);
+    });
+
+    it('refuses a sheet that answers for no child', function (): void {
+        Livewire::actingAs($this->createFakeAdmin())
+            ->test('admin.users.guardian-editor')
+            ->call('create')
+            ->set('firstName', 'Nathalie')
+            ->set('lastName', 'Wouters')
+            ->set('phone', '0475 12 34 56')
+            ->call('save')
+            ->assertHasErrors(['childIds']);
+
+        expect(Guardian::query()->count())->toBe(0);
+    });
+
+    it('offers the sheet already on file instead of typing a second one', function (): void {
+        $existing = Guardian::factory()->create(['email' => 'cristina@example.com']);
+        $child = User::factory()->create();
+
+        Livewire::actingAs($this->createFakeAdmin())
+            ->test('admin.users.guardian-editor')
+            ->call('create')
+            ->set('firstName', 'Christina')
+            ->set('lastName', 'Decreton')
+            ->set('phone', '0475 99 99 99')
+            ->set('email', 'Cristina@Example.com')
+            ->call('addChild', $child->id)
+            ->call('save')
+            ->assertSee(__('Link the children to this sheet'))
+            ->call('linkChildrenToDuplicate');
+
+        expect(Guardian::query()->count())->toBe(1)
+            ->and($existing->users->modelKeys())->toBe([$child->id]);
+    });
+
+    it('is closed to a member who may not write to members files', function (): void {
+        Livewire::actingAs($this->createFakeUser())
+            ->test('admin.users.guardian-editor')
+            ->call('create')
+            ->assertForbidden();
+    });
+});
+
+describe('the office laying out the children of a guardian', function (): void {
+
+    it('links a child to a sheet and unlinks another', function (): void {
+        $guardian = Guardian::factory()->create();
+        $stays = User::factory()->create();
+        $leaves = User::factory()->create(['birthdate' => now()->subYears(25)]);
+        $joins = User::factory()->create();
+        $guardian->users()->attach([$stays->id, $leaves->id]);
+
+        Livewire::actingAs($this->createFakeAdmin())
+            ->test('admin.users.guardian-editor')
+            ->call('edit', $guardian->id)
+            ->call('removeChild', $leaves->id)
+            ->call('addChild', $joins->id)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        expect($guardian->users()->pluck('users.id')->all())->toEqualCanonicalizing([$stays->id, $joins->id]);
+    });
+
+    it('keeps the archived children a sheet answers for', function (): void {
+        $guardian = Guardian::factory()->create();
+        $archived = User::factory()->create();
+        $guardian->users()->attach($archived);
+        $archived->delete();
+
+        Livewire::actingAs($this->createFakeAdmin())
+            ->test('admin.users.guardian-editor')
+            ->call('edit', $guardian->id)
+            ->call('addChild', User::factory()->create()->id)
+            ->call('save');
+
+        expect($guardian->users()->withTrashed()->pluck('users.id'))->toContain($archived->id);
+    });
+
+    it('refuses to leave a minor with no responsible adult, and names them', function (): void {
+        $guardian = Guardian::factory()->create();
+        $minor = User::factory()->create(['first_name' => 'Hugo', 'last_name' => 'Lambert', 'birthdate' => now()->subYears(10)]);
+        $guardian->users()->attach($minor);
+
+        Livewire::actingAs($this->createFakeAdmin())
+            ->test('admin.users.guardian-editor')
+            ->call('edit', $guardian->id)
+            ->call('removeChild', $minor->id)
+            ->call('save')
+            ->assertHasErrors(['childIds'])
+            ->assertSee('Hugo Lambert');
+
+        expect($guardian->users()->pluck('users.id')->all())->toBe([$minor->id]);
+    });
+
+    it('unlinks a minor who keeps another responsible adult', function (): void {
+        $guardian = Guardian::factory()->create();
+        $minor = User::factory()->create(['birthdate' => now()->subYears(10)]);
+        $guardian->users()->attach($minor);
+        Guardian::factory()->create()->users()->attach($minor);
+
+        Livewire::actingAs($this->createFakeAdmin())
+            ->test('admin.users.guardian-editor')
+            ->call('edit', $guardian->id)
+            ->call('removeChild', $minor->id)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        expect($guardian->users()->count())->toBe(0);
+    });
+
+    it('leaves the children alone when a member corrects their own guardian', function (): void {
+        $member = User::factory()->create();
+        $guardian = Guardian::factory()->create();
+        $guardian->users()->attach($member);
+        $stranger = User::factory()->create();
+
+        Livewire::actingAs($member)
+            ->test('admin.users.guardian-editor')
+            ->call('edit', $guardian->id)
+            ->call('addChild', $stranger->id)
+            ->assertForbidden();
+
+        expect($guardian->users()->pluck('users.id')->all())->toBe([$member->id]);
+    });
+});

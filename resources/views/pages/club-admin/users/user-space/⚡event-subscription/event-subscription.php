@@ -19,6 +19,7 @@ use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -94,6 +95,22 @@ new class extends Component
     public function cancelRegistration(int $tournamentId): void
     {
         $tournament = Tournament::findOrFail($tournamentId);
+
+        // Une fois les inscriptions closes, un désistement se règle avec
+        // l'organisation : une paire à refaire, parfois des poules à retirer.
+        // Quitter la liste d'attente ou refuser une place reste libre.
+        $isEntrant = $tournament->users()
+            ->where('users.id', $this->user->id)
+            ->wherePivotIn('registration_status', ['registered', 'confirmed'])
+            ->exists();
+
+        if ($isEntrant && ! $tournament->registrationsAreOpen()) {
+            $this->cancelConfirmModal = false;
+            $this->error(__('Registrations are closed: contact the organisers to withdraw.'));
+
+            return;
+        }
+
         app(TournamentService::class)->cancelRegistration($tournament, $this->user);
         unset($this->upcomingTournaments);
         $this->cancelConfirmModal = false;
@@ -132,13 +149,7 @@ new class extends Component
 
     public function confirmTournamentSpot(int $tournamentId): void
     {
-        TournamentRegistration::where('user_id', $this->user->id)
-            ->where('tournament_id', $tournamentId)
-            ->where('registration_status', 'spot_offered')
-            ->update([
-                'registration_status' => 'confirmed',
-                'confirmation_deadline' => null,
-            ]);
+        app(TournamentService::class)->acceptOfferedSpot(Tournament::findOrFail($tournamentId), $this->user);
 
         unset($this->upcomingTournaments);
         $this->success(__('Spot confirmed!'));
@@ -381,6 +392,21 @@ new class extends Component
     }
 
     /**
+     * Who to contact once a member can no longer withdraw alone: the holders
+     * of the Tournaments délégation, as the « Who does what » page lists them.
+     *
+     * @return Collection<int, User>
+     */
+    #[Computed]
+    public function tournamentOrganisers(): Collection
+    {
+        return User::role(Role::TOURNAMENTS->value)
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get();
+    }
+
+    /**
      * Les stages du club qu'un membre affilié peut suivre, et sa place sur chacun.
      *
      * Un stage n'est proposé qu'aux affiliés de sa saison : l'assurance de la
@@ -453,7 +479,20 @@ new class extends Component
     #[Computed]
     public function upcomingTournaments(): Collection
     {
-        return Tournament::registrationsOpen()
+        // Après la clôture des inscriptions, l'inscrit garde son tournoi sous
+        // les yeux : il y vérifie son inscription, son partenaire de double,
+        // et peut encore se désister.
+        return Tournament::query()
+            ->where(fn ($query) => $query
+                ->where('status', TournamentStatusEnum::PUBLISHED)
+                ->orWhere(fn ($closed) => $closed
+                    ->whereIn('status', [TournamentStatusEnum::LOCKED, TournamentStatusEnum::SETUP])
+                    ->whereHas('users', fn ($users) => $users
+                        ->where('tournament_user.user_id', $this->user->id)
+                        ->whereIn('tournament_user.registration_status', ['registered', 'confirmed'])
+                    )
+                )
+            )
             ->where('start_date', '>=', now())
             ->withCount([
                 'users AS active_registrations_count' => fn ($q) => $q->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered']),

@@ -96,6 +96,17 @@
                         :readonly="$this->isContractLocked"
                         :hint="$this->isContractLocked ? __('Locked — tournament validated') : null" />
 
+                    {{-- Reduced price by age — locked with the price --}}
+                    <div class="grid grid-cols-2 gap-3">
+                        <x-input :label="__('Reduced fee')" suffix="€" type="number" min="0" step="0.5"
+                            wire:model="reducedPrice"
+                            :readonly="$this->isContractLocked" />
+                        <x-input :label="__('Under the age of')" type="number" min="1" max="99"
+                            wire:model="reducedPriceUnderAge"
+                            :readonly="$this->isContractLocked"
+                            :hint="__('Age on the tournament day.')" />
+                    </div>
+
                     <div class="col-span-2">
                         <x-toggle :label="__('Open registrations')" icon="o-eye"
                             :hint="__('If chosen, this tournament will be open for external registration on our website.')"
@@ -137,10 +148,15 @@
                     type="number" icon="o-user-group" min="0"
                     :hint="$maxUsersManual
                         ? __('Set by hand. 0 means no limit.')
-                        : __('Follows the structure: :pools pools × :size players. Type a value to fix it.', [
-                            'pools' => $nb_poules,
-                            'size' => $pool_size,
-                        ])" />
+                        : ($matchType === 'double'
+                            ? __('Follows the structure: :pools pools × :size pairs × 2 players. Type a value to fix it.', [
+                                'pools' => $nb_poules,
+                                'size' => $pool_size,
+                            ])
+                            : __('Follows the structure: :pools pools × :size players. Type a value to fix it.', [
+                                'pools' => $nb_poules,
+                                'size' => $pool_size,
+                            ]))" />
 
                 @if ($maxUsersManual)
                     <x-button :label="__('Follow the structure again')" class="btn-ghost btn-xs mt-1"
@@ -226,17 +242,26 @@
             </div>
             <x-input wire:model.live.debounce.500ms="nb_poules" :label="__('Number of pools(*)')"
                 icon="o-calculator" type="number" min="1" />
-            <x-select wire:model.live.debounce.500ms="pool_size" :label="__('Players per pool(*)')"
-                icon="o-user-group" :options="$poolSizeOptions" :hint="__('Strong impact on match count')" />
+            <x-select wire:model.live.debounce.500ms="pool_size" :label="$matchType === 'double' ? __('Pairs per pool(*)') : __('Players per pool(*)')"
+                icon="o-user-group" :options="$this->poolSizeOptions" :hint="__('Strong impact on match count')" />
             <x-input wire:model.live.debounce.500ms="nb_qualifies" :label="__('Qualified per pool(*)')"
                 icon="o-trophy" type="number" :hint="__('Players advancing to the bracket')" min="1"
                 numeric />
+            @php
+                $directQualifiers = $nb_poules * $nb_qualifies;
+                $repechage = max(0, $bracketSize - $directQualifiers);
+            @endphp
+            <x-select wire:model.live="bracketSize" :label="__('Bracket(*)')" icon="o-trophy"
+                :options="[['id' => 4, 'name' => __('4 places — semi-finals')], ['id' => 8, 'name' => __('8 places — quarter-finals')], ['id' => 16, 'name' => __('16 places — last sixteen')]]"
+                :hint="$repechage > 0
+                    ? trans_choice(':direct straight in, plus the best :count from rank :rank|:direct straight in, plus the best :count from rank :rank', $repechage, ['direct' => $directQualifiers, 'count' => $repechage, 'rank' => $nb_qualifies + 1])
+                    : __(':direct straight in', ['direct' => $directQualifiers])" />
 
 
             <div class="lg:col-span-2">
-                <x-textarea wire:model="description" :label="__('Additional information')" rows="4" maxlength="2000"
+                <x-textarea wire:model="description" :label="__('Additional information')" rows="4" maxlength="255"
                     :placeholder="__('Specific rules, dress code...')" />
-                <x-char-counter model="description" max="2000" />
+                <x-char-counter model="description" max="255" />
             </div>
 
         </x-admin.shared.form-section>

@@ -97,7 +97,9 @@ Un tuteur peut couvrir plusieurs frères et sœurs. Un tuteur qui est également
 
 **Corriger un tuteur :** sur la fiche du membre ou dans son formulaire, le crayon de la carte du tuteur ouvre un tiroir (prénom, nom, téléphone, email, IBAN). La fiche vaut pour tous les enfants qu'il couvre, et le tiroir les nomme. Un tuteur qui a son propre compte n'a pas de crayon : ses coordonnées sont celles de son compte, il les corrige dans son profil. Corriger l'email annule l'invitation déjà envoyée : renvoyez-la. Le membre peut aussi corriger ses tuteurs depuis Mon profil, mais pas un parent qui agit pour lui par procuration.
 
-**Tuteur encodé deux fois :** deux fiches au même email ou au même téléphone, ou une fiche à l'email d'un membre, apparaissent au tableau de bord (« X adultes responsables encodés deux fois »). Le bouton **Fusionner les deux fiches**, dans le tiroir, rattache la fiche au membre ou réunit les deux fiches en une.
+**Tuteur encodé deux fois :** deux fiches au même email ou au même téléphone, ou une fiche à l'email d'un membre, apparaissent au tableau de bord (« X adultes responsables encodés deux fois »), dont le lien ouvre la liste des adultes responsables réduite à ces fiches. Le bouton **Fusionner les deux fiches**, dans le tiroir, rattache la fiche au membre ou réunit les deux fiches en une.
+
+**Tous les adultes responsables :** dans la liste des membres, **Actions supplémentaires → Adultes responsables** liste chaque fiche : date d'encodage, enfants couverts (archivés compris, ou « Aucun enfant »), état du compte, membre du club cette saison ou non, et le badge « Encodé deux fois ». On y cherche un adulte par son nom, son email, son téléphone ou le nom d'un enfant. Le comité la lit ; qui gère les fiches des membres peut aussi y **créer** un adulte (au moins un enfant obligatoire), le **modifier** (coordonnées, enfants, fusion), le **supprimer** (refusé tant qu'il couvre un enfant encore au club) et, en sélection, **inviter** ou **supprimer** plusieurs fiches. Un mineur ne perd jamais son dernier adulte responsable.
 
 **Qui reçoit les emails d'un mineur ?** Tous ses tuteurs qui ont une adresse, plus le mineur lui-même s'il en a une. Chaque adresse reçoit **son propre message** : deux parents séparés ne voient jamais l'adresse l'un de l'autre. Un adulte sans adresse est joint de la même façon, via ses tuteurs.
 
@@ -196,7 +198,11 @@ Depuis la page du tournoi, cliquez sur **Gérer en direct**. Onglets disponibles
 - **Poules** : classements des poules
 - **Tableau** : tableau à élimination directe (après la phase de poules)
 - **Classements** : classements en temps réel
-- **Clôture** : terminer le tournoi et publier les résultats
+- **Clôture** : encaisser les impayés, terminer le tournoi et publier les résultats
+
+Le format se fixe à la création : en double, la taille d'une poule compte des **paires** et le plafond des **joueurs** (pair) ; la **taille du tableau** (4, 8 ou 16) est un réglage, complété par les meilleurs du rang suivant comparés sur des moyennes. Le jour J, l'appel se fait dans l'assistant (absence excusée ou injustifiée, inscription tardive par le comité), les poules se tirent sur place, et les tables montées se cochent au lancement. En direct, chaque erreur a son retour : annuler un lancement, corriger un score (en poule tant que le tableau n'est pas tiré, dans le tableau tant que le match suivant n'a pas commencé), déclarer un forfait ou un abandon. L'arbitre est une suggestion : on le remplace ou on joue sans. Le détail est dans l'aide « Faire tourner un tournoi le jour J ».
+
+Un impayé n'est jamais désinscrit : le membre reçoit deux rappels (trois jours avant son échéance, puis le lendemain) et peut régler sur place. Après la date limite — incluse —, il ne peut plus se désister seul et contacte la délégation Tournois.
 
 ### Inscription groupée
 
@@ -277,11 +283,17 @@ Consultez les réponses de présence en temps réel sur la page de détail de la
 
 ### Ordre du jour
 
-Ajoutez des points à l'ordre du jour de la réunion. L'ordre du jour est visible pour tous les membres invités.
+Ajoutez des points à l'ordre du jour de la réunion. L'ordre du jour est visible pour tous les membres invités — les invités extérieurs exceptés.
+
+Les points que la dernière réunion du même type (comité pour un comité, AG pour une AG) n'a pas abordés sont proposés dans un encadré **À reprendre**, cochés. **Confirmer** ajoute les points cochés à l'ordre du jour, avec la mention « Reporté du comité du … », là et dans le PV ; un point décoché ne revient plus. Un point repris et à nouveau non abordé est reproposé.
+
+### Invités
+
+La carte **Invités** fait venir une personne hors de la réunion — l'entraîneur pour le point sur les entraînements, par exemple. Toute personne qui a un compte peut être trouvée, affiliée ou non ; choisissez le point pour lequel elle vient, ou toute la réunion. Un invité n'apprend que la date, le lieu et son point : jamais le reste de l'ordre du jour ni la description de la réunion, ni dans l'e-mail, ni sur la page de réponse, ni dans le fichier calendrier. Sa convocation part tout de suite si les autres sont déjà parties, avec elles sinon. Les invités ne comptent jamais dans le quorum, sont listés à part dans le PV et ne reçoivent jamais le PV d'un comité.
 
 ### Procès-verbal
 
-Rédigez le PV depuis la fiche de la réunion (**Rédiger le PV**), en direct pendant la réunion : un bloc par point de l'ordre du jour — ce qui s'est dit, les décisions (tapez, puis Entrée ; numérotées D1, D2… sur tout le PV) et les actions (tapez, puis Entrée ; puis qui et pour quand) — plus un bloc pour ce qui sort de l'ordre du jour. Les présences se pointent en haut : tous les confirmés d'un coup, puis les corrections nom par nom, et un membre venu sans être sur la liste s'ajoute par la recherche. **Marquer abordé** clôt un point et ouvre le suivant. Tout s'enregistre au fur et à mesure ; **Aperçu** montre le PV et son PDF avant de le **Publier** une fois la réunion passée. Une modification faite après l'envoi apparaît « Corrigé le … ».
+Rédigez le PV depuis la fiche de la réunion (**Rédiger le PV**), en direct pendant la réunion : un bloc par point de l'ordre du jour — ce qui s'est dit, les décisions (tapez, puis Entrée ; numérotées D1, D2… sur tout le PV) et les actions (tapez, puis Entrée ; puis qui et pour quand) — plus un bloc pour ce qui sort de l'ordre du jour. Les présences se pointent en haut : tous les confirmés d'un coup, puis les corrections nom par nom, et une personne venue sans être sur la liste s'ajoute par la recherche — affiliée ou non ; celle que la réunion ne convoque pas d'office est notée invitée. **Marquer abordé** clôt un point et ouvre le suivant. Tout s'enregistre au fur et à mesure ; **Aperçu** montre le PV et son PDF avant de le **Publier** une fois la réunion passée. Une modification faite après l'envoi apparaît « Corrigé le … ».
 
 - **Envoyer au comité** le transmet au comité — la première étape habituelle, pour le relire.
 - **Envoyer à tous les membres** n'existe que pour une **assemblée générale** : le PV d'une réunion de comité ne sort jamais du comité, puisqu'il peut nommer un membre en dette ou un conflit. C'est aussi l'envoi à tous qui ouvre le PV d'une AG à chaque membre actif.
@@ -291,6 +303,12 @@ Le mail est court — les décisions, les actions du destinataire, un bouton **L
 ### Points d'action
 
 Créez des points d'action de suivi depuis la réunion, assignés à des membres spécifiques avec des dates d'échéance.
+
+Chaque comité ouvre son PV sur un bloc **Suivi des actions** : les actions encore ouvertes des réunions précédentes — comités et assemblées générales —, avec leur responsable, leur échéance, la réunion d'origine et la note d'avancement du responsable. Un tap par action : **Faite**, **En cours**, **Reporter** (nouvelle échéance), **Confier** (nouveau responsable) ou **Abandonner** (une ligne de motif, obligatoire). Une action cochée faite par son responsable depuis la dernière réunion apparaît « Cochée faite par son responsable », à confirmer. La publication fige le bloc dans le PV (page et PDF) : ce qui a été dit de chaque action reste tel quel ; celles qu'on n'a pas atteintes sont seulement comptées, et reviennent au comité suivant. La convocation d'un comité liste les actions ouvertes et dit à chaque responsable combien sont à lui.
+
+**Événements → Mes actions** rassemble les actions du lecteur, de toutes les réunions : il y note où il en est (le comité suivant le lit) et coche ce qui est fait. Les actions ouvertes comptent parmi ses tâches, au tableau de bord et dans le menu. Reporter, confier et abandonner restent l'affaire de celui qui gère les réunions.
+
+**Événements → Registre des PV** est la mémoire du comité, en trois onglets : **Décisions** (une ligne chacune, regroupées par réunion, les 12 derniers mois par défaut — 6 mois, la saison ou tout sur demande —, comités, AG ou les deux), **Actions** (toutes les actions de toutes les réunions, par responsable et par état) et **Recherche** (un mot cherché dans tout ce que contiennent les PV : discussions, décisions, actions, hors ordre du jour, annonces, avec la réunion, l'endroit et un extrait). Un PV non publié n'apparaît qu'à ceux qui gèrent les réunions, marqué « Brouillon ».
 
 ### Reporter ou annuler
 
@@ -304,7 +322,7 @@ Allez dans **Événements club → Entraînements**.
 
 ### Packs d'entraînement
 
-Les packs d'entraînement représentent des séances récurrentes (jour, niveau, type). Créez et gérez les packs depuis l'index des entraînements. **Exporter les inscrits** sort un tableur de tous les membres liés à un pack de la saison (inscrits, demandes, file d'attente), avec leurs coordonnées ; chaque export est tracé dans l'audit.
+Les packs d'entraînement représentent des séances récurrentes (jour, niveau, type). Créez et gérez les packs depuis l'index des entraînements ; **Détails** ouvre la page d'un pack avec trois onglets (**Membres**, **Séances**, **Présence**), et **Nouveau pack** / **Modifier** ouvrent l'assistant en page. Les e-mails d'entraînement (séance annulée, nouvel horaire, pack arrêté) partent en file d'attente, dans les minutes qui suivent. La grille de présence s'ouvre sur les douze dernières séances déjà tenues ; le taux d'un membre porte sur toutes les séances pointées du pack. **Exporter les inscrits** sort un tableur de tous les membres liés à un pack de la saison (inscrits, demandes, file d'attente), avec leurs coordonnées ; chaque export est tracé dans l'audit.
 
 ### Approuver les demandes d'entraînement
 
@@ -316,7 +334,7 @@ Si un pack d'entraînement est complet, les membres rejoignent la liste d'attent
 
 ### Stages
 
-Un stage est un pack coché **Stage (hors cotisation)** à l'étape 1 de l'assistant. Il fonctionne comme un pack (inscrits, présences, coach, liste d'attente) mais il est **facturé à part** : son paiement ne touche jamais l'affiliation, et il n'entre ni dans le total de la cotisation ni dans l'attestation mutuelle. Pas de prorata, pas de remise automatique ; un prix propre à un membre (un seul jour, la moitié du stage) se fixe avec un motif, à l'ajout ou via **Prix** dans la liste des inscrits. Les membres s'inscrivent depuis **Mes inscriptions** ; avec **Inscription sur validation**, leurs demandes s'acceptent ou se refusent sur la fiche du stage. Arrêter un stage rembourse en entier ce qui a été payé. La case se fige dès le premier inscrit.
+Un stage est un pack coché **Stage (hors cotisation)** à l'étape 1 de l'assistant. Il fonctionne comme un pack (inscrits, présences, coach, liste d'attente) mais il est **facturé à part** : son paiement ne touche jamais l'affiliation, et il n'entre ni dans le total de la cotisation ni dans l'attestation mutuelle de l'affiliation — il a la sienne, une fois terminé et payé. Pas de prorata, pas de remise automatique ; un prix propre à un membre (un seul jour, la moitié du stage) se fixe avec un motif, à l'ajout ou via **Prix** dans la liste des inscrits. Les membres s'inscrivent depuis **Mes inscriptions** ; avec **Inscription sur validation**, leurs demandes s'acceptent ou se refusent sur la fiche du stage. Arrêter un stage rembourse en entier ce qui a été payé. La case se fige dès le premier inscrit.
 
 ### Non-membres sur un stage
 
@@ -383,8 +401,12 @@ Allez dans **Administration club → Infos club**. Mettez à jour les coordonné
 
 Allez dans **Administration club → Salles**. Gérez les lieux d'entraînement/compétition :
 - Nom, adresse, nom du bâtiment
-- Capacité pour les entraînements et les interclubs
-- Nombre total de tables par salle
+- Capacité, en tables, pour les entraînements, les matchs officiels et les tournois
+- Les tables de la salle et leur état
+
+Chaque capacité affichée est **ce que la salle offre vraiment** : la place saisie, ramenée au nombre de tables jouables. Une salle de 6 places en entraînement dont 3 tables sont hors service en offre 5, et la fiche le dit. Une table « à réparer » reste jouable. Un pack d'entraînement sans plafond prend deux joueurs par table offerte ; au lancement d'un tournoi, l'assistant coche autant de tables que la capacité tournoi, les tables en bon état d'abord.
+
+**Autocollants QR.** « Imprimer les autocollants » (liste des salles, fiche d'une salle, ou « Réimprimer l'autocollant » sur une table) produit une feuille A4 de carrés de 5 cm à découper et coller sur le bord des tables. Chaque QR porte l'adresse permanente de sa table : pendant un tournoi lancé il ouvre la saisie du score de la table, sinon la fiche de la table pour la délégation Installations, et pour tout autre membre une page « Signaler un problème » qui écrit au club. Imprimez depuis le site en ligne : depuis une autre adresse, la page vous en avertit.
 
 ### Tables
 
@@ -500,10 +522,11 @@ En tant que membre du comité, les emails suivants sont envoyés automatiquement
 | Demande de disponibilités interclubs | Membres concernés |
 | Sélection interclubs confirmée | Membre sélectionné |
 | Diffusion de composition interclubs | Tous les membres sélectionnés |
+| Sélections de la semaine (jeudi 12 h, s'il y a au moins une rencontre dans les 7 jours) | Joueurs des équipes du club, capitaines et comité — un seul e-mail par adresse |
 | Pack d'entraînement approuvé | Membre |
 | Pack d'entraînement refusé | Membre |
 | Séance d'entraînement annulée | Membres inscrits |
-| Invitation à une réunion | Membres invités |
+| Invitation à une réunion | Membres invités, et les invités extérieurs |
 | Confirmation de RSVP réunion | Membre |
 | Procès-verbal de réunion | Le comité ; tous les membres actifs pour une AG envoyée à tous |
 | Réunion annulée/reportée | Tous les membres invités |
@@ -534,7 +557,9 @@ L'écran **Attestations mutuelle** porte trois choses : la façon dont le club s
 
 **Formulaires.** Téléverser le formulaire tel que la mutualité le publie. L'application le convertit puis retrouve seule l'emplacement de chaque valeur à partir des intitulés imprimés — une révision du formulaire fonctionne donc en général sans rien changer. Sinon, les étiquettes introuvables sont listées en rouge et la mutualité **disparaît de la liste proposée aux membres**. MC et Mutualité Neutre acceptent par écrit une attestation rédigée par le club : elles restent proposées même sans formulaire.
 
-**Révocation.** Un membre ne peut demander qu'une attestation par saison. Le motif de révocation est obligatoire. Le fichier est supprimé, la ligne d'historique reste, et la page publique de vérification indique désormais que le document n'est plus valable. Le membre peut alors en demander une nouvelle.
+**Formulaires de stage.** Les stages ont leurs propres formulaires : Partenamut (« Stages et camps ») et Solidaris (« Avantage activité jeunes »), installés en choisissant *Stage* dans le champ **Document** avant le téléversement. L'attestation de stage du club est toujours proposée, avec ou sans formulaire. Le club atteste les jours où une séance a eu lieu (séances annulées exclues) ; un jour de moins de quatre heures compte pour un demi-jour, et le formulaire Solidaris a les mentions inutiles biffées. Un stage encore facturé dans l'affiliation n'apparaît pas aux membres : ces formulaires se remplissent à la main.
+
+**Révocation.** Un membre ne peut demander qu'une attestation par saison, et une par stage. Quand un remboursement est ouvert sur un stage qui porte une attestation, le mail au trésorier le signale, avec la référence. Le motif de révocation est obligatoire. Le fichier est supprimé, la ligne d'historique reste, et la page publique de vérification indique désormais que le document n'est plus valable. Le membre peut alors en demander une nouvelle.
 
 **Délivrance à la place d'un membre.** Possible depuis la fiche du membre, avec les mêmes contrôles — utile pour un appel téléphonique ou un compte géré.
 

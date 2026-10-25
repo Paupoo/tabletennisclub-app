@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Meetings\Models;
 
+use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\Meetings\Models\MeetingAgendaItemFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
@@ -21,6 +22,9 @@ use Illuminate\Support\Carbon;
  * @property string|null $description
  * @property string|null $discussion what was said on the point, markdown
  * @property Carbon|null $discussed_at
+ * @property int|null $carried_from_id the point an earlier meeting did not reach, taken up here
+ * @property Carbon|null $carry_over_dismissed_at left unticked when the next meeting was prepared
+ * @property-read MeetingAgendaItem|null $carriedFrom
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Meeting $meeting
@@ -48,6 +52,7 @@ class MeetingAgendaItem extends Model
     protected $casts = [
         'sort_order' => 'integer',
         'discussed_at' => 'datetime',
+        'carry_over_dismissed_at' => 'datetime',
     ];
 
     protected $fillable = [
@@ -57,12 +62,26 @@ class MeetingAgendaItem extends Model
         'description',
         'discussion',
         'discussed_at',
+        'carried_from_id',
+        'carry_over_dismissed_at',
     ];
 
     /** @return HasMany<MeetingActionItem, $this> */
     public function actionItems(): HasMany
     {
         return $this->hasMany(MeetingActionItem::class, 'agenda_item_id');
+    }
+
+    /** @return BelongsTo<self, $this> */
+    public function carriedFrom(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'carried_from_id');
+    }
+
+    /** @return HasMany<self, $this> where it was taken up again */
+    public function carriedInto(): HasMany
+    {
+        return $this->hasMany(self::class, 'carried_from_id');
     }
 
     /** @return HasMany<MeetingDecision, $this> */
@@ -74,5 +93,21 @@ class MeetingAgendaItem extends Model
     public function meeting(): BelongsTo
     {
         return $this->belongsTo(Meeting::class);
+    }
+
+    /** "Postponed from the committee of 12/09/2026" — a dated fact, never a count. */
+    public function postponedFromLabel(): ?string
+    {
+        $origin = $this->carriedFrom?->meeting;
+
+        if ($origin === null) {
+            return null;
+        }
+
+        $date = $origin->scheduled_at?->format('d/m/Y') ?? '—';
+
+        return $origin->type === MeetingTypeEnum::GENERAL_ASSEMBLY
+            ? __('Postponed from the general assembly of :date', ['date' => $date])
+            : __('Postponed from the committee of :date', ['date' => $date]);
     }
 }

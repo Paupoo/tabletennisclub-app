@@ -467,12 +467,12 @@ tolère le volume mais pas le burst.
 **Les trois pièces vont ensemble** — il en manque une et l'envoi part en spam, ou disparaît :
 
 ```php
-// app/Jobs/SendTournamentAnnouncementJob.php
-class SendTournamentAnnouncementJob implements ShouldQueue
+// app/Jobs/SendTournamentInvitationJob.php
+class SendTournamentInvitationJob implements ShouldQueue
 {
-    use Queueable, RetriesWhileRateLimited;   // 3. la politique de retry
+    use Batchable, Queueable, RetriesWhileRateLimited;   // 3. la politique de retry
 
-    public function __construct(public int $tournamentId, public int $userId) {}
+    public function __construct(public int $tournamentId, public int $userId, /* … */) {}
 
     public function middleware(): array
     {
@@ -481,7 +481,8 @@ class SendTournamentAnnouncementJob implements ShouldQueue
 }
 
 // Le fan-out : un job par destinataire, jamais une boucle d'envois.  // 1.
-User::active()->each(fn (User $m) => SendTournamentAnnouncementJob::dispatch($t->id, $m->id));
+Bus::batch($users->map(fn (User $m) => new SendTournamentInvitationJob($t->id, $m->id))->all())
+    ->name('invitations')->dispatch();
 ```
 
 1. **Un job par destinataire**, portant des `id` et non des modèles : un membre archivé

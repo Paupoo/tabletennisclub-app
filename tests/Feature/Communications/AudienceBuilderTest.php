@@ -249,6 +249,20 @@ describe('the addresses', function (): void {
 
         expect(audienceBuild()->addresses())->toBe(['same@example.com']);
     });
+
+    it('singles out the addresses that speak for more than one member', function (): void {
+        $parent = Guardian::factory()->create(['email' => 'parent@example.com']);
+        $lea = audienceMember($this->currentSeason, attributes: ['email' => null, 'birthdate' => '2014-01-01']);
+        $tom = audienceMember($this->currentSeason, attributes: ['email' => null, 'birthdate' => '2012-01-01']);
+        $lea->guardians()->attach($parent);
+        $tom->guardians()->attach($parent);
+        audienceMember($this->currentSeason, attributes: ['email' => 'alone@example.com']);
+
+        $shared = audienceBuild()->sharedAddresses();
+
+        expect(array_keys($shared))->toBe(['parent@example.com'])
+            ->and(audienceIds($shared['parent@example.com']))->toBe(audienceIds([$lea, $tom]));
+    });
 });
 
 describe('narrowing by activity', function (): void {

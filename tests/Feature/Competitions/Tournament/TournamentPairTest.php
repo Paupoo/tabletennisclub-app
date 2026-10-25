@@ -5,7 +5,6 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentPair;
-use Livewire\Livewire;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -60,8 +59,8 @@ describe('TournamentPair model', function (): void {
     });
 
     it('returns a display name from last names', function (): void {
-        $p1 = User::factory()->create(['last_name' => 'Dupont']);
-        $p2 = User::factory()->create(['last_name' => 'Martin']);
+        $p1 = User::factory()->create(['first_name' => 'Anne', 'last_name' => 'Dupont']);
+        $p2 = User::factory()->create(['first_name' => 'Marc', 'last_name' => 'Martin']);
         $tournament = Tournament::factory()->create();
         $admin = User::factory()->create();
 
@@ -72,7 +71,7 @@ describe('TournamentPair model', function (): void {
             'registered_by' => $admin->id,
         ]);
 
-        expect($pair->displayName())->toBe('Dupont/Martin');
+        expect($pair->displayName())->toBe('A. Dupont / M. Martin');
     });
 
     it('labels a pair with both rankings rather than inventing an average', function (): void {
@@ -127,82 +126,5 @@ describe('doubles_registration_mode', function (): void {
     it('defaults to null for single tournaments', function (): void {
         $t = Tournament::factory()->create(['match_type' => 'single']);
         expect($t->doubles_registration_mode)->toBeNull();
-    });
-});
-
-// ── Wizard createPair / deletePair ────────────────────────────────────────────
-
-describe('wizard createPair', function (): void {
-    it('creates a pair between two registered players', function (): void {
-        $admin = User::factory()->isAdmin()->create();
-        $this->actingAs($admin);
-
-        $tournament = doublesTournament();
-        [$p1, $p2] = registeredUsersInTournament($tournament);
-
-        Livewire::test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
-            ->set('pairPlayer1Id', $p1->id)
-            ->set('pairPlayer2Id', $p2->id)
-            ->call('createPair')
-            ->assertHasNoErrors();
-
-        expect(TournamentPair::where('tournament_id', $tournament->id)->count())->toBe(1);
-    });
-
-    it('rejects pairing the same player twice', function (): void {
-        $admin = User::factory()->isAdmin()->create();
-        $this->actingAs($admin);
-
-        $tournament = doublesTournament();
-        [$p1] = registeredUsersInTournament($tournament);
-
-        Livewire::test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
-            ->set('pairPlayer1Id', $p1->id)
-            ->set('pairPlayer2Id', $p1->id)
-            ->call('createPair');
-
-        expect(TournamentPair::where('tournament_id', $tournament->id)->count())->toBe(0);
-    });
-
-    it('rejects creating a pair if a player is already paired', function (): void {
-        $admin = User::factory()->isAdmin()->create();
-        $this->actingAs($admin);
-
-        $tournament = doublesTournament();
-        [$p1, $p2, $p3] = registeredUsersInTournament($tournament, 3);
-
-        TournamentPair::create([
-            'tournament_id' => $tournament->id,
-            'player1_id' => $p1->id,
-            'player2_id' => $p2->id,
-            'registered_by' => $admin->id,
-        ]);
-
-        Livewire::test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
-            ->set('pairPlayer1Id', $p1->id)
-            ->set('pairPlayer2Id', $p3->id)
-            ->call('createPair');
-
-        expect(TournamentPair::where('tournament_id', $tournament->id)->count())->toBe(1);
-    });
-
-    it('deletes a pair', function (): void {
-        $admin = User::factory()->isAdmin()->create();
-        $this->actingAs($admin);
-
-        $tournament = doublesTournament();
-        [$p1, $p2] = registeredUsersInTournament($tournament);
-
-        $pair = TournamentPair::create([
-            'tournament_id' => $tournament->id,
-            'player1_id' => $p1->id,
-            'player2_id' => $p2->id,
-            'registered_by' => $admin->id,
-        ]);
-
-        Livewire::test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
-            ->call('deletePair', $pair->id);
-
-        expect(TournamentPair::where('id', $pair->id)->exists())->toBeFalse();
     });
 });

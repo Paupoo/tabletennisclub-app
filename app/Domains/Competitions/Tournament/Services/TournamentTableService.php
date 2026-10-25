@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Tournament\Services;
 
-use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
-use App\Domains\Shared\Enums\TableStateEnum;
 
 class TournamentTableService
 {
@@ -42,13 +40,5 @@ class TournamentTableService
         }
 
         $tournament->tables()->sync($tablesToSync);
-    }
-
-    public function updateTablesCount(Room $room): void
-    {
-        $room->total_playable_tables = $room->tables()
-            ->whereNot('state', TableStateEnum::OUT_OF_SERVICE)
-            ->count();
-        $room->save();
     }
 }

@@ -5,6 +5,10 @@
 <div>
     <x-header progress-indicator :title="__('Table configuration')" separator>
         <x-slot:actions>
+            @if ($tableId)
+                <x-button :label="__('Reprint the sticker')" icon="o-qr-code" class="btn-ghost btn-sm"
+                    link="{{ route('admin.tables.stickers', ['table' => $tableId]) }}" external />
+            @endif
             <x-button :label="__('Back')" icon="o-arrow-left" link="{{ url()->previous() }}" />
         </x-slot:actions>
     </x-header>

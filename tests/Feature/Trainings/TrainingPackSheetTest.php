@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Trainings\Models\Training;
@@ -50,8 +51,7 @@ it('sorts each list of the roster by surname', function (): void {
     enrol($pack, 'enrolled', userAttributes: ['last_name' => 'Albert', 'first_name' => 'Bob']);
 
     $roster = Livewire::actingAs($this->admin)
-        ->test('pages::club-events.trainings.index')
-        ->call('openPack', $pack->id)
+        ->test('pages::club-events.trainings.pack-roster', ['packId' => $pack->id])
         ->get('packRoster');
 
     // Ordre du français, pas celui des octets : « Étienne » se range entre
@@ -70,8 +70,7 @@ it('separates the enrolled, the requests, the queue and those who left', functio
     enrol($pack, 'left', ['ends_on' => '2026-01-15'], ['last_name' => 'Parti']);
 
     $roster = Livewire::actingAs($this->admin)
-        ->test('pages::club-events.trainings.index')
-        ->call('openPack', $pack->id)
+        ->test('pages::club-events.trainings.pack-roster', ['packId' => $pack->id])
         ->get('packRoster');
 
     expect($roster['enrolled'])->toHaveCount(1)
@@ -92,8 +91,7 @@ it('leaves a cancelled membership out of the roster', function (): void {
     enrol($pack, 'enrolled', userAttributes: ['last_name' => 'Present']);
 
     $roster = Livewire::actingAs($this->admin)
-        ->test('pages::club-events.trainings.index')
-        ->call('openPack', $pack->id)
+        ->test('pages::club-events.trainings.pack-roster', ['packId' => $pack->id])
         ->get('packRoster');
 
     // Même règle que committedCount() : une affiliation annulée ne tient plus
@@ -118,15 +116,19 @@ it('counts the attendance of each member over the recorded sessions only', funct
     // un oubli de pointage se lirait comme une désaffection.
     Training::factory()->past(14)->for($pack, 'trainingPack')->create();
 
-    $component = Livewire::actingAs($this->admin)
-        ->test('pages::club-events.trainings.index')
-        ->call('openPack', $pack->id);
+    $roster = Livewire::actingAs($this->admin)
+        ->test('pages::club-events.trainings.pack-roster', ['packId' => $pack->id])
+        ->get('packRoster');
 
-    $rates = collect($component->get('packRoster')['enrolled'])->pluck('rate', 'name');
+    $rates = collect($roster['enrolled'])->pluck('rate', 'name');
+
+    $summary = Livewire::actingAs($this->admin)
+        ->test('pages::club-events.trainings.show', ['pack' => $pack->id])
+        ->get('packSummary');
 
     expect($rates->first())->toBe(100)
         ->and($rates->last())->toBe(0)
-        ->and($component->get('packSummary')['turnout'])->toBe(50);
+        ->and($summary['turnout'])->toBe(50);
 })->group('training', 'attendance');
 
 it('counts the spots left against what is actually committed', function (): void {
@@ -137,8 +139,7 @@ it('counts the spots left against what is actually committed', function (): void
     enrol($pack, 'offered', ['waitlist_position' => 1]);
 
     $summary = Livewire::actingAs($this->admin)
-        ->test('pages::club-events.trainings.index')
-        ->call('openPack', $pack->id)
+        ->test('pages::club-events.trainings.show', ['pack' => $pack->id])
         ->get('packSummary');
 
     expect($summary['enrolled'])->toBe(1)
@@ -150,8 +151,7 @@ it('gives no spot count for a self-service pack', function (): void {
     $pack = sheetPack(['is_open_enrollment' => true]);
 
     $summary = Livewire::actingAs($this->admin)
-        ->test('pages::club-events.trainings.index')
-        ->call('openPack', $pack->id)
+        ->test('pages::club-events.trainings.show', ['pack' => $pack->id])
         ->get('packSummary');
 
     expect($summary['capped'])->toBeFalse()
@@ -166,8 +166,7 @@ it('splits the sessions into held, to come and cancelled', function (): void {
     Training::factory()->for($pack, 'trainingPack')->create(['start' => now()->addWeek(), 'end' => now()->addWeek()->addHours(2)]);
 
     $summary = Livewire::actingAs($this->admin)
-        ->test('pages::club-events.trainings.index')
-        ->call('openPack', $pack->id)
+        ->test('pages::club-events.trainings.show', ['pack' => $pack->id])
         ->get('packSummary');
 
     expect($summary['sessions'])->toBe(3)
@@ -183,8 +182,7 @@ it('renders the sheet with its roster and its facts', function (): void {
     // Le rendu est la seule vraie vérification : une erreur Blade ne se voit
     // pas sur les données du composant.
     Livewire::actingAs($this->admin)
-        ->test('pages::club-events.trainings.index')
-        ->call('openPack', $pack->id)
+        ->test('pages::club-events.trainings.show', ['pack' => $pack->id])
         ->assertOk()
         ->assertSee('Jeudi Élite')
         ->assertSee($member->user->last_name)
@@ -203,8 +201,7 @@ it('reads an enrolment dated from the first day of the pack as there from the st
     enrol($pack, 'enrolled', ['starts_on' => today()->toDateString()], ['last_name' => 'Arrive']);
 
     $roster = Livewire::actingAs($this->admin)
-        ->test('pages::club-events.trainings.index')
-        ->call('openPack', $pack->id)
+        ->test('pages::club-events.trainings.pack-roster', ['packId' => $pack->id])
         ->get('packRoster');
 
     // Encodé en retard avec la date du début ou inscrit à temps : même prix,
@@ -214,4 +211,19 @@ it('reads an enrolment dated from the first day of the pack as there from the st
         'Encode ' . User::where('last_name', 'Encode')->value('first_name') => null,
         'Inscrit ' . User::where('last_name', 'Inscrit')->value('first_name') => null,
     ]);
+})->group('training', 'pack');
+
+it('counts the external participants among the enrolled, as the spots left already do', function (): void {
+    $pack = sheetPack(['max_participants' => 10]);
+    foreach (range(1, 7) as $_) {
+        enrol($pack, 'enrolled');
+    }
+    ExternalRegistration::factory()->count(2)->create(['registrable_type' => TrainingPack::class, 'registrable_id' => $pack->id]);
+
+    $summary = Livewire::actingAs($this->admin)
+        ->test('pages::club-events.trainings.show', ['pack' => $pack->id])
+        ->get('packSummary');
+
+    expect($summary['enrolled'])->toBe(9)
+        ->and($summary['spotsLeft'])->toBe(1);
 })->group('training', 'pack');

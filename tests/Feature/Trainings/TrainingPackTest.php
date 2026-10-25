@@ -158,7 +158,8 @@ describe('effectiveMaxParticipants', function (): void {
         expect($pack->effectiveMaxParticipants())->toBe(12);
     });
 
-    it('falls back to room capacity when max_participants is null', function (): void {
+    it('falls back to two players per table of the room when max_participants is null', function (): void {
+        // The room's training capacity counts tables, not players (2026-10-17).
         $room = Room::factory()->create(['capacity_for_trainings' => 15]);
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season, [
@@ -167,7 +168,7 @@ describe('effectiveMaxParticipants', function (): void {
         ]);
         $pack->load('room');
 
-        expect($pack->effectiveMaxParticipants())->toBe(15);
+        expect($pack->effectiveMaxParticipants())->toBe(30);
     });
 });
 
@@ -215,8 +216,7 @@ describe('trainer update', function (): void {
             ->toBe($coachA->id);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openEdit', $pack->id)
+            ->test('pages::club-events.trainings.form', ['pack' => $pack->id])
             ->set('formTrainerId', $coachB->id)
             ->call('save');
 
@@ -245,8 +245,7 @@ describe('trainerOptions', function (): void {
         ]);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openCreate')
+            ->test('pages::club-events.trainings.form')
             ->assertSee('Zelda Coachowski')
             ->assertDontSee('Nestor Nocoach');
     });
@@ -294,8 +293,7 @@ describe('capacity', function (): void {
         $coach = User::factory()->isCoach()->create();
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openCreate')
+            ->test('pages::club-events.trainings.form')
             ->set('formSeasonId', $season->id)
             ->set('formName', 'Jeunes mardi')
             ->set('formLevel', trainingLevelId('Jeunes'))
@@ -309,15 +307,14 @@ describe('capacity', function (): void {
         expect(TrainingPack::where('name', 'Jeunes mardi')->sole()->max_participants)->toBe(12);
     });
 
-    it('falls back to the room capacity when the maximum is left empty', function (): void {
+    it('falls back to two players per table of the room when the maximum is left empty', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $season = makeActiveSeason();
         $room = Room::factory()->create(['capacity_for_trainings' => 16]);
         $coach = User::factory()->isCoach()->create();
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openCreate')
+            ->test('pages::club-events.trainings.form')
             ->set('formSeasonId', $season->id)
             ->set('formName', 'Sans plafond explicite')
             ->set('formLevel', trainingLevelId('Jeunes'))
@@ -330,7 +327,7 @@ describe('capacity', function (): void {
         $pack = TrainingPack::where('name', 'Sans plafond explicite')->sole();
 
         expect($pack->max_participants)->toBeNull()
-            ->and($pack->effectiveMaxParticipants())->toBe(16);
+            ->and($pack->effectiveMaxParticipants())->toBe(32);
     });
 
     it('refuses unlimited enrolment on a directed pack', function (): void {
@@ -340,8 +337,7 @@ describe('capacity', function (): void {
         $coach = User::factory()->isCoach()->create();
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openCreate')
+            ->test('pages::club-events.trainings.form')
             ->set('formSeasonId', $season->id)
             ->set('formName', 'Dirige sans limite')
             ->set('formLevel', trainingLevelId('Jeunes'))
@@ -364,8 +360,7 @@ describe('capacity', function (): void {
         $room = Room::factory()->create(['capacity_for_trainings' => 4]);
 
         Livewire::actingAs($admin)
-            ->test('pages::club-events.trainings.index')
-            ->call('openCreate')
+            ->test('pages::club-events.trainings.form')
             ->set('formSeasonId', $season->id)
             ->set('formName', 'Libre du vendredi')
             ->set('formLevel', trainingLevelId('Tous niveaux'))

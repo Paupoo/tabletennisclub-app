@@ -76,6 +76,9 @@ final readonly class AttestationFieldValues
             ...$this->digitCells('period_from_day', $data->periodFrom->format('d'), 2),
             ...$this->digitCells('period_from_month', $data->periodFrom->format('m'), 2),
             ...$this->digitCells('period_from_year', $data->periodFrom->format('Y'), 4),
+            ...$this->digitCells('period_to_day', $data->periodTo->format('d'), 2),
+            ...$this->digitCells('period_to_month', $data->periodTo->format('m'), 2),
+            ...$this->digitCells('period_to_year', $data->periodTo->format('Y'), 4),
             'period_from' => $data->periodFrom->format('d/m/Y'),
             'period_from_day' => $data->periodFrom->format('d'),
             'period_from_month' => $data->periodFrom->format('m'),
@@ -109,6 +112,40 @@ final readonly class AttestationFieldValues
             'mark_transfer' => $method === 'transfer' ? 'X' : '',
             'mark_cash' => $method === 'cash' ? 'X' : '',
             'mark_other' => $method !== null && ! in_array($method, ['transfer', 'cash'], true) ? 'X' : '',
+
+            ...$this->campValues($data, $identifiers),
+        ];
+    }
+
+    /**
+     * What only a camp form asks: the days, which box to cross, which units
+     * to strike, and the disability question the member answered.
+     *
+     * @return array<string, string>
+     */
+    private function campValues(AttestationData $data, MemberIdentifiers $identifiers): array
+    {
+        $days = $data->campDays;
+
+        if ($days === null) {
+            return [];
+        }
+
+        $inHalfDays = $days->countsInHalfDays();
+
+        return [
+            'camp_name' => (string) $data->campName,
+            'camp_days' => (string) $days->participationDays(),
+            ...$this->digitCells('camp_days', (string) $days->participationDays(), 2, rightAlign: true),
+            // One figure in one unit, on a form that offers three: nights never
+            // apply, and whichever of days or half days is not used is struck.
+            'camp_units' => (string) $days->inFormUnits(),
+            'strike_nights' => 'X',
+            'strike_days' => $inHalfDays ? 'X' : '',
+            'strike_half_days' => $inHalfDays ? '' : 'X',
+            'mark_camp' => 'X',
+            'disabled_yes' => $identifiers->recognisedDisabled === true ? 'X' : '',
+            'disabled_no' => $identifiers->recognisedDisabled === false ? 'X' : '',
         ];
     }
 

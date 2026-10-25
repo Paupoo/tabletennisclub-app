@@ -110,6 +110,7 @@ erDiagram
     %% Meetings
     Meeting
     MeetingActionItem
+    MeetingActionReview
     MeetingAgendaItem
     MeetingDateProposal
     MeetingDateVote
@@ -241,7 +242,9 @@ erDiagram
     Meeting ||--o| EventPost : "eventPost"
     Meeting ||--o| MeetingMinutes : "minutes"
     Meeting }o--o{ User : "users"
+    MeetingActionItem ||--o{ MeetingActionReview : "reviews"
     MeetingAgendaItem ||--o{ MeetingActionItem : "actionItems"
+    MeetingAgendaItem ||--o{ self : "carriedInto"
     MeetingAgendaItem ||--o{ MeetingDecision : "decisions"
     MeetingDateProposal ||--o{ MeetingDateVote : "votes"
     MeetingUser ||--o| Payment : "payment"

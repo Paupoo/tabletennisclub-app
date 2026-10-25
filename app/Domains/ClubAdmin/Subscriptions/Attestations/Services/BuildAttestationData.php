@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Domains\ClubAdmin\Subscriptions\Attestations\Services;
 
 use App\Data\Attestation\AttestationData;
+use App\Data\Attestation\CampDays;
 use App\Domains\ClubAdmin\Subscriptions\Attestations\Models\AttestationSetting;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -32,6 +34,9 @@ final readonly class BuildAttestationData
 {
     /** What a rehearsal prints where a real amount would go. */
     private const float SAMPLE_AMOUNT = 125.0;
+
+    /** What a camp rehearsal prints where a real amount would go. */
+    private const float SAMPLE_CAMP_AMOUNT = 80.0;
 
     public function for(Subscription $affiliation): AttestationData
     {
@@ -76,6 +81,27 @@ final readonly class BuildAttestationData
             signatoryName: (string) $settings->signatory?->full_name,
             issuedOn: Carbon::today(),
         );
+    }
+
+    /**
+     * What the club will certify about one camp.
+     *
+     * The member's identity, the club and the signatory are the affiliation's
+     * own — assembled once, in {@see for()}. What changes is the period, which
+     * runs from the first day to the last one the member took part in, and the
+     * money, which is the camp line's and never the cotisation's.
+     */
+    public function forCamp(SubscriptionTrainingPack $line, CampDays $days, float $amount): AttestationData
+    {
+        $line->loadMissing(['subscription.user', 'subscription.season', 'trainingPack']);
+
+        $method = $line->payments()
+            ->whereIn('status', ['paid', 'refunded'])
+            ->where(fn ($query) => $query->where('payment_method', '!=', 'refund')->orWhereNull('payment_method'))
+            ->latest('id')
+            ->value('payment_method');
+
+        return $this->asCamp($this->for($line->subscription), (string) $line->trainingPack->name, $days, $amount, $method);
     }
 
     /**
@@ -126,11 +152,42 @@ final readonly class BuildAttestationData
         );
     }
 
+    /**
+     * A camp rehearsal: the viewer's identity, a five-day week, a stated amount.
+     */
+    public function sampleForCamp(User $viewer, Season $season): AttestationData
+    {
+        $monday = Carbon::today()->subWeek()->startOfWeek();
+
+        $days = new CampDays(array_map(
+            fn (int $offset): array => ['date' => $monday->copy()->addDays($offset), 'half' => false],
+            range(0, 4),
+        ));
+
+        return $this->asCamp($this->sampleFor($viewer, $season), __('Training camp'), $days, self::SAMPLE_CAMP_AMOUNT, 'transfer');
+    }
+
     private function address(?string $street, ?string $cityCode, ?string $cityName): string
     {
         $city = $this->city($cityCode, $cityName);
 
         return trim(implode(', ', array_filter([$street, $city === '' ? null : $city])));
+    }
+
+    private function asCamp(AttestationData $base, string $name, CampDays $days, float $amount, ?string $method): AttestationData
+    {
+        return new AttestationData(...[
+            ...get_object_vars($base),
+            'periodFrom' => $days->first() ?? $base->periodFrom,
+            'periodTo' => $days->last() ?? $base->periodTo,
+            'amountPaid' => $amount,
+            'cotisation' => 0.0,
+            'trainingsTotal' => $amount,
+            'familyCredit' => 0.0,
+            'paymentMethod' => $method,
+            'campName' => $name,
+            'campDays' => $days,
+        ]);
     }
 
     private function city(?string $cityCode, ?string $cityName): string

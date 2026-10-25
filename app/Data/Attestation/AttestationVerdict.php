@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Data\Attestation;
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\Shared\Enums\AttestationRefusal;
+use Illuminate\Support\Carbon;
 
 /**
  * Whether the club may certify this member's affiliation, and why not.
@@ -29,18 +31,24 @@ final readonly class AttestationVerdict
          * what turns it into something the member can act on.
          */
         public float $balanceDue = 0.0,
+        /** The camp line looked at, for a camp attestation. */
+        public ?SubscriptionTrainingPack $line = null,
+        /** The first day a camp not over yet can be certified. */
+        public ?Carbon $availableOn = null,
     ) {}
 
-    public static function allow(Subscription $affiliation): self
+    public static function allow(Subscription $affiliation, ?SubscriptionTrainingPack $line = null): self
     {
-        return new self(true, null, $affiliation);
+        return new self(true, null, $affiliation, line: $line);
     }
 
     public static function refuse(
         AttestationRefusal $refusal,
         ?Subscription $affiliation = null,
         float $balanceDue = 0.0,
+        ?SubscriptionTrainingPack $line = null,
+        ?Carbon $availableOn = null,
     ): self {
-        return new self(false, $refusal, $affiliation, $balanceDue);
+        return new self(false, $refusal, $affiliation, $balanceDue, $line, $availableOn);
     }
 }

@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
-use App\Domains\Competitions\Tournament\Notifications\NewTournamentPublishedNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentInvitationNotification;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Jobs\SendMeetingInvitationJob;
 use App\Jobs\SendMemberInvitationJob;
-use App\Jobs\SendTournamentAnnouncementJob;
 use App\Jobs\SendTournamentCancellationJob;
 use App\Jobs\SendTournamentInvitationJob;
 use App\Jobs\SendTournamentUpdateJob;
@@ -40,8 +38,8 @@ it('spreads a mailing over the windows instead of dropping it, under --tries=1',
     $second = activeMember($season);
     $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PUBLISHED]);
 
-    SendTournamentAnnouncementJob::dispatch($tournament->id, $first->id);
-    SendTournamentAnnouncementJob::dispatch($tournament->id, $second->id);
+    SendTournamentInvitationJob::dispatch($tournament->id, $first->id);
+    SendTournamentInvitationJob::dispatch($tournament->id, $second->id);
 
     $worker = app('queue.worker');
     $options = new WorkerOptions(maxTries: 1);
@@ -52,19 +50,18 @@ it('spreads a mailing over the windows instead of dropping it, under --tries=1',
     expect(DB::table('failed_jobs')->count())->toBe(0)
         ->and(DB::table('jobs')->count())->toBe(1);          // waiting, not dead
 
-    Notification::assertSentTo($first, NewTournamentPublishedNotification::class);
-    Notification::assertNotSentTo($second, NewTournamentPublishedNotification::class);
+    Notification::assertSentTo($first, TournamentInvitationNotification::class);
+    Notification::assertNotSentTo($second, TournamentInvitationNotification::class);
 
     $this->travel(90)->seconds();                           // past the window it was released to
     $worker->runNextJob('database', 'default', $options);
 
-    Notification::assertSentTo($second, NewTournamentPublishedNotification::class);
+    Notification::assertSentTo($second, TournamentInvitationNotification::class);
     expect(DB::table('jobs')->count())->toBe(0);
 });
 
 it('bounds every throttled mailing by a deadline rather than by a count', function (): void {
     $mailings = [
-        new SendTournamentAnnouncementJob(1, 1),
         new SendMemberInvitationJob(1),
         new SendMeetingInvitationJob(1, 1),
         new SendTournamentInvitationJob(1, 1),
@@ -87,7 +84,6 @@ it('bounds every throttled mailing by a deadline rather than by a count', functi
 it('runs every club-wide mailing through a declared limiter', function (): void {
     $expected = [
         [new SendMemberInvitationJob(1), 'invitations'],
-        [new SendTournamentAnnouncementJob(1, 1), 'invitations'],
         [new SendTournamentInvitationJob(1, 1), 'invitations'],
         [new SendMeetingInvitationJob(1, 1), 'convocations'],
         [new SendTournamentCancellationJob(1, 1), 'convocations'],

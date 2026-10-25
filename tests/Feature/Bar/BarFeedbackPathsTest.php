@@ -501,10 +501,18 @@ it('says so out loud when there is nothing to send', function (): void {
     // au trésorier sous la forme d'un CSV à zéro ligne, annoncée « Email envoyé
     // avec succès ». Le garde compte maintenant commandes et paiements.
     AppSetting::set('treasurer_email', 'previous@example.test');
+    $date = now()->subMonth()->toDateString();
+
+    $this->actingAs($this->manager)
+        ->get(route('bar.cashSheet.index', ['date' => $date]))
+        ->assertOk()
+        ->assertSee('Aucune commande ni paiement enregistré pour cette journée.')
+        ->assertSeeInOrder(['name="to"', 'disabled', 'value='], escape: false)
+        ->assertDontSee(route('bar.cashSheet.download', ['date' => $date]), escape: false);
 
     $this->actingAs($this->manager)
         ->post(route('bar.cashSheet.send'), [
-            'date' => now()->subMonth()->toDateString(),
+            'date' => $date,
             'to' => 'tresorier@example.test',
             'save_default' => true,
         ])

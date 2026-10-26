@@ -292,15 +292,10 @@
                             </div>
                         @endforeach
                         @can('cash_register.entry.create')
-                            @if (count($this->cashRegisterOptions) > 0)
-                                <div class="flex flex-wrap items-end gap-2">
-                                    <div class="min-w-48 flex-1">
-                                        <x-select wire:model="cashRegisterId" :label="__('Cash register')" :options="$this->cashRegisterOptions" />
-                                    </div>
-                                    <x-button :label="__('Record a cash payment of :amount €', ['amount' => number_format($shown->amount, 2, ',', ' ')])"
-                                        icon="o-currency-euro" class="btn-outline btn-sm" wire:click="payInCash" spinner="payInCash" />
-                                </div>
-                            @endif
+                            <div class="flex justify-end">
+                                <x-button :label="__('Record a cash payment of :amount €', ['amount' => number_format($shown->amount, 2, ',', ' ')])"
+                                    icon="o-currency-euro" class="btn-outline btn-sm" wire:click="payInCash" spinner="payInCash" />
+                            </div>
                         @endcan
                     </div>
                 @endif

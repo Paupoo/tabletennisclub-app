@@ -32,16 +32,16 @@ new class extends Component
 
     public bool $changeHolderModal = false;
 
-    public bool $createRegisterModal = false;
-
     /** « Versement de/vers la banque » : links a movement of the till to its bank line. */
     public bool $depositDrawer = false;
 
     /** The movement of the till whose documents or bank deposit are open. */
     public ?int $documentEntryId = null;
 
-    #[Rule('required|integer|not_in:0')]
-    public int $entryAmount = 0;
+    /**
+     * In euros as typed — a comma or a dot, down to the cent.
+     */
+    public string $entryAmount = '';
 
     public bool $entryDocumentsDrawer = false;
 
@@ -58,19 +58,6 @@ new class extends Component
     #[Rule('nullable|exists:users,id')]
     public ?int $newHolderUserId = null;
 
-    #[Rule('nullable|exists:users,id')]
-    public ?int $newRegisterHolderUserId = null;
-
-    #[Rule('required|string|max:100')]
-    public string $newRegisterName = 'Caisse principale';
-
-    public bool $retireRegisterModal = false;
-
-    public ?int $selectedRegisterId = null;
-
-    /** Retired registers stay out of the way until you ask for them. */
-    public bool $showRetired = false;
-
     #[Computed]
     public function balance(): int
     {
@@ -83,8 +70,7 @@ new class extends Component
 
         $this->validateOnly('newHolderUserId');
 
-        $register = CashRegister::findOrFail($this->selectedRegisterId);
-        $register->update(['held_by_user_id' => $this->newHolderUserId]);
+        CashRegister::club()->update(['held_by_user_id' => $this->newHolderUserId]);
 
         $this->changeHolderModal = false;
         unset($this->register);
@@ -112,24 +98,6 @@ new class extends Component
         }
 
         $this->afterEntryChange(__('Supporting document :reference filed and linked.', ['reference' => $document->reference()]));
-    }
-
-    public function createRegister(): void
-    {
-        $this->validateOnly('newRegisterName');
-        $this->validateOnly('newRegisterHolderUserId');
-
-        Gate::authorize(Permission::CashRegisterHolderChange->value);
-
-        $register = CashRegister::create([
-            'name' => $this->newRegisterName,
-            'held_by_user_id' => $this->newRegisterHolderUserId,
-        ]);
-
-        $this->selectedRegisterId = $register->id;
-        $this->reset(['newRegisterName', 'newRegisterHolderUserId', 'createRegisterModal']);
-        unset($this->register, $this->registers);
-        $this->success(__('Cash register created.'));
     }
 
     /**
@@ -227,12 +195,6 @@ new class extends Component
         $this->afterEntryChange(__('Supporting document linked.'));
     }
 
-    public function mount(): void
-    {
-        $register = CashRegister::first();
-        $this->selectedRegisterId = $register?->id;
-    }
-
     public function openChangeHolder(): void
     {
         Gate::authorize(Permission::CashRegisterHolderChange->value);
@@ -276,13 +238,6 @@ new class extends Component
         $this->manualEntryModal = true;
     }
 
-    public function openRetireRegister(): void
-    {
-        Gate::authorize(Permission::CashRegisterManage->value);
-
-        $this->retireRegisterModal = true;
-    }
-
     public function reasonOptions(): array
     {
         return [
@@ -292,23 +247,16 @@ new class extends Component
         ];
     }
 
+    /**
+     * The club's till, once something has opened it — reading the screen
+     * opens nothing.
+     */
     #[Computed]
     public function register(): ?CashRegister
     {
-        if (! $this->selectedRegisterId) {
-            return null;
-        }
-
-        return CashRegister::with(['entries.recordedBy', 'entries.supportingDocuments', 'entries.transaction', 'heldBy'])->find($this->selectedRegisterId);
-    }
-
-    #[Computed]
-    public function registers(): Illuminate\Database\Eloquent\Collection
-    {
-        return CashRegister::query()
-            ->when($this->showRetired, fn ($query) => $query->withTrashed())
-            ->orderBy('name')
-            ->get();
+        return CashRegister::with(['entries.recordedBy', 'entries.supportingDocuments', 'entries.transaction', 'heldBy'])
+            ->orderBy('id')
+            ->first();
     }
 
     public function render(): View
@@ -320,59 +268,29 @@ new class extends Component
         ]);
     }
 
-    public function restoreRegister(int $registerId): void
-    {
-        Gate::authorize(Permission::CashRegisterManage->value);
-
-        $register = CashRegister::onlyTrashed()->findOrFail($registerId);
-        $register->restore();
-
-        unset($this->register, $this->registers);
-
-        $this->success(__('The cash register :name is back in service.', ['name' => $register->name]));
-    }
-
-    /**
-     * Take a register out of service without erasing its books.
-     *
-     * `cash_register_entries` cascades on delete, so a real DELETE would take
-     * the whole ledger with it. Retiring keeps every movement and lets the
-     * register come back.
-     */
-    public function retireRegister(): void
-    {
-        Gate::authorize(Permission::CashRegisterManage->value);
-
-        $register = CashRegister::findOrFail($this->selectedRegisterId);
-        $register->delete();
-
-        $this->reset(['retireRegisterModal']);
-        $this->selectedRegisterId = CashRegister::value('id');
-        unset($this->register, $this->registers);
-
-        $this->success(__('The cash register :name has been retired.', ['name' => $register->name]));
-    }
-
     public function saveManualEntry(): void
     {
         Gate::authorize(Permission::CashRegisterEntryCreate->value);
 
+        $this->entryAmount = str_replace(',', '.', trim($this->entryAmount));
+
         $this->validate([
-            'entryAmount' => 'required|integer|not_in:0',
+            'entryAmount' => ['required', 'numeric', 'decimal:0,2', 'not_in:0'],
             'entryReason' => 'required|string',
             'entryNotes' => 'nullable|string|max:500',
         ]);
 
-        $register = CashRegister::find($this->selectedRegisterId);
-        if (! $register) {
-            $this->error(__('No cash register selected.'));
+        $cents = (int) round((float) $this->entryAmount * 100);
+
+        if ($cents === 0) {
+            $this->addError('entryAmount', __('Enter an amount other than zero.'));
 
             return;
         }
 
         CashRegisterEntry::create([
-            'cash_register_id' => $register->id,
-            'amount' => $this->entryAmount * 100,
+            'cash_register_id' => CashRegister::club()->id,
+            'amount' => $cents,
             'reason' => $this->entryReason,
             'notes' => $this->entryNotes,
             'recorded_by_id' => Auth::id(),

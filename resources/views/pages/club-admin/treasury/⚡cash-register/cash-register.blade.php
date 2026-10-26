@@ -5,14 +5,6 @@
 <div>
     <x-header :title="__('Cash Register')" :subtitle="__('In-person cash management')" separator progress-indicator>
         <x-slot:actions>
-            @can('cash_register.holder.change')
-            <x-button
-                :label="__('New register')"
-                icon="o-building-library"
-                class="btn-outline btn-sm"
-                wire:click="$set('createRegisterModal', true)" />
-            @endcan
-            @if($this->register)
             @can('cash_register.entry.create')
             <x-button
                 :label="__('Add entry')"
@@ -20,48 +12,15 @@
                 class="btn-primary btn-sm"
                 wire:click="openManualEntry" />
             @endcan
-            @can('cash_register.manage')
-            @unless($this->register->trashed())
-            <x-button
-                :label="__('Retire')"
-                icon="o-archive-box-x-mark"
-                class="btn-ghost btn-sm text-error"
-                wire:click="openRetireRegister" />
-            @endunless
-            @endcan
-            @endif
         </x-slot:actions>
     </x-header>
 
-    @if($this->registers->isEmpty())
+    @if($this->register === null)
     <div class="flex flex-col items-center justify-center py-20 text-muted">
         <x-icon name="o-currency-euro" class="w-16 h-16 mb-4" />
-        <p class="text-sm italic">{{ __('No cash register yet. Create one to get started.') }}</p>
+        <p class="text-sm italic">{{ __('No movement in the till yet.') }}</p>
     </div>
     @else
-
-    {{-- Register selector (if multiple) --}}
-    @if($this->registers->count() > 1 || $showRetired)
-    <div class="mb-6 flex flex-wrap items-center gap-2">
-        @foreach($this->registers as $reg)
-        <x-button
-            :label="$reg->trashed() ? $reg->name . ' — ' . __('Retired') : $reg->name"
-            wire:click="$set('selectedRegisterId', {{ $reg->id }})"
-            @class(['btn-sm', 'btn-primary' => $selectedRegisterId === $reg->id, 'btn-outline' => $selectedRegisterId !== $reg->id, 'opacity-60' => $reg->trashed()]) />
-        @if($reg->trashed())
-        @can('cash_register.manage')
-        <x-button
-            :label="__('Put back in service')"
-            icon="o-arrow-path"
-            class="btn-ghost btn-sm"
-            wire:click="restoreRegister({{ $reg->id }})" />
-        @endcan
-        @endif
-        @endforeach
-    </div>
-    @endif
-
-    @if($this->register)
     {{-- Holder info --}}
     <div class="flex items-center gap-3 mb-4 px-1">
         <x-icon name="o-user-circle" class="w-5 h-5 text-base-content/40 shrink-0" />
@@ -196,43 +155,6 @@
         @endforelse
     </x-card>
     @endif
-    @endif
-
-    @can('cash_register.manage')
-    <div class="mb-4 flex justify-end">
-        <x-checkbox :label="__('Show retired registers')" wire:model.live="showRetired" class="text-sm" />
-    </div>
-    @endcan
-
-    {{-- Modal: Retire register --}}
-    <x-app-modal wire:model="retireRegisterModal" :title="__('Retire this cash register')" separator
-        :open="$retireRegisterModal">
-        <p class="text-sm">
-            {{ __('It leaves the list but keeps every movement it recorded. You can put it back in service later.') }}
-        </p>
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" @click="$wire.retireRegisterModal = false" class="btn-ghost" />
-            <x-button :label="__('Retire')" icon="o-archive-box-x-mark" class="btn-error" wire:click="retireRegister"
-                spinner />
-        </x-slot:actions>
-    </x-app-modal>
-
-    {{-- Modal: Create register --}}
-    <x-app-modal wire:model="createRegisterModal" :title="__('Create Cash Register')" separator :open="$createRegisterModal">
-        <div class="space-y-4">
-            <x-input :label="__('Register name')" wire:model="newRegisterName" autofocus />
-            <x-choices-offline
-                :label="__('Holder')"
-                :options="$users"
-                :placeholder="__('Search for a member...')"
-                wire:model="newRegisterHolderUserId"
-                single searchable clearable />
-        </div>
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" @click="$wire.createRegisterModal = false" class="btn-ghost" />
-            <x-button :label="__('Create')" icon="o-check" class="btn-primary" wire:click="createRegister" spinner />
-        </x-slot:actions>
-    </x-app-modal>
 
     {{-- Modal: Change holder --}}
     <x-app-modal wire:model="changeHolderModal" :title="__('Change holder')" separator :open="$changeHolderModal">
@@ -257,7 +179,7 @@
             <x-input
                 :label="__('Amount (€)')"
                 wire:model="entryAmount"
-                type="number"
+                inputmode="decimal"
                 :hint="__('Positive = cash in, negative = cash out')" />
             <x-select
                 :label="__('Reason')"

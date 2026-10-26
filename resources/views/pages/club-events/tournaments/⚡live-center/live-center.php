@@ -569,16 +569,13 @@ new class extends Component
     {
         abort_unless($this->canManageTournament, 403);
 
-        $register = CashRegister::first();
         $player = User::find($userId);
 
-        if (! $register instanceof CashRegister || ! $player instanceof User) {
-            $this->error(__('No cash register found. Create one in Treasury first.'));
-
+        if (! $player instanceof User) {
             return;
         }
 
-        app(TournamentService::class)->recordCashPayment($this->tournament, $player, $register);
+        app(TournamentService::class)->recordCashPayment($this->tournament, $player, CashRegister::club());
         unset($this->unpaidParticipants);
         $this->success(__('Cash payment recorded.'), icon: 'o-currency-euro');
     }

@@ -15,7 +15,8 @@ namespace App\Support\Charts;
  *
  * The hues are the validated reference palette of the dataviz method (blue
  * and orange, then aqua and violet), checked for colour-blind separation on
- * both surfaces; the previous year and the internal movements recede in grey;
+ * both surfaces; the previous year, the internal movements and the opening balance
+ * recede in grey;
  * « to process » wears the warning colour, always next to its label. The
  * money held stacks the bank accounts in the categorical order (blue,
  * orange, aqua) and the tills in violet, whatever the number of accounts.
@@ -25,7 +26,7 @@ final class ChartPalette
     /** @var list<string> */
     public const array ROLES = [
         'income', 'expense', 'current', 'previous', 'result',
-        'reconciled', 'justified', 'written_off', 'internal', 'to_process',
+        'reconciled', 'justified', 'written_off', 'internal', 'opening_balance', 'to_process',
         'holding_1', 'holding_2', 'holding_3', 'holding_cash',
         'ink', 'muted', 'grid', 'axis', 'surface',
     ];
@@ -45,6 +46,7 @@ final class ChartPalette
         'justified' => '#1baf7a',
         'written_off' => '#4a3aa7',
         'internal' => '#b8b6ae',
+        'opening_balance' => '#b8b6ae',
         'to_process' => '#fab219',
         'holding_1' => '#2a78d6',
         'holding_2' => '#eb6834',

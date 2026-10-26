@@ -191,7 +191,7 @@ it('keeps the unallocated part of a line to process, and files a written-off res
     $report = FinancialReport::for(FiscalYear::startingIn(2026));
 
     expect($report->incomeByCategory())->toBe(['membership_fees' => 240.0, 'other_income' => 5.0, FinancialReport::UNCATEGORISED => 30.0])
-        ->and($report->justification()['count'])->toBe(['reconciled' => 0, 'justified' => 0, 'written_off' => 1, 'internal' => 0, 'to_process' => 1]);
+        ->and($report->justification()['count'])->toBe(['reconciled' => 0, 'justified' => 0, 'written_off' => 1, 'internal' => 0, 'opening_balance' => 0, 'to_process' => 1]);
 });
 
 it('says how much of the year is explained, in count and in amount', function (): void {
@@ -203,8 +203,8 @@ it('says how much of the year is explained, in count and in amount', function ()
     $justification = FinancialReport::for(FiscalYear::startingIn(2026))->justification();
 
     // 3 of 4 movements are closed; 920 € of 1 000 €.
-    expect($justification['count'])->toBe(['reconciled' => 1, 'justified' => 1, 'written_off' => 0, 'internal' => 1, 'to_process' => 1])
-        ->and($justification['amount'])->toBe(['reconciled' => 120.0, 'justified' => 300.0, 'written_off' => 0.0, 'internal' => 500.0, 'to_process' => 80.0])
+    expect($justification['count'])->toBe(['reconciled' => 1, 'justified' => 1, 'written_off' => 0, 'internal' => 1, 'opening_balance' => 0, 'to_process' => 1])
+        ->and($justification['amount'])->toBe(['reconciled' => 120.0, 'justified' => 300.0, 'written_off' => 0.0, 'internal' => 500.0, 'opening_balance' => 0.0, 'to_process' => 80.0])
         ->and($justification['closed_count_share'])->toBe(75.0)
         ->and($justification['closed_amount_share'])->toBe(92.0);
 });

@@ -22,11 +22,20 @@ erDiagram
         string notes "nullable"
         int held_by_user_id FK "nullable"
     }
+    CashRegisterCount {
+        int id PK
+        int cash_register_id FK
+        int expected
+        int counted
+        int counted_by_id FK "nullable"
+        string notes "nullable"
+    }
     CashRegisterEntry {
         int id PK
         int cash_register_id FK
         int amount
         string reason
+        string category "nullable"
         string payable_type "nullable"
         int payable_id FK "nullable"
         int transaction_id FK "nullable"
@@ -82,6 +91,7 @@ erDiagram
 
     BankAccount ||--o{ Transaction : "transactions"
     BankImport ||--o{ Transaction : "transactions"
+    CashRegister ||--o{ CashRegisterCount : "counts"
     CashRegister ||--o{ CashRegisterEntry : "entries"
     CashRegisterEntry }o--o{ SupportingDocument : "supportingDocuments"
     Payment ||--o{ PaymentCredit : "credits"

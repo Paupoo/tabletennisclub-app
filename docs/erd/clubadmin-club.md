@@ -25,7 +25,7 @@ erDiagram
         int id PK
         string name
         datetime purchased_on "nullable"
-        string state "nullable"
+        TableStateEnum state
         int room_id FK "nullable"
         string state_description "nullable"
         string brand "nullable"

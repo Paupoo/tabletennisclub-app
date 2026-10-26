@@ -132,18 +132,6 @@ describe('Treasury routes', function (): void {
 // ── Cash register Livewire component ─────────────────────────────────────────
 
 describe('Cash register view', function (): void {
-    it('creates a new cash register', function (): void {
-        $admin = User::factory()->isAdmin()->create();
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-admin.treasury.cash-register')
-            ->set('newRegisterName', 'Caisse tournoi')
-            ->call('createRegister')
-            ->assertHasNoErrors();
-
-        expect(CashRegister::where('name', 'Caisse tournoi')->exists())->toBeTrue();
-    });
-
     // Regression: the is_active column was dropped — holder list must use active members.
     it('lists active members as holders and excludes users without an active subscription', function (): void {
         $admin = User::factory()->isAdmin()->create();
@@ -152,12 +140,14 @@ describe('Cash register view', function (): void {
         activeMember($season, ['first_name' => 'Olga', 'last_name' => 'Activsky']);
         User::factory()->create(['first_name' => 'Igor', 'last_name' => 'Inactif']);
 
-        // La liste des porteurs vit dans la modale de création : depuis 87ddb05a
-        // le corps d'une modale fermée n'est plus rendu, il faut donc l'ouvrir —
-        // ce que fait le bouton « Créer une caisse ».
+        // La liste des porteurs vit dans la modale « Changer de détenteur » :
+        // depuis 87ddb05a le corps d'une modale fermée n'est plus rendu, il
+        // faut donc l'ouvrir.
+        createCashRegister();
+
         Livewire::actingAs($admin)
             ->test('pages::club-admin.treasury.cash-register')
-            ->set('createRegisterModal', true)
+            ->call('openChangeHolder')
             ->assertSee('Olga Activsky')
             ->assertDontSee('Igor Inactif');
     });
@@ -168,8 +158,7 @@ describe('Cash register view', function (): void {
 
         Livewire::actingAs($admin)
             ->test('pages::club-admin.treasury.cash-register')
-            ->set('selectedRegisterId', $register->id)
-            ->set('entryAmount', 50)
+            ->set('entryAmount', '50')
             ->set('entryReason', 'manual')
             ->call('saveManualEntry')
             ->assertHasNoErrors();

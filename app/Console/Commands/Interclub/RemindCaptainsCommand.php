@@ -24,8 +24,6 @@ use Illuminate\Console\Command;
 #[Description('Remind each captain of the lineups of the next three weeks not sent to their team yet.')]
 class RemindCaptainsCommand extends Command
 {
-    public const int HORIZON_DAYS = 21;
-
     public function handle(InterclubPreparationService $preparation): int
     {
         $pending = Interclub::query()
@@ -33,7 +31,7 @@ class RemindCaptainsCommand extends Command
             ->withoutByes()
             ->withoutForfeits()
             ->where('start_date_time', '>', now())
-            ->where('start_date_time', '<=', now()->addDays(self::HORIZON_DAYS))
+            ->where('start_date_time', '<=', now()->addDays(InterclubPreparationService::HORIZON_DAYS))
             ->orderBy('start_date_time')
             ->orderBy('interclubs.id')
             ->get()

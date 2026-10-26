@@ -267,15 +267,8 @@ describe('my actions', function (): void {
         $action = followUpAction($meeting, ['assigned_to_id' => $owner->id]);
         $abandoned = followUpAction($meeting, ['assigned_to_id' => $owner->id, 'abandoned_at' => now(), 'abandon_reason' => 'Sans objet']);
 
-        Livewire::actingAs($intruder)
-            ->test('pages::club-events.meetings.my-actions')
-            ->call('markDone', $action->id)
-            ->assertNotFound();
-
-        Livewire::actingAs($owner)
-            ->test('pages::club-events.meetings.my-actions')
-            ->call('markDone', $abandoned->id)
-            ->assertNotFound();
+        Livewire::actingAs($intruder)->test('pages::club-events.meetings.my-actions')->call('markDone', $action->id)->assertNotFound();
+        Livewire::actingAs($owner)->test('pages::club-events.meetings.my-actions')->call('markDone', $abandoned->id)->assertNotFound();
 
         expect($action->fresh()->is_completed)->toBeFalse()
             ->and($abandoned->fresh()->is_completed)->toBeFalse();

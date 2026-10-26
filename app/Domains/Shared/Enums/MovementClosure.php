@@ -9,15 +9,17 @@ namespace App\Domains\Shared\Enums;
  * of things to explain, or that it has not yet. Read off the movement, never
  * stored.
  *
- * Four ways out, and they are worth the same to the auditors: the website
+ * Five ways out, and they are worth the same to the auditors: the website
  * accounts for it (a member's payment, a refund), a supporting document says
- * what it was, what little was left was written off on purpose, or the money
- * only moved between the club's own accounts.
+ * what it was, what little was left was written off on purpose, the money
+ * only moved between the club's own accounts, or it is what the till held
+ * before the app followed it.
  */
 enum MovementClosure: string
 {
     case Internal = 'internal';
     case Justified = 'justified';
+    case OpeningBalance = 'opening_balance';
     case Reconciled = 'reconciled';
     case ToProcess = 'to_process';
     case WrittenOff = 'written_off';
@@ -29,7 +31,7 @@ enum MovementClosure: string
      */
     public static function ordered(): array
     {
-        return [self::Reconciled, self::Justified, self::WrittenOff, self::Internal, self::ToProcess];
+        return [self::Reconciled, self::Justified, self::WrittenOff, self::Internal, self::OpeningBalance, self::ToProcess];
     }
 
     public function isClosed(): bool
@@ -42,6 +44,7 @@ enum MovementClosure: string
         return match ($this) {
             self::Internal => __('Internal movement'),
             self::Justified => __('Justified by a document'),
+            self::OpeningBalance => __('Opening balance'),
             self::Reconciled => __('Reconciled by the website'),
             self::ToProcess => __('To process'),
             self::WrittenOff => __('Residue written off'),

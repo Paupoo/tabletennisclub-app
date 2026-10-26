@@ -91,6 +91,8 @@ class CashRegister extends Model
 
     /**
      * Every time the treasurer counted this till.
+     *
+     * @return HasMany<CashRegisterCount, $this>
      */
     public function counts(): HasMany
     {
@@ -102,6 +104,9 @@ class CashRegister extends Model
         return (int) $this->entries()->sum('amount');
     }
 
+    /**
+     * @return HasMany<CashRegisterEntry, $this>
+     */
     public function entries(): HasMany
     {
         return $this->hasMany(CashRegisterEntry::class);

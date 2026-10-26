@@ -82,6 +82,12 @@ class CashRegisterEntry extends Model
      */
     public const string DIFFERENCE_REASON = 'cash_difference';
 
+    /**
+     * The reason of the movement declared as what the drawer held before the
+     * app followed it.
+     */
+    public const string OPENING_REASON = 'opening_balance';
+
     protected $casts = [
         'amount' => 'integer',
     ];
@@ -141,7 +147,7 @@ class CashRegisterEntry extends Model
      */
     public function incomeShares(): array
     {
-        if ($this->amount <= 0 || $this->isInternal() || $this->reason === self::DIFFERENCE_REASON) {
+        if ($this->amount <= 0 || $this->isInternal() || $this->isOpeningBalance() || $this->reason === self::DIFFERENCE_REASON) {
             return [];
         }
 
@@ -164,12 +170,32 @@ class CashRegisterEntry extends Model
 
     /**
      * Money the website accounts for, a supporting document justifies, a
-     * count filed, or that only moved between the till and the bank: either
-     * way, nothing is left to explain.
+     * count filed, the till's opening balance, or that only moved between the
+     * till and the bank: either way, nothing is left to explain.
      */
     public function isClosed(): bool
     {
-        return $this->payable_type !== null || $this->category !== null || $this->isInternal() || $this->isJustified();
+        return $this->payable_type !== null
+            || $this->category !== null
+            || $this->isOpeningBalance()
+            || $this->isInternal()
+            || $this->isJustified();
+    }
+
+    /**
+     * No movement of the same till came before this one.
+     */
+    public function isFirstOfItsTill(): bool
+    {
+        return ! self::query()
+            ->where('cash_register_id', $this->cash_register_id)
+            ->whereKeyNot($this->getKey())
+            ->where(fn (Builder $query): Builder => $query
+                ->where('created_at', '<', $this->created_at)
+                ->orWhere(fn (Builder $sameSecond): Builder => $sameSecond
+                    ->where('created_at', $this->created_at)
+                    ->where('id', '<', $this->getKey())))
+            ->exists();
     }
 
     public function isIncoming(): bool
@@ -188,6 +214,15 @@ class CashRegisterEntry extends Model
     public function isJustified(): bool
     {
         return $this->justifyingDocuments()->isNotEmpty();
+    }
+
+    /**
+     * What the drawer held before the app followed it: neither income nor a
+     * transfer from the bank.
+     */
+    public function isOpeningBalance(): bool
+    {
+        return $this->reason === self::OPENING_REASON;
     }
 
     public function payable(): MorphTo

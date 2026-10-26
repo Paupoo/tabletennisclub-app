@@ -406,6 +406,10 @@ final class FinancialReport
             return MovementClosure::Internal;
         }
 
+        if ($entry->isOpeningBalance()) {
+            return MovementClosure::OpeningBalance;
+        }
+
         if ($entry->payable_type !== null) {
             $this->fileSiteMoney($entry->payable, $money, $month);
 

@@ -208,7 +208,7 @@
     @feature('treasury', 'cash_register')
     @canany(['financial_report.view', 'payments.view', 'fines.view', 'transactions.view', 'cash_register.view'])
     <x-menu-sub icon="o-banknotes">
-        <x-slot:title><x-admin.menu-sub-title :title="__('Treasury')" :badge="$badge('expense_reports_to_archive', 'transactions', 'expense_reports')" /></x-slot:title>
+        <x-slot:title><x-admin.menu-sub-title :title="__('Treasury')" :badge="$badge('expense_reports_to_archive', 'transactions', 'cash_movements', 'expense_reports')" /></x-slot:title>
         {{-- Three groups, following the money from the whole to the detail:
              the report; the money that moves (bank, till) and what justifies
              it; what is owed — by the members, to the members, and the fines
@@ -240,7 +240,8 @@
                 :badge="$badge('transactions')" badge-classes="badge-warning" />
         @endif
         @if ($seesCash)
-            <x-menu-item icon="o-currency-euro" link="{{ route('admin.treasury.cash') }}" :title="__('Cash Register')" />
+            <x-menu-item icon="o-currency-euro" link="{{ route('admin.treasury.cash') }}" :title="__('Cash Register')"
+                :badge="$badge('cash_movements')" badge-classes="badge-warning" />
         @endif
         @if ($seesTransactions)
             <x-menu-item icon="o-document-check" link="{{ route('admin.treasury.supporting-documents') }}" :title="__('Supporting documents')" />

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\CountCashRegisterAction;
+use App\Actions\ClubAdmin\Payments\DeclareOpeningBalanceAction;
 use App\Actions\ClubAdmin\Payments\LinkCashDepositAction;
 use App\Actions\ClubAdmin\Payments\UnlinkCashDepositAction;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
@@ -110,6 +111,25 @@ new class extends Component
     }
 
     /**
+     * « C'est le solde d'ouverture » : what the drawer held before the app
+     * followed it, out of the income.
+     */
+    public function declareOpeningBalance(int $entryId): void
+    {
+        Gate::authorize('linkCashDeposit', SupportingDocument::class);
+
+        try {
+            (new DeclareOpeningBalanceAction)(CashRegisterEntry::findOrFail($entryId));
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        $this->afterEntryChange(__('Declared as the opening balance of the till: it is not income.'));
+    }
+
+    /**
      * Bank lines the open movement may have been deposited to, or withdrawn from.
      *
      * @return Illuminate\Database\Eloquent\Collection<int, Transaction>
@@ -172,6 +192,15 @@ new class extends Component
             : new Illuminate\Database\Eloquent\Collection;
     }
 
+    /**
+     * The till's latest count, the one the next difference starts from.
+     */
+    #[Computed]
+    public function lastCount(): ?CashRegisterCount
+    {
+        return CashRegisterCount::query()->with('countedBy')->latest('created_at')->latest('id')->first();
+    }
+
     public function linkDeposit(int $transactionId): void
     {
         Gate::authorize('linkCashDeposit', SupportingDocument::class);
@@ -202,15 +231,6 @@ new class extends Component
         }
 
         $this->afterEntryChange(__('Supporting document linked.'));
-    }
-
-    /**
-     * The till's latest count, the one the next difference starts from.
-     */
-    #[Computed]
-    public function lastCount(): ?CashRegisterCount
-    {
-        return CashRegisterCount::query()->with('countedBy')->latest('created_at')->latest('id')->first();
     }
 
     public function openChangeHolder(): void
@@ -355,6 +375,15 @@ new class extends Component
         unset($this->register);
         $this->reset(['entryAmount', 'entryReason', 'entryNotes', 'manualEntryModal']);
         $this->success(__('Entry recorded.'));
+    }
+
+    public function undoOpeningBalance(int $entryId): void
+    {
+        Gate::authorize('linkCashDeposit', SupportingDocument::class);
+
+        (new DeclareOpeningBalanceAction)->undo(CashRegisterEntry::findOrFail($entryId));
+
+        $this->afterEntryChange(__('No longer the opening balance: the movement is back among those to process.'));
     }
 
     public function unlinkDeposit(int $entryId): void

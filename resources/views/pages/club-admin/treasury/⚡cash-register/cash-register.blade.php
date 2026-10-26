@@ -59,7 +59,7 @@
                 <span class="text-xs text-muted">{{ $this->lastCount->countedBy->full_name }}</span>
             @endif
         @else
-            <span class="italic text-base-content/40">{{ __('Never') }}</span>
+            <span class="italic text-base-content/40">{{ __('Never counted') }}</span>
         @endif
     </div>
 
@@ -67,6 +67,8 @@
     @php
         $entriesIn = $this->register->entries->where('amount', '>', 0);
         $entriesOut = $this->register->entries->where('amount', '<', 0);
+        // Seul le premier mouvement de la caisse peut être son solde d'ouverture.
+        $firstEntryId = $this->register->entries->sortBy([['created_at', 'asc'], ['id', 'asc']])->first()?->id;
     @endphp
     <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-3">
         <x-admin.shared.stat-card
@@ -116,6 +118,7 @@
                             'training_payment'   => __('Training payment'),
                             'bar_sale'           => __('Bar sale'),
                             'cash_difference'    => __('Cash difference'),
+                            'opening_balance'    => __('Opening balance'),
                             default              => __('Manual entry'),
                         } }}
                     </span>
@@ -123,6 +126,8 @@
                     <x-badge :value="$entry->filedCategory()->label()" class="badge-ghost badge-sm" />
                     @elseif($entry->payable_type)
                     <x-badge value="{{ class_basename($entry->payable_type) }}" class="badge-ghost badge-sm" />
+                    @elseif($entry->isOpeningBalance())
+                    <x-badge value="{{ __('Out of the income') }}" class="badge-neutral badge-soft badge-sm" />
                     @elseif($entry->isInternal())
                     {{-- De la caisse à la banque, ou l'inverse : ni recette ni dépense. --}}
                     <x-badge value="{{ __('Bank deposit') }}" class="badge-neutral badge-soft badge-sm" />
@@ -154,7 +159,12 @@
                 $canDeposit = auth()->user()->can('linkCashDeposit', \App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument::class);
             @endphp
             <div class="shrink-0">
-                @if($entry->isInternal())
+                @if($entry->isOpeningBalance())
+                    @if($canDeposit)
+                    <x-button :label="__('Undo the opening balance')" class="btn-ghost btn-xs"
+                        wire:click="undoOpeningBalance({{ $entry->id }})" spinner="undoOpeningBalance({{ $entry->id }})" />
+                    @endif
+                @elseif($entry->isInternal())
                     @if($canDeposit)
                     <x-button :label="__('Unlink from the bank')" class="btn-ghost btn-xs"
                         wire:click="unlinkDeposit({{ $entry->id }})" spinner="unlinkDeposit({{ $entry->id }})" />
@@ -166,6 +176,9 @@
                     <x-admin.shared.row-menu :label="__('Justify')" icon="o-document-check"
                         :wire-click="'openEntryDocuments(' . $entry->id . ')'">
                         <x-menu-item icon="o-building-library" :title="__('It is a deposit to or from the bank')" wire:click="openDeposit({{ $entry->id }})" />
+                        @if($entry->amount > 0 && $entry->id === $firstEntryId)
+                        <x-menu-item icon="o-flag" :title="__('It is the opening balance')" wire:click="declareOpeningBalance({{ $entry->id }})" />
+                        @endif
                     </x-admin.shared.row-menu>
                 @elseif($canDocument)
                     <x-button :label="__('Justify')" icon="o-document-check" class="btn-outline btn-xs"

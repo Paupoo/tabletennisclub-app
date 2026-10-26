@@ -148,6 +148,36 @@ describe('the backfill', function (): void {
         expect(CashRegisterEntry::count())->toBe(1);
     });
 
+    it('puts an order whose barman is gone in the name of the till holder', function (): void {
+        $holder = User::factory()->create();
+        $this->till->update(['held_by_user_id' => $holder->id]);
+        cashBarOrder($this->barman, 400, ['created_by' => null, 'is_paid' => 1, 'payment_method' => 'cash', 'paid_at' => '2026-09-12 18:06:09']);
+
+        $this->artisan('bar:backfill-cash', ['since' => '2026-09-01'])->assertSuccessful();
+
+        expect(CashRegisterEntry::sole()->recorded_by_id)->toBe($holder->id);
+    });
+
+    it('puts it in the name of whoever is given, when asked', function (): void {
+        $treasurer = User::factory()->create();
+        cashBarOrder($this->barman, 400, ['created_by' => null, 'is_paid' => 1, 'payment_method' => 'cash', 'paid_at' => '2026-09-12 18:06:09']);
+
+        $this->artisan('bar:backfill-cash', ['since' => '2026-09-01', '--recorded-by' => $treasurer->id])->assertSuccessful();
+
+        expect(CashRegisterEntry::sole()->recorded_by_id)->toBe($treasurer->id);
+    });
+
+    it('writes nothing when an order has nobody to be put in the name of', function (): void {
+        cashBarOrder($this->barman, 400, ['is_paid' => 1, 'payment_method' => 'cash', 'paid_at' => '2026-09-12 18:06:09']);
+        cashBarOrder($this->barman, 250, ['created_by' => null, 'is_paid' => 1, 'payment_method' => 'cash', 'paid_at' => '2026-09-13 18:06:09']);
+
+        $this->artisan('bar:backfill-cash', ['since' => '2026-09-01'])
+            ->expectsOutputToContain('1 cash orders have no barman any more')
+            ->assertFailed();
+
+        expect(CashRegisterEntry::count())->toBe(0);
+    });
+
     it('only counts on a dry run', function (): void {
         cashBarOrder($this->barman, 400, ['is_paid' => 1, 'payment_method' => 'cash', 'paid_at' => '2026-09-12 18:06:09']);
         cashBarOrder($this->barman, 250, ['is_paid' => 1, 'payment_method' => 'cash', 'paid_at' => '2026-10-02 20:00:00']);

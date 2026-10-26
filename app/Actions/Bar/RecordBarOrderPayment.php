@@ -85,12 +85,13 @@ class RecordBarOrderPayment
      * Le mouvement de caisse d'une commande réglée en espèces.
      *
      * Idempotent comme la ligne du QR : une reprise rejouée ne met pas deux fois
-     * le même billet dans la caisse. Inscrit au nom du barman qui a servi, et non
-     * de celui qui lance une reprise.
+     * le même billet dans la caisse. Inscrit au nom de celui qui encaisse ; lors
+     * d'une reprise, au nom du barman qui a servi, et de `$recordedBy` quand son
+     * compte n'existe plus.
      *
      * @return CashRegisterEntry|null Le mouvement créé, ou null s'il existait déjà.
      */
-    public function putInTill(BarOrder $order): ?CashRegisterEntry
+    public function putInTill(BarOrder $order, ?int $recordedBy = null): ?CashRegisterEntry
     {
         $alreadyIn = CashRegisterEntry::query()
             ->where('payable_type', BarOrder::class)
@@ -107,7 +108,7 @@ class RecordBarOrderPayment
             'reason' => self::TILL_REASON,
             'payable_type' => BarOrder::class,
             'payable_id' => $order->id,
-            'recorded_by_id' => auth()->id() ?? $order->created_by,
+            'recorded_by_id' => auth()->id() ?? $order->created_by ?? $recordedBy,
             'notes' => $order->name,
         ]);
     }

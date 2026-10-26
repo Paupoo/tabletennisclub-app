@@ -48,7 +48,7 @@ class CashSheetService
         $paymentDateExpression = $this->businessDateExpression('COALESCE(paid_at, created_at)');
         $paymentDays = BarOrder::query()
             ->where('is_paid', 1)
-            ->selectRaw("{$paymentDateExpression} as business_date, COUNT(*) as payments_total, SUM(CASE WHEN payment_method NOT IN ('offered', 'free') THEN total_price ELSE 0 END) as received_total_cents")
+            ->selectRaw("{$paymentDateExpression} as business_date, COUNT(*) as payments_total, SUM(CASE WHEN payment_method IS NULL OR payment_method NOT IN ('offered', 'free') THEN total_price ELSE 0 END) as received_total_cents")
             ->whereRaw("{$paymentDateExpression} <= ?", [now()->toDateString()])
             ->groupByRaw($paymentDateExpression)
             ->toBase()
@@ -127,7 +127,10 @@ class CashSheetService
         $soldTotalCents = (int) (clone $ordersQuery)->sum('total_price');
 
         $receivedTotalCents = (int) (clone $paymentsQuery)
-            ->whereNotIn('payment_method', ['offered', 'free'])
+            ->where(function (Builder $query): void {
+                $query->whereNotIn('payment_method', ['offered', 'free'])
+                    ->orWhereNull('payment_method');
+            })
             ->sum('total_price');
 
         $unpaidTotalCents = (int) (clone $ordersQuery)
@@ -158,7 +161,6 @@ class CashSheetService
 
         $cash = (int) ($paymentTotals['cash'] ?? 0);
         $qr = (int) ($paymentTotals['qr'] ?? 0);
-        $other = (int) ($paymentTotals['other'] ?? 0);
 
         // Support both legacy "free" and current "offered"
         $offered = (int) (($paymentTotals['offered'] ?? 0) + ($paymentTotals['free'] ?? 0));
@@ -212,6 +214,7 @@ class CashSheetService
         $otherPaymentsCents = (int) $paymentRows
             ->reject(fn (stdClass $payment): bool => in_array($payment->payment_method, ['cash', 'qr', 'offered', 'free'], true))
             ->sum('total_cents');
+        $other = $otherPaymentsCents;
 
         $summary = [
             'orders_total' => $ordersTotal,

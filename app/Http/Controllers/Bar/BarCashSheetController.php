@@ -83,10 +83,6 @@ class BarCashSheetController extends Controller
         $to = $validated['to'];
         $saveDefault = (bool) ($validated['save_default'] ?? false);
 
-        if ($saveDefault) {
-            $this->cashSheetService->saveDefaultEmail($to);
-        }
-
         [$summary, , $csv] = $this->cashSheetService->build($date);
 
         if ((int) ($summary['orders_total'] ?? 0) === 0 && (int) ($summary['payments_total'] ?? 0) === 0) {
@@ -109,6 +105,21 @@ class BarCashSheetController extends Controller
         $body .= "Cordialement.\n";
 
         $ok = $this->cashSheetService->sendCsv($to, $subject, $body, $date, $csv);
+
+        if ($ok) {
+            activity()
+                ->causedBy($request->user())
+                ->event('bar_cash_sheet_sent')
+                ->withProperties([
+                    'report_date' => $date,
+                    'recipient' => $to,
+                ])
+                ->log('bar_cash_sheet_sent');
+
+            if ($saveDefault) {
+                $this->cashSheetService->saveDefaultEmail($to);
+            }
+        }
 
         return redirect()
             ->route('bar.cashSheet.index', ['date' => $date])

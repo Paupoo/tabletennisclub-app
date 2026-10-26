@@ -1,6 +1,7 @@
 @php
     use App\Support\Breadcrumb;
     $trail = Breadcrumb::make()->home()->bar()->current('Feuille de caisse')->toArray();
+    $hasActivity = $summary['orders_total'] > 0 || $summary['payments_total'] > 0;
 @endphp
 
 <x-app-layout>
@@ -302,6 +303,13 @@
         <x-card class="shadow-sm">
             <h2 class="text-muted mb-3 text-xs font-bold uppercase tracking-widest">Partager la feuille de caisse</h2>
 
+            @unless ($hasActivity)
+                <div class="alert alert-info mb-3" role="status">
+                    <x-icon name="o-information-circle" class="h-5 w-5 shrink-0" />
+                    <span>Aucune commande ni paiement enregistré pour cette journée. Choisissez une journée active pour partager une feuille de caisse.</span>
+                </div>
+            @endunless
+
             <form method="POST" action="{{ route('bar.cashSheet.send') }}" class="space-y-3">
                 @csrf
                 <input type="hidden" name="date" value="{{ $date }}">
@@ -315,18 +323,23 @@
                         type="email"
                         name="to"
                         required
+                        @disabled(! $hasActivity)
                         value="{{ old('to', $defaultTo) }}"
                         placeholder="cttottigniesblocry@gmail.com"
                         class="input input-bordered tap-comfort w-full"
                     >
                 </div>
 
-                <label class="tap-comfort cursor-pointer justify-start gap-2.5 text-sm font-semibold">
-                    <input type="checkbox" name="save_default" value="1" class="toggle toggle-primary">
+                <label @class([
+                    'tap-comfort justify-start gap-2.5 text-sm font-semibold',
+                    'cursor-pointer' => $hasActivity,
+                    'cursor-not-allowed opacity-50' => ! $hasActivity,
+                ])>
+                    <input type="checkbox" name="save_default" value="1" class="toggle toggle-primary" @disabled(! $hasActivity)>
                     Enregistrer comme adresse par défaut
                 </label>
 
-                <button type="submit" class="btn btn-primary tap-comfort w-full gap-2">
+                <button type="submit" class="btn btn-primary tap-comfort w-full gap-2" @disabled(! $hasActivity)>
                     <x-icon name="o-paper-airplane" class="h-4 w-4" />
                     Envoyer la feuille de caisse
                 </button>
@@ -334,13 +347,20 @@
 
             <div class="divider my-3 text-xs">OU</div>
 
-            <a
-                href="{{ route('bar.cashSheet.download', ['date' => $date]) }}"
-                class="btn btn-outline tap-comfort w-full gap-2"
-            >
-                <x-icon name="o-arrow-down-tray" class="h-4 w-4" />
-                Télécharger en CSV
-            </a>
+            @if ($hasActivity)
+                <a
+                    href="{{ route('bar.cashSheet.download', ['date' => $date]) }}"
+                    class="btn btn-outline tap-comfort w-full gap-2"
+                >
+                    <x-icon name="o-arrow-down-tray" class="h-4 w-4" />
+                    Télécharger en CSV
+                </a>
+            @else
+                <span class="btn btn-outline tap-comfort w-full cursor-not-allowed gap-2 opacity-50" aria-disabled="true">
+                    <x-icon name="o-arrow-down-tray" class="h-4 w-4" />
+                    Télécharger en CSV
+                </span>
+            @endif
 
             <p class="text-subtle mt-3 text-xs">
                 Envoyez la feuille de caisse par e-mail ou téléchargez-la en CSV pour l'archiver ou l'envoyer manuellement.

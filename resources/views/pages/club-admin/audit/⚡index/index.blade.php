@@ -52,7 +52,8 @@
                 $changes = $activity->attribute_changes;
                 $shown = $changes['attributes'] ?? $changes['old'] ?? null;
                 $isSnapshot = $event === 'created' || ! isset($changes['attributes']);
-                $subjectName = $subjectLabels[$activity->subject_type] ?? \Illuminate\Support\Str::afterLast($activity->subject_type, '\\');
+                $subjectName = $activity->audit_subject_name;
+                $eventDetails = $activity->audit_event_details;
                 $formatValue = fn ($value) => \Illuminate\Support\Str::limit(is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : (string) $value, 60);
             @endphp
             <x-card class="border border-base-300 bg-base-100 shadow-sm" wire:key="mobile-activity-{{ $activity->id }}">
@@ -68,7 +69,9 @@
                             <x-badge :value="$this->eventLabel($event)" class="badge-ghost badge-sm" />
                         @endif
                         <span class="text-sm font-semibold">{{ $subjectName }}</span>
-                        <span class="font-mono text-xs text-muted">#{{ $activity->subject_id }}</span>
+                        @if ($activity->subject_id !== null)
+                            <span class="font-mono text-xs text-muted">#{{ $activity->subject_id }}</span>
+                        @endif
                     </div>
                     <span class="shrink-0 text-xs tabular-nums text-muted">{{ $activity->created_at->format('d/m/Y H:i') }}</span>
                 </div>
@@ -86,6 +89,17 @@
                      `old` et retire `attributes`. La colonne ne lisait que `attributes`,
                      si bien que TOUTE ligne « Supprimé » affichait un tiret. On la rend
                      comme une création : un instantané de ce qui a disparu. --}}
+                @if ($eventDetails !== [])
+                    <div class="mt-3 space-y-1 border-t border-base-300 pt-2">
+                        @foreach ($eventDetails as $label => $value)
+                            <div class="break-all text-xs">
+                                <span class="font-semibold opacity-70">{{ $label }}:</span>
+                                <span>{{ $value }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
                 @if ($shown)
                     <div x-data="{ open: {{ $isSnapshot ? 'false' : 'true' }} }" class="mt-3 border-t border-base-300 pt-2">
                         {{-- py-1.5 : le bouton ne faisait que la hauteur de son texte,
@@ -157,10 +171,12 @@
             @endif
             @endscope
 
-            @scope('cell_subject', $activity, $subjectLabels)
+            @scope('cell_subject', $activity)
             <div>
-                <div class="text-sm font-medium">{{ $subjectLabels[$activity->subject_type] ?? \Illuminate\Support\Str::afterLast($activity->subject_type, '\\') }}</div>
-                <div class="font-mono text-xs text-muted">#{{ $activity->subject_id }}</div>
+                <div class="text-sm font-medium">{{ $activity->audit_subject_name }}</div>
+                @if ($activity->subject_id !== null)
+                    <div class="font-mono text-xs text-muted">#{{ $activity->subject_id }}</div>
+                @endif
             </div>
             @endscope
 
@@ -170,7 +186,17 @@
             @php $shown = $changes['attributes'] ?? $changes['old'] ?? null; @endphp
             @php $isSnapshot = $event === 'created' || ! isset($changes['attributes']); @endphp
             @php $formatValue = fn ($value) => \Illuminate\Support\Str::limit(is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : (string) $value, 40); @endphp
-            @if ($shown)
+            @php $eventDetails = $activity->audit_event_details; @endphp
+            @if ($eventDetails !== [])
+                <div class="space-y-0.5 text-xs">
+                    @foreach ($eventDetails as $label => $value)
+                        <div class="break-all">
+                            <span class="font-semibold opacity-70">{{ $label }}:</span>
+                            <span>{{ $value }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            @elseif ($shown)
                 @if ($isSnapshot)
                 {{-- Création, et suppression : repliées par défaut (sinon mur de champs).
                 Une suppression n'a pas d'avant/après — le paquet range son contenu sous

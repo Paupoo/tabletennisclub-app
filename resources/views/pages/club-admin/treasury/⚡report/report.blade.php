@@ -351,6 +351,42 @@
                         </table>
                     </div>
                 </x-card>
+
+                {{-- Income by channel: what went through the bank, what went through the till --}}
+                <x-card :title="__('Income by transfer and in cash')" class="shadow-sm" separator data-print-keep data-income-channels>
+                    <p class="mb-2 text-xs text-subtle">{{ __(':year. A QR code payment is a transfer: nothing on the statement tells them apart.', ['year' => $yearLabel]) }}</p>
+                    <div class="overflow-x-auto">
+                        <table class="table table-xs sm:table-sm max-sm:[&_td]:px-1 max-sm:[&_th]:px-1">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('Poste') }}</th>
+                                    <th class="text-right">{{ __('By transfer') }}</th>
+                                    <th class="text-right">{{ __('In cash') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($incomeChannels['rows'] as $row)
+                                    <tr @class(['text-warning-content' => $row['uncategorised']])>
+                                        <td>{{ $row['label'] }}</td>
+                                        <td class="text-right tabular-nums">{{ $euros($row['bank']) }}</td>
+                                        <td class="text-right tabular-nums">{{ $euros($row['cash']) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="3" class="text-muted">{{ __('Nothing came in this year.') }}</td></tr>
+                                @endforelse
+                            </tbody>
+                            @if ($incomeChannels['bank_share'] !== null)
+                                <tfoot>
+                                    <tr>
+                                        <th>{{ __('Total') }}</th>
+                                        <th class="text-right tabular-nums">{{ $euros($incomeChannels['bank']) }}<span class="block text-xs font-normal text-muted">{{ $incomeChannels['bank_share'] }} %</span></th>
+                                        <th class="text-right tabular-nums">{{ $euros($incomeChannels['cash']) }}<span class="block text-xs font-normal text-muted">{{ $incomeChannels['cash_share'] }} %</span></th>
+                                    </tr>
+                                </tfoot>
+                            @endif
+                        </table>
+                    </div>
+                </x-card>
             </div>
 
             {{-- Internal movements: closed and out of the flows, shown for the record --}}

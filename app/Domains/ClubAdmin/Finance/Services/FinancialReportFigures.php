@@ -50,12 +50,49 @@ final class FinancialReportFigures
             'months' => self::months($report),
             'expenseRows' => self::posteRows($report->expensesByCategory(), $previous->expensesByCategory(), 'expense'),
             'incomeRows' => self::posteRows($report->incomeByCategory(), $previous->incomeByCategory(), 'income'),
+            'incomeChannels' => self::channels($report),
             'trainings' => [
                 'income' => [$report->incomeByCategory()[IncomeCategory::Trainings->value] ?? 0.0, $previous->incomeByCategory()[IncomeCategory::Trainings->value] ?? 0.0],
                 'expense' => [$report->expensesByCategory()[ExpenseCategory::Training->value] ?? 0.0, $previous->expensesByCategory()[ExpenseCategory::Training->value] ?? 0.0],
             ],
             'fees' => [$report->membershipFeesByLicence(), $previous->membershipFeesByLicence()],
             'internalMovements' => $report->internalMovements(),
+        ];
+    }
+
+    /**
+     * The year's income by transfer and in cash: poste by poste, largest
+     * first and uncategorised last, then the totals and the share of each in
+     * whole percents — the cash share is what the transfer share leaves, so
+     * the two always make 100. No share when nothing came in.
+     *
+     * @return array{rows: list<array{key: string, label: string, bank: float, cash: float, uncategorised: bool}>, bank: float, cash: float, bank_share: int|null, cash_share: int|null}
+     */
+    private static function channels(FinancialReport $report): array
+    {
+        $rows = [];
+
+        foreach ($report->incomeByCategoryAndChannel() as $key => $split) {
+            $rows[] = [
+                'key' => $key,
+                'label' => IncomeCategory::tryFrom($key)?->label() ?? __('Uncategorised — to process'),
+                'bank' => $split[FinancialReport::BANK],
+                'cash' => $split[FinancialReport::CASH],
+                'uncategorised' => $key === FinancialReport::UNCATEGORISED,
+            ];
+        }
+
+        usort($rows, static fn (array $a, array $b): int => [$a['uncategorised'], -($a['bank'] + $a['cash'])] <=> [$b['uncategorised'], -($b['bank'] + $b['cash'])]);
+
+        $totals = $report->incomeByChannel();
+        $total = $totals[FinancialReport::BANK] + $totals[FinancialReport::CASH];
+        $bankShare = $total > 0 ? (int) round($totals[FinancialReport::BANK] / $total * 100) : null;
+
+        return [
+            'rows' => $rows,
+            ...$totals,
+            'bank_share' => $bankShare,
+            'cash_share' => $bankShare === null ? null : 100 - $bankShare,
         ];
     }
 

@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Payments\CountCashRegisterAction;
 use App\Actions\ClubAdmin\Payments\LinkCashDepositAction;
 use App\Actions\ClubAdmin\Payments\UnlinkCashDepositAction;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
+use App\Domains\ClubAdmin\Payment\Models\CashRegisterCount;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\SupportingDocuments\Actions\LinkSupportingDocument;
@@ -31,6 +33,13 @@ new class extends Component
     use EditsSupportingDocument, HasBreadcrumbs, Toast, WithFileUploads;
 
     public bool $changeHolderModal = false;
+
+    /** What the treasurer found in the drawer, in euros as typed. */
+    public string $countedAmount = '';
+
+    public bool $countModal = false;
+
+    public ?string $countNotes = null;
 
     /** « Versement de/vers la banque » : links a movement of the till to its bank line. */
     public bool $depositDrawer = false;
@@ -195,12 +204,30 @@ new class extends Component
         $this->afterEntryChange(__('Supporting document linked.'));
     }
 
+    /**
+     * The till's latest count, the one the next difference starts from.
+     */
+    #[Computed]
+    public function lastCount(): ?CashRegisterCount
+    {
+        return CashRegisterCount::query()->with('countedBy')->latest('created_at')->latest('id')->first();
+    }
+
     public function openChangeHolder(): void
     {
         Gate::authorize(Permission::CashRegisterHolderChange->value);
 
         $this->newHolderUserId = $this->register?->held_by_user_id;
         $this->changeHolderModal = true;
+    }
+
+    public function openCount(): void
+    {
+        Gate::authorize(Permission::CashRegisterEntryCreate->value);
+
+        $this->reset(['countedAmount', 'countNotes']);
+        $this->resetErrorBag();
+        $this->countModal = true;
     }
 
     public function openDeposit(int $entryId): void
@@ -266,6 +293,35 @@ new class extends Component
             'reasonOptions' => $this->reasonOptions(),
             'users' => $this->users,
         ]);
+    }
+
+    /**
+     * Record what the drawer held: the app files the difference itself.
+     */
+    public function saveCount(): void
+    {
+        Gate::authorize(Permission::CashRegisterEntryCreate->value);
+
+        $this->countedAmount = str_replace(',', '.', trim($this->countedAmount));
+
+        $this->validate([
+            'countedAmount' => ['required', 'numeric', 'decimal:0,2', 'min:0'],
+            'countNotes' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $count = (new CountCashRegisterAction)(
+            CashRegister::club(),
+            (int) round((float) $this->countedAmount * 100),
+            Auth::user(),
+            $this->countNotes ?: null,
+        );
+
+        unset($this->register, $this->balance, $this->lastCount);
+        $this->reset(['countedAmount', 'countNotes', 'countModal']);
+
+        $count->difference() === 0
+            ? $this->success(__('The till is right.'))
+            : $this->warning(__('A difference of :amount € was recorded and filed.', ['amount' => number_format($count->difference() / 100, 2, ',', ' ')]));
     }
 
     public function saveManualEntry(): void

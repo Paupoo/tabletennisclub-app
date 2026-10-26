@@ -89,6 +89,14 @@ class CashRegister extends Model
         ])->all();
     }
 
+    /**
+     * Every time the treasurer counted this till.
+     */
+    public function counts(): HasMany
+    {
+        return $this->hasMany(CashRegisterCount::class);
+    }
+
     public function currentBalance(): int
     {
         return (int) $this->entries()->sum('amount');

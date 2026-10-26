@@ -7,6 +7,11 @@
         <x-slot:actions>
             @can('cash_register.entry.create')
             <x-button
+                :label="__('Count the till')"
+                icon="o-calculator"
+                class="btn-outline btn-sm"
+                wire:click="openCount" />
+            <x-button
                 :label="__('Add entry')"
                 icon="o-plus"
                 class="btn-primary btn-sm"
@@ -37,6 +42,25 @@
                 class="btn-ghost btn-xs ml-1"
                 wire:click="openChangeHolder" />
         @endcan
+    </div>
+
+    {{-- Le dernier contrôle : la période du prochain écart part de lui. --}}
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mb-4 px-1 text-sm" data-last-count>
+        <x-icon name="o-calculator" class="w-5 h-5 text-base-content/40 shrink-0" />
+        <span class="text-base-content/60">{{ __('Last count') }}:</span>
+        @if($this->lastCount)
+            <span class="font-medium">{{ $this->lastCount->created_at->format('d/m/Y') }}</span>
+            @if($this->lastCount->difference() === 0)
+                <x-badge :value="__('Right')" class="badge-success badge-soft badge-sm" />
+            @else
+                <x-badge :value="__('Difference of :amount €', ['amount' => number_format($this->lastCount->difference() / 100, 2, ',', ' ')])" class="badge-warning badge-soft badge-sm" />
+            @endif
+            @if($this->lastCount->countedBy)
+                <span class="text-xs text-muted">{{ $this->lastCount->countedBy->full_name }}</span>
+            @endif
+        @else
+            <span class="italic text-base-content/40">{{ __('Never') }}</span>
+        @endif
     </div>
 
     {{-- Balance card --}}
@@ -91,10 +115,13 @@
                             'tournament_payment' => __('Tournament payment'),
                             'training_payment'   => __('Training payment'),
                             'bar_sale'           => __('Bar sale'),
+                            'cash_difference'    => __('Cash difference'),
                             default              => __('Manual entry'),
                         } }}
                     </span>
-                    @if($entry->payable_type)
+                    @if($entry->filedCategory())
+                    <x-badge :value="$entry->filedCategory()->label()" class="badge-ghost badge-sm" />
+                    @elseif($entry->payable_type)
                     <x-badge value="{{ class_basename($entry->payable_type) }}" class="badge-ghost badge-sm" />
                     @elseif($entry->isInternal())
                     {{-- De la caisse à la banque, ou l'inverse : ni recette ni dépense. --}}
@@ -121,7 +148,7 @@
             {{-- Hors site : une pièce justifie le mouvement, ou c'est un
                  versement de/vers la banque. Jamais les deux, jamais sur un
                  paiement que le site compte déjà. --}}
-            @if($entry->payable_type === null)
+            @if($entry->payable_type === null && $entry->category === null)
             @php
                 $canDocument = auth()->user()->can('create', \App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument::class);
                 $canDeposit = auth()->user()->can('linkCashDeposit', \App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument::class);
@@ -155,6 +182,30 @@
         @endforelse
     </x-card>
     @endif
+
+    {{-- Modal: Count the till --}}
+    <x-app-modal wire:model="countModal" :title="__('Count the till')" separator :open="$countModal">
+        <div class="space-y-4">
+            <p class="text-sm">
+                {{ __('According to the books, the till holds :amount €. Enter what you found in the drawer: any difference is recorded and filed for you.', ['amount' => number_format($this->balance / 100, 2, ',', ' ')]) }}
+            </p>
+            <x-input
+                :label="__('Counted (€)')"
+                wire:model="countedAmount"
+                inputmode="decimal"
+                autofocus />
+            <x-textarea
+                :label="__('Notes')"
+                wire:model="countNotes"
+                rows="2"
+                maxlength="500"
+                :placeholder="__('Optional notes...')" />
+        </div>
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" @click="$wire.countModal = false" class="btn-ghost" />
+            <x-button :label="__('Record the count')" icon="o-check" class="btn-primary" wire:click="saveCount" spinner />
+        </x-slot:actions>
+    </x-app-modal>
 
     {{-- Modal: Change holder --}}
     <x-app-modal wire:model="changeHolderModal" :title="__('Change holder')" separator :open="$changeHolderModal">

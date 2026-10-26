@@ -420,6 +420,16 @@ final class FinancialReport
             return MovementClosure::Justified;
         }
 
+        // The difference a count found, already spread over the postes it is
+        // blamed on: written off on purpose, like the residue of a bank line.
+        $category = $entry->filedCategory();
+
+        if ($category !== null) {
+            $this->fileUnder($category, $money, $month);
+
+            return MovementClosure::WrittenOff;
+        }
+
         $this->fileUncategorised($money, $month);
 
         return MovementClosure::ToProcess;

@@ -199,6 +199,32 @@
     </tr>
 </table>
 
+<h2>{{ __('Income by transfer and in cash') }}</h2>
+<p class="caption">{{ __(':year. A QR code payment is a transfer: nothing on the statement tells them apart.', ['year' => $yearLabel]) }}</p>
+<table>
+    <thead><tr><th>{{ __('Poste') }}</th><th class="num">{{ __('By transfer') }}</th><th class="num">{{ __('In cash') }}</th></tr></thead>
+    <tbody>
+        @forelse ($incomeChannels['rows'] as $row)
+            <tr>
+                <td @class(['warn' => $row['uncategorised']])>{{ $row['label'] }}</td>
+                <td class="num">{{ $euros($row['bank']) }}</td>
+                <td class="num">{{ $euros($row['cash']) }}</td>
+            </tr>
+        @empty
+            <tr><td colspan="3" class="muted">{{ __('Nothing came in this year.') }}</td></tr>
+        @endforelse
+    </tbody>
+    @if ($incomeChannels['bank_share'] !== null)
+        <tfoot>
+            <tr>
+                <th>{{ __('Total') }}</th>
+                <th class="num">{{ $euros($incomeChannels['bank']) }} ({{ $incomeChannels['bank_share'] }} %)</th>
+                <th class="num">{{ $euros($incomeChannels['cash']) }} ({{ $incomeChannels['cash_share'] }} %)</th>
+            </tr>
+        </tfoot>
+    @endif
+</table>
+
 <h2>{{ __('How the movements were closed') }}</h2>
 <div class="chart">
     <x-charts.share-bars id="pdf-closure" :palette="$palette" :interactive="false"

@@ -50,6 +50,8 @@ Sous les graphiques, les tableaux par poste donnent le détail. Deux d'entre eux
 - **Entraînements** met côte à côte ce que les entraînements rapportent (la part entraînement des affiliations) et ce qu'ils coûtent (le poste *Entraînement & formation*), avec le solde ;
 - **Cotisations par type de licence** sépare récréatifs et compétiteurs.
 
+Le bloc **Recettes par virement et en espèces** dit, pour l'exercice affiché, combien de chaque poste est arrivé **par virement** et combien **en espèces**, avec la part de chacun au total. Un paiement par QR code est un virement : sur l'extrait, rien ne l'en distingue. Les remboursements et les manques de caisse sont déduits du côté par lequel l'argent est passé.
+
 Enfin, **Mouvements internes** liste l'argent passé d'un compte du club à un autre, ou entre la caisse et la banque : ni recette, ni dépense, mais visible.
 
 **Imprimer** donne une version papier de l'onglet.

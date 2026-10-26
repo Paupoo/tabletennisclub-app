@@ -127,7 +127,6 @@ it('pays a document from the till', function (): void {
 
     sdScreenAs(Role::TREASURY, Role::CASH_REGISTER)
         ->call('show', $document->id)
-        ->set('cashRegisterId', $register->id)
         ->call('payInCash');
 
     $entry = CashRegisterEntry::sole();

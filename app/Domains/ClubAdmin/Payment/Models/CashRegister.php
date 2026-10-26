@@ -59,6 +59,19 @@ class CashRegister extends Model
     ];
 
     /**
+     * The club's till — there is only one: the bar, the tournaments and the
+     * treasurer all put their cash in it.
+     *
+     * Opened under a default name the first time money needs it, so a sale
+     * at the bar never fails for want of a till.
+     */
+    public static function club(): self
+    {
+        return self::query()->orderBy('id')->first()
+            ?? self::create(['name' => __('Club till')]);
+    }
+
+    /**
      * Every till's name as a list shows it: its own name, and who holds it
      * when another till — retired ones included — bears the same name.
      *
@@ -76,11 +89,24 @@ class CashRegister extends Model
         ])->all();
     }
 
+    /**
+     * Every time the treasurer counted this till.
+     *
+     * @return HasMany<CashRegisterCount, $this>
+     */
+    public function counts(): HasMany
+    {
+        return $this->hasMany(CashRegisterCount::class);
+    }
+
     public function currentBalance(): int
     {
         return (int) $this->entries()->sum('amount');
     }
 
+    /**
+     * @return HasMany<CashRegisterEntry, $this>
+     */
     public function entries(): HasMany
     {
         return $this->hasMany(CashRegisterEntry::class);

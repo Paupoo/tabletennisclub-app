@@ -10,7 +10,6 @@ use App\Actions\User\RecalculateForceListAction;
 use App\Domains\ClubAdmin\Club\Models\KeyRing;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
-use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\League;
@@ -266,14 +265,6 @@ class DatabaseSeeder extends Seeder
         User::where('email', 'aurelien.paulus@gmail.com')->first()?->assignRole(Role::ADMINISTRATOR->value);
 
         Model::preventLazyLoading(! app()->isProduction());
-
-        // The tournaments' till; TreasurySeeder opens « Caisse du club ». Two
-        // tills of the same name could not be told apart in the report.
-        $gilles = User::where('email', 'gilles.herpigny@test.com')->first();
-        CashRegister::create([
-            'name' => 'Caisse des tournois',
-            'held_by_user_id' => $gilles?->id,
-        ]);
 
         // Key rings — the four committee members who open the venue, plus one
         // spare in the drawer so the inventory shows an unassigned ring too.

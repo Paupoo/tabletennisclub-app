@@ -1,11 +1,11 @@
 ---
-title: Savoir qui détient les clés et les caisses
-summary: Tenir à jour qui a un trousseau et qui est responsable de chaque caisse — et qui a le droit de le changer.
+title: Savoir qui détient les clés et la caisse
+summary: Tenir à jour qui a un trousseau et qui est responsable de la caisse — et qui a le droit de le changer.
 audience: committee, treasurer
 order: 15
 ---
 
-Le club confie deux choses à des personnes : des **trousseaux de clés** (pour ouvrir les locaux) et des **caisses** (dont quelqu'un est comptable). L'application sert à répondre à une seule question, mais la bonne : **en cas de besoin un soir d'événement, à qui je m'adresse ?**
+Le club confie deux choses à des personnes : des **trousseaux de clés** (pour ouvrir les locaux) et sa **caisse** (dont quelqu'un est comptable). L'application sert à répondre à une seule question, mais la bonne : **en cas de besoin un soir d'événement, à qui je m'adresse ?**
 
 ## Les clés — un inventaire, pas une case à cocher
 
@@ -26,19 +26,19 @@ Trois gestes, tous sur la ligne du trousseau :
 
 Détenir un trousseau **n'ouvre aucun écran** de l'application. Ça ne déclenche rien : ça note qui a une clé physique en main. Tenez l'inventaire à jour quand un trousseau change de main, sinon la vue d'ensemble ment.
 
-## Les caisses — trésorier et administrateur seulement
+## La caisse — trésorier et administrateur seulement
 
-Là, c'est plus restreint, et c'est voulu : **seuls le trésorier et un administrateur** peuvent créer une caisse, en changer le détenteur ou la retirer. Ni le président, ni le reste du comité — une caisse engage une responsabilité financière, elle ne change pas de mains à la légère.
+Le club n'a **qu'une caisse** : le bar, les tournois et la trésorerie y mettent tous leurs espèces. Il n'y a donc rien à créer ni à choisir. Elle s'ouvre d'elle-même au premier encaissement.
 
-- **Créer une caisse** : **Trésorerie → Caisse → Nouvelle caisse**. Nom + détenteur, recherché par son nom.
-- **Changer le détenteur** : sur la caisse concernée, **Changer**, choisissez la nouvelle personne, enregistrez.
-- **Retirer une caisse** : **Retirer**, puis confirmez. La caisse quitte la liste mais **son livre de comptes est conservé en entier** — aucun mouvement n'est effacé. **Afficher les caisses retirées** la fait réapparaître.
+Là, c'est plus restreint, et c'est voulu : **seuls le trésorier et un administrateur** peuvent en changer le détenteur. Ni le président, ni le reste du comité — la caisse engage une responsabilité financière, elle ne change pas de mains à la légère.
+
+- **Changer le détenteur** : **Trésorerie → Caisse**, **Changer** à côté du détenteur, choisissez la nouvelle personne, enregistrez.
 
 Changer le détenteur **ne solde pas la caisse et ne transfère pas d'argent** : ça déplace seulement la responsabilité affichée. Le contenu et l'historique de la caisse restent les mêmes. Faites-le au moment où la personne change réellement, pas en prévision.
 
 ## La vue d'ensemble
 
-**Administration → Informations du club**, section **Détenteurs d'équipements** : chaque trousseau avec son détenteur, les trousseaux au tiroir compris, et chaque caisse avec le sien. C'est le réflexe à avoir avant de chercher ailleurs.
+**Administration → Informations du club**, section **Détenteurs d'équipements** : chaque trousseau avec son détenteur, les trousseaux au tiroir compris, et la caisse avec le sien. C'est le réflexe à avoir avant de chercher ailleurs.
 
 Depuis la **liste des membres**, deux filtres (bouton **Filtres**) isolent au besoin les porteurs de clé et les détenteurs de caisse.
 

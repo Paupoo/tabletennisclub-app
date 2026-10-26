@@ -110,7 +110,6 @@ describe('Cash register confirmChangeHolder', function (): void {
 
         Livewire::actingAs($admin)
             ->test('pages::club-admin.treasury.cash-register')
-            ->set('selectedRegisterId', $register->id)
             ->set('newHolderUserId', $newHolder->id)
             ->call('confirmChangeHolder')
             ->assertHasNoErrors();
@@ -127,7 +126,6 @@ describe('Cash register confirmChangeHolder', function (): void {
 
         Livewire::actingAs($treasurer)
             ->test('pages::club-admin.treasury.cash-register')
-            ->set('selectedRegisterId', $register->id)
             ->set('newHolderUserId', $newHolder->id)
             ->call('confirmChangeHolder')
             ->assertHasNoErrors();
@@ -144,7 +142,6 @@ describe('Cash register confirmChangeHolder', function (): void {
 
         Livewire::actingAs($secretary)
             ->test('pages::club-admin.treasury.cash-register')
-            ->set('selectedRegisterId', $register->id)
             ->set('newHolderUserId', $newHolder->id)
             ->call('confirmChangeHolder')
             ->assertForbidden();
@@ -159,7 +156,6 @@ describe('Cash register confirmChangeHolder', function (): void {
 
         Livewire::actingAs($user)
             ->test('pages::club-admin.treasury.cash-register')
-            ->set('selectedRegisterId', $register->id)
             ->set('newHolderUserId', $newHolder->id)
             ->call('confirmChangeHolder')
             ->assertForbidden();
@@ -168,33 +164,29 @@ describe('Cash register confirmChangeHolder', function (): void {
     });
 });
 
-// ── createRegister with holder ────────────────────────────────────────────────
+// ── One till for the club ─────────────────────────────────────────────────────
 
-describe('Cash register creation with holder', function (): void {
-    it('admin can create register with holder', function (): void {
-        $admin = User::factory()->isAdmin()->create();
-        $holder = makeHolder();
+describe('The club till', function (): void {
+    it('cannot be doubled by a second one', function (): void {
+        makeRegisterWithHolder();
 
-        Livewire::actingAs($admin)
+        Livewire::actingAs(User::factory()->isAdmin()->create())
             ->test('pages::club-admin.treasury.cash-register')
-            ->set('newRegisterName', 'New Register')
-            ->set('newRegisterHolderUserId', $holder->id)
-            ->call('createRegister')
-            ->assertHasNoErrors();
+            ->assertDontSee('createRegister');
 
-        $register = CashRegister::where('name', 'New Register')->first();
-        expect($register)->not->toBeNull();
-        expect($register->held_by_user_id)->toBe($holder->id);
+        expect(CashRegister::count())->toBe(1);
     });
 
-    it('regular user cannot create register', function (): void {
-        $user = User::factory()->create();
+    it('takes its first holder before anything is recorded in it', function (): void {
+        $holder = makeHolder();
 
-        Livewire::actingAs($user)
+        Livewire::actingAs(User::factory()->isAdmin()->create())
             ->test('pages::club-admin.treasury.cash-register')
-            ->set('newRegisterName', 'New Register')
-            ->call('createRegister')
-            ->assertForbidden();
+            ->set('newHolderUserId', $holder->id)
+            ->call('confirmChangeHolder')
+            ->assertHasNoErrors();
+
+        expect(CashRegister::sole()->held_by_user_id)->toBe($holder->id);
     });
 });
 
@@ -262,10 +254,10 @@ describe('Club information equipment overview', function (): void {
     });
 });
 
-// ── Retiring a cash register ─────────────────────────────────────────────────
+// ── No retiring the club till ────────────────────────────────────────────────
 
-describe('Retiring a cash register', function (): void {
-    it('hides the register without touching its ledger', function (): void {
+describe('The club till', function (): void {
+    it('cannot be retired from the screen, its ledger stays where it is', function (): void {
         $register = makeRegisterWithHolder();
         CashRegisterEntry::create([
             'cash_register_id' => $register->id,
@@ -276,37 +268,8 @@ describe('Retiring a cash register', function (): void {
 
         Livewire::actingAs(User::factory()->isAdmin()->create())
             ->test('pages::club-admin.treasury.cash-register')
-            ->set('selectedRegisterId', $register->id)
-            ->call('retireRegister')
-            ->assertHasNoErrors();
-
-        expect(CashRegister::find($register->id))->toBeNull();
-        expect(CashRegisterEntry::where('cash_register_id', $register->id)->count())->toBe(1);
-    });
-
-    it('puts a retired register back in service', function (): void {
-        $register = makeRegisterWithHolder();
-        $register->delete();
-
-        Livewire::actingAs(User::factory()->isAdmin()->create())
-            ->test('pages::club-admin.treasury.cash-register')
-            ->set('showRetired', true)
-            ->call('restoreRegister', $register->id)
-            ->assertHasNoErrors();
-
-        expect(CashRegister::find($register->id))->not->toBeNull();
-    });
-
-    it('is closed to a committee member without the cash register delegation', function (): void {
-        $register = makeRegisterWithHolder();
-
-        Livewire::actingAs(User::factory()->isCommitteeMember()->create([
-            'committee_role' => CommitteeRolesEnum::SECRETARY,
-        ]))
-            ->test('pages::club-admin.treasury.cash-register')
-            ->set('selectedRegisterId', $register->id)
-            ->call('retireRegister')
-            ->assertForbidden();
+            ->assertDontSee('retireRegister')
+            ->assertSee('12,50');
 
         expect(CashRegister::find($register->id))->not->toBeNull();
     });

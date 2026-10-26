@@ -4,8 +4,17 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Payment\Models;
 
+use App\Domains\Bar\Models\BarOrder;
+use App\Domains\ClubAdmin\ExternalParticipants\Models\ExternalRegistration;
+use App\Domains\ClubAdmin\Subscriptions\Models\Registration;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
 use App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
+use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Shared\Enums\ExpenseCategory;
 use App\Domains\Shared\Enums\IncomeCategory;
 use App\Domains\Shared\Traits\HasAuditLog;
@@ -30,6 +39,7 @@ use Illuminate\Support\Carbon;
  * @property int $cash_register_id
  * @property int $amount Signed, in cents: positive when cash comes in.
  * @property string $reason
+ * @property string|null $category An income or an expense category value, when the movement itself names its poste.
  * @property string|null $payable_type
  * @property int|null $payable_id
  * @property int|null $transaction_id The bank line this movement deposited or withdrew, making it internal.
@@ -66,6 +76,18 @@ class CashRegisterEntry extends Model
     use HasAuditLog;
     use HasFactory;
 
+    /**
+     * The reason of the movement a count writes when the drawer and the books
+     * disagree.
+     */
+    public const string DIFFERENCE_REASON = 'cash_difference';
+
+    /**
+     * The reason of the movement declared as what the drawer held before the
+     * app followed it.
+     */
+    public const string OPENING_REASON = 'opening_balance';
+
     protected $casts = [
         'amount' => 'integer',
     ];
@@ -74,6 +96,7 @@ class CashRegisterEntry extends Model
         'cash_register_id',
         'amount',
         'reason',
+        'category',
         'payable_type',
         'payable_id',
         'recorded_by_id',
@@ -98,13 +121,81 @@ class CashRegisterEntry extends Model
     }
 
     /**
-     * Money the website accounts for, a supporting document justifies, or
-     * that only moved between the till and the bank: either way, nothing is
-     * left to explain.
+     * The poste the movement itself names — a count's difference, already
+     * spread — or null when its payable or its documents say it.
+     */
+    public function filedCategory(): ExpenseCategory|IncomeCategory|null
+    {
+        if ($this->category === null) {
+            return null;
+        }
+
+        return IncomeCategory::tryFrom($this->category) ?? ExpenseCategory::tryFrom($this->category);
+    }
+
+    /**
+     * The cash this movement brought in, income category by income category,
+     * in cents — what a count's shortfall is spread over. Empty for money
+     * that went out, moved to or from the bank, or that nobody explained yet.
+     *
+     * Read the way the financial report files it, except an affiliation paid
+     * in cash, which counts as membership fees whole instead of splitting with
+     * the trainings: the report's split needs the affiliation's composition,
+     * and a cash affiliation is rare enough at the till.
+     *
+     * @return array<string, int> keyed by income category value
+     */
+    public function incomeShares(): array
+    {
+        if ($this->amount <= 0 || $this->isInternal() || $this->isOpeningBalance() || $this->reason === self::DIFFERENCE_REASON) {
+            return [];
+        }
+
+        $category = $this->filedCategory() ?? self::incomeCategoryOf($this->payable);
+
+        if ($category instanceof IncomeCategory) {
+            return [$category->value => $this->amount];
+        }
+
+        $shares = [];
+
+        foreach ($this->categoryShares() as $share) {
+            if ($share['category'] instanceof IncomeCategory) {
+                $shares[$share['category']->value] = ($shares[$share['category']->value] ?? 0) + (int) round($share['amount'] * 100);
+            }
+        }
+
+        return $shares;
+    }
+
+    /**
+     * Money the website accounts for, a supporting document justifies, a
+     * count filed, the till's opening balance, or that only moved between the
+     * till and the bank: either way, nothing is left to explain.
      */
     public function isClosed(): bool
     {
-        return $this->payable_type !== null || $this->isInternal() || $this->isJustified();
+        return $this->payable_type !== null
+            || $this->category !== null
+            || $this->isOpeningBalance()
+            || $this->isInternal()
+            || $this->isJustified();
+    }
+
+    /**
+     * No movement of the same till came before this one.
+     */
+    public function isFirstOfItsTill(): bool
+    {
+        return ! self::query()
+            ->where('cash_register_id', $this->cash_register_id)
+            ->whereKeyNot($this->getKey())
+            ->where(fn (Builder $query): Builder => $query
+                ->where('created_at', '<', $this->created_at)
+                ->orWhere(fn (Builder $sameSecond): Builder => $sameSecond
+                    ->where('created_at', $this->created_at)
+                    ->where('id', '<', $this->getKey())))
+            ->exists();
     }
 
     public function isIncoming(): bool
@@ -123,6 +214,15 @@ class CashRegisterEntry extends Model
     public function isJustified(): bool
     {
         return $this->justifyingDocuments()->isNotEmpty();
+    }
+
+    /**
+     * What the drawer held before the app followed it: neither income nor a
+     * transfer from the bank.
+     */
+    public function isOpeningBalance(): bool
+    {
+        return $this->reason === self::OPENING_REASON;
     }
 
     public function payable(): MorphTo
@@ -173,6 +273,26 @@ class CashRegisterEntry extends Model
     public function transaction(): BelongsTo
     {
         return $this->belongsTo(Transaction::class);
+    }
+
+    /**
+     * The income a payment the website accounts for brought in.
+     */
+    private static function incomeCategoryOf(?Model $payable): ?IncomeCategory
+    {
+        return match (true) {
+            $payable instanceof Payment => self::incomeCategoryOf($payable->payable),
+            $payable instanceof BarOrder => IncomeCategory::Bar,
+            $payable instanceof Subscription => IncomeCategory::MembershipFees,
+            $payable instanceof SubscriptionTrainingPack,
+            $payable instanceof ExternalRegistration => IncomeCategory::Trainings,
+            $payable instanceof TournamentRegistration,
+            $payable instanceof Tournament,
+            $payable instanceof MeetingUser,
+            $payable instanceof Meeting,
+            $payable instanceof Registration => IncomeCategory::Event,
+            default => null,
+        };
     }
 
     /**

@@ -63,16 +63,29 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  */
 final class FinancialReport
 {
+    /** Money seen on a bank statement: a transfer, a QR code paid by phone alike. */
+    public const string BANK = 'bank';
+
+    /** Money that went through the till. */
+    public const string CASH = 'cash';
+
     /** The poste of money nobody has explained yet. */
     public const string UNCATEGORISED = 'uncategorised';
 
     /**
+     * The channel of the movement being filed: every flow it feeds goes
+     * through it.
+     */
+    private string $channel = self::BANK;
+
+    /**
      * Every piece of money of the year, filed: the poste it feeds (`income:…`
      * or `expense:…`), how much it adds to that poste in cents (negative for a
-     * refund), the fiscal month it moved in (0 to 11), and for membership fees
-     * whether the licence was a competitive one.
+     * refund), the fiscal month it moved in (0 to 11), for membership fees
+     * whether the licence was a competitive one, and the channel it went
+     * through (`bank` or `cash`).
      *
-     * @var list<array{poste: string, cents: int, month: int, competitive: bool|null}>
+     * @var list<array{poste: string, cents: int, month: int, competitive: bool|null, channel: string}>
      */
     private array $flows = [];
 
@@ -176,6 +189,42 @@ final class FinancialReport
             static fn (IncomeCategory $category): string => $category->value,
             IncomeCategory::ordered(),
         ));
+    }
+
+    /**
+     * {@see self::incomeByCategory()}, each poste split between transfer and
+     * cash: the two always add up to the poste.
+     *
+     * @return array<string, array{bank: float, cash: float}> keyed by {@see IncomeCategory} value
+     */
+    public function incomeByCategoryAndChannel(): array
+    {
+        $split = [];
+
+        foreach (array_keys($this->incomeByCategory()) as $key) {
+            $poste = 'income:' . $key;
+
+            $split[$key] = [
+                self::BANK => $this->euros($this->sumWhere(fn (array $flow): bool => $flow['poste'] === $poste && $flow['channel'] === self::BANK)),
+                self::CASH => $this->euros($this->sumWhere(fn (array $flow): bool => $flow['poste'] === $poste && $flow['channel'] === self::CASH)),
+            ];
+        }
+
+        return $split;
+    }
+
+    /**
+     * What came in by transfer and what came in cash, net of what went back
+     * the same way. The two add up to {@see self::income()}.
+     *
+     * @return array{bank: float, cash: float}
+     */
+    public function incomeByChannel(): array
+    {
+        return [
+            self::BANK => $this->euros($this->sumWhere(fn (array $flow): bool => str_starts_with($flow['poste'], 'income:') && $flow['channel'] === self::BANK)),
+            self::CASH => $this->euros($this->sumWhere(fn (array $flow): bool => str_starts_with($flow['poste'], 'income:') && $flow['channel'] === self::CASH)),
+        ];
     }
 
     /**
@@ -350,6 +399,7 @@ final class FinancialReport
             'cents' => $direction === 'income' ? $moneyCents : -$moneyCents,
             'month' => $month,
             'competitive' => $competitive,
+            'channel' => $this->channel,
         ];
     }
 
@@ -536,6 +586,7 @@ final class FinancialReport
 
     private function readBankLines(): void
     {
+        $this->channel = self::BANK;
         $lines = Transaction::query()
             ->whereDate('date', '>=', $this->year->start()->toDateString())
             ->whereDate('date', '<=', $this->lastDay()->toDateString())
@@ -568,6 +619,7 @@ final class FinancialReport
 
     private function readCashMovements(): void
     {
+        $this->channel = self::CASH;
         $entries = CashRegisterEntry::query()
             ->whereDate('created_at', '>=', $this->year->start()->toDateString())
             ->whereDate('created_at', '<=', $this->lastDay()->toDateString())
@@ -616,7 +668,7 @@ final class FinancialReport
     }
 
     /**
-     * @param  callable(array{poste: string, cents: int, month: int, competitive: bool|null}): bool  $filter
+     * @param  callable(array{poste: string, cents: int, month: int, competitive: bool|null, channel: string}): bool  $filter
      */
     private function sumWhere(callable $filter): int
     {

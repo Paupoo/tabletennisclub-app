@@ -442,20 +442,33 @@
                 {{-- Whoever's ZIP download archives the expense reports: where
                      paid reports still wait for it. --}}
                 @if ($this->unarchivedByYear !== [])
+                    @php
+                        $shownStart = $this->fiscalYear ?? \App\Domains\Shared\ValueObjects\FiscalYear::current()->startYear();
+                        $shownCount = $this->unarchivedByYear[$shownStart] ?? 0;
+                        $otherYears = array_diff_key($this->unarchivedByYear, [$shownStart => true]);
+                    @endphp
                     <div class="mt-4 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm" data-unarchived>
-                        <x-icon name="o-archive-box" class="me-1 size-4 text-warning-content" />
-                        {{ __('Paid expense reports not archived yet:') }}
-                        @foreach ($this->unarchivedByYear as $start => $count)
-                            @php $label = \App\Domains\Shared\ValueObjects\FiscalYear::startingIn($start)->label(); @endphp
-                            @if ($label === $yearLabel)
-                                <strong>{{ trans_choice(':count in :year|:count in :year', $count, ['year' => $label]) }}</strong>
-                            @else
-                                <a class="link" href="{{ route('admin.treasury.report', ['year' => $start, 'tab' => 'pieces']) }}" wire:navigate>{{ trans_choice(':count in :year|:count in :year', $count, ['year' => $label]) }}</a>
-                            @endif
-                            @unless ($loop->last) · @endunless
-                        @endforeach
-                        <div class="mt-1 text-xs text-muted">{{ __('Downloading the ZIP of a year archives its expense reports.') }}</div>
+                        @if ($shownCount > 0)
+                            <p>
+                                <x-icon name="o-archive-box" class="me-1 size-4 text-warning-content" />
+                                {{ trans_choice(':count paid expense report has no copy of its receipts outside the application yet.|:count paid expense reports have no copy of their receipts outside the application yet.', $shownCount, ['count' => $shownCount]) }}
+                                {{ __('Download the ZIP archive of :year to keep them safe.', ['year' => $yearLabel]) }}
+                            </p>
+                            <x-button :label="__('Prepare the ZIP archive of :year', ['year' => $yearLabel])" icon="o-archive-box-arrow-down" class="btn-sm mt-2"
+                                wire:click="archiveExpenseReports({{ $shownStart }})" spinner="archiveExpenseReports" />
+                        @endif
+                        @if ($otherYears !== [])
+                            <p @class(['mt-2' => $shownCount > 0])>
+                                {{ __('Paid expense reports not archived yet:') }}
+                                @foreach ($otherYears as $start => $count)
+                                    @php $label = \App\Domains\Shared\ValueObjects\FiscalYear::startingIn($start)->label(); @endphp
+                                    <a class="link" href="{{ route('admin.treasury.report', ['year' => $start, 'tab' => 'pieces']) }}" wire:navigate>{{ trans_choice(':count in :year|:count in :year', $count, ['year' => $label]) }}</a>
+                                    @unless ($loop->last) · @endunless
+                                @endforeach
+                            </p>
+                        @endif
                     </div>
+                    <span data-unarchived-end hidden></span>
                 @endif
             </x-card>
 

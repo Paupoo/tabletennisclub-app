@@ -69,6 +69,19 @@ new class extends Component
      * originals — narrowed to a poste and to the pieces asked for, and tell
      * the requester when it is ready.
      */
+    /**
+     * The ZIP of a year's expense reports, in one click from the notice: the
+     * export whose download archives them, the right year and scope already
+     * chosen.
+     */
+    public function archiveExpenseReports(int $fiscalYear): void
+    {
+        Gate::authorize(Permission::FinancialReportView->value);
+        Gate::authorize('archive', ExpenseReport::class);
+
+        $this->queueExport('zip', $fiscalYear, null, FinancialExportScope::ExpenseReports, false);
+    }
+
     public function export(string $format): void
     {
         Gate::authorize(Permission::FinancialReportView->value);

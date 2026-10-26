@@ -60,6 +60,6 @@ Les justificatifs ne vivent que sur le serveur de l'application. Pour qu'ils exi
 
 **L'archivage revient à la trésorerie**, et à un membre du comité qui traite aussi les notes de frais. La délégation **Notes de frais** seule ne donne pas accès au rapport financier : le relais du trésorier décide des notes, mais ne les exporte ni ne les archive.
 
-Un rappel est envoyé à chaque **trimestre de l'exercice** (le 1er du mois) et le **5 du mois qui suit sa clôture** — le 5 janvier pour un exercice qui suit l'année civile —, tant qu'il reste des notes payées non archivées. Le tableau de bord le signale aussi. Voir [Lire le rapport financier](lire-le-rapport-financier).
+Un rappel est envoyé à chaque **trimestre de l'exercice** (le 1er du mois) et le **5 du mois qui suit sa clôture** — le 5 janvier pour un exercice qui suit l'année civile —, tant qu'il reste des notes payées non archivées. L'onglet **Pièces & exports** du rapport le signale aussi, avec un bouton qui prépare l'archive de l'exercice. Voir [Lire le rapport financier](lire-le-rapport-financier).
 
 Pour tout ce qui concerne la lecture des notes par les vérificateurs ou le filtre par exercice, voyez [Vérifier les notes de frais](verifier-les-notes-de-frais).

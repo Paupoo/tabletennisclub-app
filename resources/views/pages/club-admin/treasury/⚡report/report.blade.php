@@ -520,12 +520,13 @@
 
             @php
                 $pieces = [
-                    'documents' => $this->pieces->documents(),
-                    'expenseReports' => $this->pieces->expenseReports(),
-                    'sitePayments' => $this->pieces->sitePayments(),
+                    'documents' => $this->documentsPage(),
+                    'expenseReports' => $this->expenseReportsPage(),
+                    'sitePayments' => $this->sitePaymentsPage(),
                 ];
             @endphp
 
+            <div id="pieces-documents" class="scroll-mt-4">
             <x-card :title="__('Supporting documents')" class="mb-6 shadow-sm" separator>
                 @if ($pieces['documents']->isEmpty())
                     <p class="text-sm text-muted">{{ __('No supporting document dated in this year.') }}</p>
@@ -566,12 +567,15 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="mt-3">{{ $pieces['documents']->links(data: ['scrollTo' => '#pieces-documents']) }}</div>
                 @endif
             </x-card>
+            </div>
 
             @feature('expense_reports')
+                <div id="pieces-expense-reports" class="scroll-mt-4">
                 <x-card :title="__('Expense reports')" class="mb-6 shadow-sm" separator>
-                    @if ($pieces['expenseReports'] === [])
+                    @if ($pieces['expenseReports']->isEmpty())
                         <p class="text-sm text-muted">{{ __('No expense report paid in this year.') }}</p>
                     @else
                         <div class="overflow-x-auto">
@@ -599,12 +603,15 @@
                                 </tbody>
                             </table>
                         </div>
+                        <div class="mt-3">{{ $pieces['expenseReports']->links(data: ['scrollTo' => '#pieces-expense-reports']) }}</div>
                     @endif
                 </x-card>
+                </div>
             @endfeature
 
+            <div id="pieces-site-payments" class="scroll-mt-4">
             <x-card :title="__('Website payments')" class="mb-6 shadow-sm" separator>
-                @if ($pieces['sitePayments'] === [])
+                @if ($pieces['sitePayments']->isEmpty())
                     <p class="text-sm text-muted">{{ __('No website payment reconciled in this year.') }}</p>
                 @else
                     <div class="overflow-x-auto">
@@ -636,8 +643,10 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="mt-3">{{ $pieces['sitePayments']->links(data: ['scrollTo' => '#pieces-site-payments']) }}</div>
                 @endif
             </x-card>
+            </div>
         </x-tab>
     </x-tabs>
 </div>

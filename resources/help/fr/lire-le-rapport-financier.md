@@ -19,14 +19,14 @@ En haut de l'écran, choisissez l'**exercice**. Il commence le mois fixé dans *
 
 | Carte | Ce qu'elle dit |
 |---|---|
-| **Recettes** | tout l'argent entré, banque et caisses, sans les mouvements internes |
+| **Recettes** | tout l'argent entré, banque et caisse, sans les mouvements internes ni le solde d'ouverture de la caisse |
 | **Dépenses** | tout l'argent sorti, de la même façon |
 | **Résultat** | recettes moins dépenses |
 | **Argent justifié** | la part des mouvements de l'exercice qui sont clôturés, en nombre et en montant |
 | **Membres qui doivent encore de l'argent** | parmi les membres actifs, ceux qui ont au moins un paiement en attente |
 | **Argent encore attendu** | les paiements en attente et les recettes à régler (un subside promis) |
 | **Ce que le club doit encore** | les remboursements à faire (notes de frais acceptées comprises) et les factures à régler |
-| **Trésorerie** | l'argent détenu : chaque compte bancaire et chaque caisse |
+| **Trésorerie** | l'argent détenu : chaque compte bancaire et la caisse |
 
 Les trois premières se comparent à l'exercice précédent : la flèche donne le sens, le pourcentage l'écart. **La couleur dit si c'est bon pour le club**, pas si le chiffre monte : des dépenses qui baissent sont en vert.
 
@@ -38,7 +38,7 @@ Le solde d'un compte est celui que la banque a imprimé sur la **dernière ligne
 
 ## Les graphiques
 
-- **Trésorerie au fil de l'exercice** : l'argent détenu à chaque fin de mois, compte par compte, les caisses au-dessus.
+- **Trésorerie au fil de l'exercice** : l'argent détenu à chaque fin de mois, compte par compte, la caisse au-dessus.
 - **Recettes et dépenses par mois**, avec une ligne pour le résultat qui se construit au fil de l'année.
 - **Dépenses par poste** et **Recettes par poste** : l'exercice en couleur, le précédent en gris, du plus grand au plus petit.
 - **Clôture des mouvements** : comment les mouvements ont été clôturés, en nombre et en montant.
@@ -60,7 +60,7 @@ Le second onglet liste tout ce qui fonde les chiffres de l'exercice : les **pi�
 
 C'est aussi là que l'on **exporte** l'exercice :
 
-- **PDF imprimable** : le journal de tous les mouvements (banque et caisses), puis chaque pièce et chaque note de frais avec ses justificatifs imprimés. C'est le document à remettre aux vérificateurs.
+- **PDF imprimable** : le journal de tous les mouvements (banque et caisse), puis chaque pièce et chaque note de frais avec ses justificatifs imprimés. C'est le document à remettre aux vérificateurs.
 - **Archive ZIP (originaux)** : le journal en tableur (CSV, pour Excel) et les **fichiers originaux** de chaque pièce et de chaque note de frais, intacts.
 
 Le rapport lui-même (tuiles, graphiques, tableaux par poste) est déjà dans l'onglet **Vue d'ensemble** : il n'entre dans l'export que si vous cochez **Inclure le rapport financier**. Il ouvre alors le PDF, et rejoint le ZIP sous le nom `rapport-financier.pdf`. Pour l'assemblée générale, cochez-le.

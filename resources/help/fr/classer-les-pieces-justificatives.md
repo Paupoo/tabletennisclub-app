@@ -67,7 +67,7 @@ Si une ligne est liée à des pièces de catégories différentes (des balles et
 
 Une facture réglée en liquide se lie à un **mouvement de caisse**. Deux façons :
 
-- depuis la pièce : choisissez la **caisse**, puis **Enregistrer un paiement en espèces de … €**. Le mouvement de caisse est créé pour vous, du bon montant et dans le bon sens ;
+- depuis la pièce : **Enregistrer un paiement en espèces de … €**. Le mouvement est créé pour vous dans la caisse du club, du bon montant et dans le bon sens ;
 - depuis **Trésorerie → Caisse** : sur un mouvement, **Justifier**, puis liez une pièce existante ou classez-en une nouvelle.
 
 C'est ainsi que la personne qui tient la caisse range elle-même les tickets de ce qu'elle a payé.
@@ -75,7 +75,8 @@ C'est ainsi que la personne qui tient la caisse range elle-même les tickets de 
 ## Ce qui ne reçoit pas de pièce
 
 - Une **transaction rapprochée d'un paiement du site** (une cotisation, un remboursement de note de frais) : elle est déjà justifiée par le site. On ne mélange jamais, sur une même ligne, l'argent du site et l'argent hors site.
-- Un **mouvement de caisse** qui est un paiement du site (une commande du bar, par exemple).
+- Un **mouvement de caisse** qui est un paiement du site : une commande du bar réglée en espèces, un tournoi payé sur place. Il entre dans la caisse tout seul, déjà rangé en « Bar » ou en « Événements & tournois ».
+- Un **écart de caisse** ou le **solde d'ouverture** (voir plus bas).
 - Un **mouvement interne** : un virement entre deux comptes du club, ou un versement entre la caisse et la banque. Ce n'est ni une recette ni une dépense (voir plus bas).
 
 À l'inverse, **les frais de banque et les intérêts ont besoin d'une pièce**, comme le reste. Une capture d'écran de l'extrait qui les montre suffit.
@@ -85,6 +86,20 @@ C'est ainsi que la personne qui tient la caisse range elle-même les tickets de 
 Quand la caisse est versée à la banque, ou qu'on retire un fonds de caisse, le même argent apparaît deux fois : une sortie d'un côté, une entrée de l'autre. Pour que le club ne le compte pas comme une recette et une dépense, la trésorerie relie les deux : dans **Trésorerie → Caisse**, sur le mouvement, **C'est un versement de/vers la banque**, puis choisissez la ligne correspondante de l'extrait. Les deux mouvements deviennent **internes**.
 
 Les virements entre deux comptes du club (vers le compte d'épargne, par exemple) n'ont rien à faire : l'import les reconnaît tout seul. Voir [Importer et gérer les extraits bancaires](importer-les-extraits-bancaires).
+
+### Le solde d'ouverture
+
+L'argent que le tiroir contenait avant que l'application ne le suive n'a pas de ligne bancaire à relier. Sur le **premier** mouvement de la caisse, **Justifier → C'est le solde d'ouverture** le range à part : ce n'est pas une recette. Le geste n'est proposé que sur ce premier mouvement. Tant que personne ne tranche, le mouvement reste parmi les tâches **à traiter**.
+
+## Contrôler la caisse
+
+Comptez le tiroir, puis **Trésorerie → Caisse → Contrôler la caisse** et indiquez ce que vous avez trouvé. L'application compare avec ce que la caisse devrait contenir et range elle-même l'écart :
+
+- **il en manque** : le manque est réparti entre les recettes en espèces entrées depuis le contrôle précédent, au prorata des montants. Un contrôle fait juste avant un tournoi laisse donc le prochain manque au tournoi seul ;
+- **il y en a trop** : le surplus va en « Autres recettes » ;
+- **il en manque, mais rien n'est entré depuis le dernier contrôle** : le manque va en « Autres dépenses ».
+
+Un contrôle juste s'enregistre aussi : c'est lui qui borne la période suivante. Le dernier contrôle s'affiche en haut de l'écran.
 
 ## Modifier, supprimer
 

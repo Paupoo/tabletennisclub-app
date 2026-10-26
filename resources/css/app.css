@@ -615,6 +615,7 @@ select:focus-visible {
   --chart-justified: #1baf7a;
   --chart-written-off: #4a3aa7;
   --chart-internal: #b8b6ae;
+  --chart-opening-balance: var(--chart-internal);
   --chart-to-process: #fab219;
   --chart-holding-1: #2a78d6;
   --chart-holding-2: #eb6834;
@@ -641,6 +642,7 @@ select:focus-visible {
   --chart-justified: #199e70;
   --chart-written-off: #9085e9;
   --chart-internal: #6b6a65;
+  --chart-opening-balance: var(--chart-internal);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -658,6 +660,7 @@ select:focus-visible {
     --chart-justified: #199e70;
     --chart-written-off: #9085e9;
     --chart-internal: #6b6a65;
+    --chart-opening-balance: var(--chart-internal);
   }
 }
 

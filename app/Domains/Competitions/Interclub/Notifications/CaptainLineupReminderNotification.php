@@ -45,6 +45,7 @@ class CaptainLineupReminderNotification extends Notification
                     'opponent' => $ic->opponentTeam()?->fullName() ?? '—',
                     'days' => (int) now()->diffInDays($ic->start_date_time),
                     'saved' => $ic->awaitsSending(),
+                    ...$this->shortage($ic),
                 ])->all(),
                 'url' => route('admin.interclubs.captain-selection'),
             ]);
@@ -54,5 +55,22 @@ class CaptainLineupReminderNotification extends Notification
     public function via(object $notifiable): array
     {
         return ['mail', 'database'];
+    }
+
+    /**
+     * What stands between the captain and a full lineup: players missing among
+     * those available, and team members who have not answered yet.
+     *
+     * @return array{missing: int, pending: int}
+     */
+    private function shortage(Interclub $interclub): array
+    {
+        $answers = $interclub->users->pluck('registration.availability')->filter();
+        $members = $interclub->ourTeam()?->users()->count() ?? 0;
+
+        return [
+            'missing' => max(0, $interclub->total_players - $answers->filter(fn (string $a): bool => $a === 'available')->count()),
+            'pending' => max(0, $members - $answers->count()),
+        ];
     }
 }

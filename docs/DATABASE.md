@@ -238,9 +238,18 @@ Détail colonne par colonne : [erd/clubadmin-payment.md](erd/clubadmin-payment.m
 - `allocated_amount`, `settled_at` / `settled_reason` (reliquat abandonné)
 - Une ligne est clôturée si elle est affectée à des paiements du site, justifiée par une pièce, soldée ou interne
 
+#### `cash_registers`
+- Une seule caisse pour tout le club (`CashRegister::club()`, ouverte au premier encaissement) : le bar, les tournois et la trésorerie y écrivent tous
+
 #### `cash_register_entries`
 - `amount` (centimes, signé), `payable_type` / `payable_id` (argent du site), `transaction_id` (nullable, unique : versement caisse ↔ banque)
+- `category` (nullable) : valeur d'une catégorie de recette ou de dépense, pour l'écart d'un contrôle de caisse déjà réparti (`reason = cash_difference`)
+- `reason = bar_sale` : une commande du bar réglée en espèces (une ligne par commande) ; `reason = opening_balance` : le solde d'ouverture, hors recettes, seulement sur le premier mouvement
 - La date d'un mouvement de caisse est son `created_at`
+
+#### `cash_register_counts` (Contrôles de caisse)
+- `cash_register_id`, `expected` (solde théorique), `counted` (compté), centimes ; `counted_by_id`, `notes`
+- Un contrôle borne la période sur laquelle l'écart suivant est réparti ; un contrôle juste est gardé aussi
 
 #### `supporting_documents` (Pièces justificatives)
 - `id`, `date` (date de la pièce), `amount` (centimes, positif), `counterparty`, `label`, `created_by_id`, `deleted_at`

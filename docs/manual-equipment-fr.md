@@ -63,35 +63,18 @@ Le champ démarre **vide** : le trousseau ne retourne jamais tout seul chez la p
 
 ### Pourquoi ?
 
-Chaque caisse du club est confiée à un membre (généralement le trésorier ou un délégué). Cela permet de savoir qui est responsable de chaque caisse à tout moment.
+Le club n'a qu'une caisse : le bar, les tournois et la trésorerie y mettent tous leurs espèces. Elle est confiée à un membre (généralement le trésorier ou un délégué), pour savoir à tout moment qui en est responsable. Elle s'ouvre d'elle-même au premier encaissement : il n'y a ni caisse à créer, ni caisse à choisir.
 
-### Créer une caisse avec un détenteur
-
-1. Allez dans **Administration → Trésorerie → Caisse**.
-2. Cliquez sur **Nouvelle caisse**.
-3. Saisissez le nom de la caisse et recherchez le détenteur par son nom.
-4. Cliquez sur **Créer**.
-
-> Cette action est réservée aux **administrateurs** et aux **trésoriers**.
-
-### Changer le détenteur d'une caisse
+### Changer le détenteur de la caisse
 
 1. Allez dans **Administration → Trésorerie → Caisse**.
-2. Sélectionnez la caisse concernée (si plusieurs existent).
-3. À côté du nom du détenteur actuel, cliquez sur **Changer**.
-4. Recherchez le nouveau détenteur par son nom.
-5. Cliquez sur **Enregistrer**.
+2. À côté du nom du détenteur actuel, cliquez sur **Changer**.
+3. Recherchez le nouveau détenteur par son nom.
+4. Cliquez sur **Enregistrer**.
 
 > Cette action est réservée aux **administrateurs** et aux **trésoriers**.
 
 Changer le détenteur **ne solde pas la caisse et ne transfère pas d'argent** : cela déplace seulement la responsabilité affichée.
-
-### Retirer une caisse du service
-
-1. Allez dans **Administration → Trésorerie → Caisse** et sélectionnez la caisse.
-2. Cliquez sur **Retirer**, puis confirmez.
-
-La caisse quitte la liste mais **son livre de comptes est intégralement conservé** : aucun mouvement n'est effacé. Cochez **Afficher les caisses retirées** pour la retrouver et **Remettre en service** pour la réactiver.
 
 ---
 

@@ -359,6 +359,19 @@ it('takes a cash payment at the desk once the tournament is under way', function
     expect($registration->fresh()->payment->status)->toBe('paid');
 });
 
+it('takes a cash payment at the desk even before the club has a till', function (): void {
+    ['tournament' => $t, 'pairs' => [$a]] = liveDoubles();
+    $registration = TournamentRegistration::where('tournament_id', $t->id)->where('user_id', $a->player1_id)->firstOrFail();
+    $payment = $registration->payment()->create(['reference' => (new GeneratePaymentReference)(), 'amount_due' => 15, 'amount_paid' => 0, 'status' => 'pending']);
+    $registration->update(['payment_id' => $payment->id]);
+
+    liveCentre($t)->call('recordCashPayment', $a->player1_id);
+
+    expect($registration->fresh()->payment->status)->toBe('paid')
+        ->and(CashRegister::count())->toBe(1)
+        ->and(CashRegister::sole()->entries()->sum('amount'))->toBe(1500);
+});
+
 describe('the score by QR code', function (): void {
     it('names both pairs in full on the table page', function (): void {
         ['tournament' => $t, 'pairs' => [$a, $b], 'tables' => [$one]] = liveDoubles();

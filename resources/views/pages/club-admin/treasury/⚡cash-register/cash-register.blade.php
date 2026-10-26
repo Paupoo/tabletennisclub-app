@@ -5,63 +5,27 @@
 <div>
     <x-header :title="__('Cash Register')" :subtitle="__('In-person cash management')" separator progress-indicator>
         <x-slot:actions>
-            @can('cash_register.holder.change')
-            <x-button
-                :label="__('New register')"
-                icon="o-building-library"
-                class="btn-outline btn-sm"
-                wire:click="$set('createRegisterModal', true)" />
-            @endcan
-            @if($this->register)
             @can('cash_register.entry.create')
+            <x-button
+                :label="__('Count the till')"
+                icon="o-calculator"
+                class="btn-outline btn-sm"
+                wire:click="openCount" />
             <x-button
                 :label="__('Add entry')"
                 icon="o-plus"
                 class="btn-primary btn-sm"
                 wire:click="openManualEntry" />
             @endcan
-            @can('cash_register.manage')
-            @unless($this->register->trashed())
-            <x-button
-                :label="__('Retire')"
-                icon="o-archive-box-x-mark"
-                class="btn-ghost btn-sm text-error"
-                wire:click="openRetireRegister" />
-            @endunless
-            @endcan
-            @endif
         </x-slot:actions>
     </x-header>
 
-    @if($this->registers->isEmpty())
+    @if($this->register === null)
     <div class="flex flex-col items-center justify-center py-20 text-muted">
         <x-icon name="o-currency-euro" class="w-16 h-16 mb-4" />
-        <p class="text-sm italic">{{ __('No cash register yet. Create one to get started.') }}</p>
+        <p class="text-sm italic">{{ __('No movement in the till yet.') }}</p>
     </div>
     @else
-
-    {{-- Register selector (if multiple) --}}
-    @if($this->registers->count() > 1 || $showRetired)
-    <div class="mb-6 flex flex-wrap items-center gap-2">
-        @foreach($this->registers as $reg)
-        <x-button
-            :label="$reg->trashed() ? $reg->name . ' — ' . __('Retired') : $reg->name"
-            wire:click="$set('selectedRegisterId', {{ $reg->id }})"
-            @class(['btn-sm', 'btn-primary' => $selectedRegisterId === $reg->id, 'btn-outline' => $selectedRegisterId !== $reg->id, 'opacity-60' => $reg->trashed()]) />
-        @if($reg->trashed())
-        @can('cash_register.manage')
-        <x-button
-            :label="__('Put back in service')"
-            icon="o-arrow-path"
-            class="btn-ghost btn-sm"
-            wire:click="restoreRegister({{ $reg->id }})" />
-        @endcan
-        @endif
-        @endforeach
-    </div>
-    @endif
-
-    @if($this->register)
     {{-- Holder info --}}
     <div class="flex items-center gap-3 mb-4 px-1">
         <x-icon name="o-user-circle" class="w-5 h-5 text-base-content/40 shrink-0" />
@@ -80,10 +44,31 @@
         @endcan
     </div>
 
+    {{-- Le dernier contrôle : la période du prochain écart part de lui. --}}
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 mb-4 px-1 text-sm" data-last-count>
+        <x-icon name="o-calculator" class="w-5 h-5 text-base-content/40 shrink-0" />
+        <span class="text-base-content/60">{{ __('Last count') }}:</span>
+        @if($this->lastCount)
+            <span class="font-medium">{{ $this->lastCount->created_at->format('d/m/Y') }}</span>
+            @if($this->lastCount->difference() === 0)
+                <x-badge :value="__('Right')" class="badge-success badge-soft badge-sm" />
+            @else
+                <x-badge :value="__('Difference of :amount €', ['amount' => number_format($this->lastCount->difference() / 100, 2, ',', ' ')])" class="badge-warning badge-soft badge-sm" />
+            @endif
+            @if($this->lastCount->countedBy)
+                <span class="text-xs text-muted">{{ $this->lastCount->countedBy->full_name }}</span>
+            @endif
+        @else
+            <span class="italic text-base-content/40">{{ __('Never counted') }}</span>
+        @endif
+    </div>
+
     {{-- Balance card --}}
     @php
         $entriesIn = $this->register->entries->where('amount', '>', 0);
         $entriesOut = $this->register->entries->where('amount', '<', 0);
+        // Seul le premier mouvement de la caisse peut être son solde d'ouverture.
+        $firstEntryId = $this->register->entries->sortBy([['created_at', 'asc'], ['id', 'asc']])->first()?->id;
     @endphp
     <div class="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2 lg:grid-cols-3">
         <x-admin.shared.stat-card
@@ -131,11 +116,18 @@
                         {{ match($entry->reason) {
                             'tournament_payment' => __('Tournament payment'),
                             'training_payment'   => __('Training payment'),
+                            'bar_sale'           => __('Bar sale'),
+                            'cash_difference'    => __('Cash difference'),
+                            'opening_balance'    => __('Opening balance'),
                             default              => __('Manual entry'),
                         } }}
                     </span>
-                    @if($entry->payable_type)
+                    @if($entry->filedCategory())
+                    <x-badge :value="$entry->filedCategory()->label()" class="badge-ghost badge-sm" />
+                    @elseif($entry->payable_type)
                     <x-badge value="{{ class_basename($entry->payable_type) }}" class="badge-ghost badge-sm" />
+                    @elseif($entry->isOpeningBalance())
+                    <x-badge value="{{ __('Out of the income') }}" class="badge-neutral badge-soft badge-sm" />
                     @elseif($entry->isInternal())
                     {{-- De la caisse à la banque, ou l'inverse : ni recette ni dépense. --}}
                     <x-badge value="{{ __('Bank deposit') }}" class="badge-neutral badge-soft badge-sm" />
@@ -161,13 +153,18 @@
             {{-- Hors site : une pièce justifie le mouvement, ou c'est un
                  versement de/vers la banque. Jamais les deux, jamais sur un
                  paiement que le site compte déjà. --}}
-            @if($entry->payable_type === null)
+            @if($entry->payable_type === null && $entry->category === null)
             @php
                 $canDocument = auth()->user()->can('create', \App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument::class);
                 $canDeposit = auth()->user()->can('linkCashDeposit', \App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument::class);
             @endphp
             <div class="shrink-0">
-                @if($entry->isInternal())
+                @if($entry->isOpeningBalance())
+                    @if($canDeposit)
+                    <x-button :label="__('Undo the opening balance')" class="btn-ghost btn-xs"
+                        wire:click="undoOpeningBalance({{ $entry->id }})" spinner="undoOpeningBalance({{ $entry->id }})" />
+                    @endif
+                @elseif($entry->isInternal())
                     @if($canDeposit)
                     <x-button :label="__('Unlink from the bank')" class="btn-ghost btn-xs"
                         wire:click="unlinkDeposit({{ $entry->id }})" spinner="unlinkDeposit({{ $entry->id }})" />
@@ -179,6 +176,9 @@
                     <x-admin.shared.row-menu :label="__('Justify')" icon="o-document-check"
                         :wire-click="'openEntryDocuments(' . $entry->id . ')'">
                         <x-menu-item icon="o-building-library" :title="__('It is a deposit to or from the bank')" wire:click="openDeposit({{ $entry->id }})" />
+                        @if($entry->amount > 0 && $entry->id === $firstEntryId)
+                        <x-menu-item icon="o-flag" :title="__('It is the opening balance')" wire:click="declareOpeningBalance({{ $entry->id }})" />
+                        @endif
                     </x-admin.shared.row-menu>
                 @elseif($canDocument)
                     <x-button :label="__('Justify')" icon="o-document-check" class="btn-outline btn-xs"
@@ -195,41 +195,28 @@
         @endforelse
     </x-card>
     @endif
-    @endif
 
-    @can('cash_register.manage')
-    <div class="mb-4 flex justify-end">
-        <x-checkbox :label="__('Show retired registers')" wire:model.live="showRetired" class="text-sm" />
-    </div>
-    @endcan
-
-    {{-- Modal: Retire register --}}
-    <x-app-modal wire:model="retireRegisterModal" :title="__('Retire this cash register')" separator
-        :open="$retireRegisterModal">
-        <p class="text-sm">
-            {{ __('It leaves the list but keeps every movement it recorded. You can put it back in service later.') }}
-        </p>
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" @click="$wire.retireRegisterModal = false" class="btn-ghost" />
-            <x-button :label="__('Retire')" icon="o-archive-box-x-mark" class="btn-error" wire:click="retireRegister"
-                spinner />
-        </x-slot:actions>
-    </x-app-modal>
-
-    {{-- Modal: Create register --}}
-    <x-app-modal wire:model="createRegisterModal" :title="__('Create Cash Register')" separator :open="$createRegisterModal">
+    {{-- Modal: Count the till --}}
+    <x-app-modal wire:model="countModal" :title="__('Count the till')" separator :open="$countModal">
         <div class="space-y-4">
-            <x-input :label="__('Register name')" wire:model="newRegisterName" autofocus />
-            <x-choices-offline
-                :label="__('Holder')"
-                :options="$users"
-                :placeholder="__('Search for a member...')"
-                wire:model="newRegisterHolderUserId"
-                single searchable clearable />
+            <p class="text-sm">
+                {{ __('According to the books, the till holds :amount €. Enter what you found in the drawer: any difference is recorded and filed for you.', ['amount' => number_format($this->balance / 100, 2, ',', ' ')]) }}
+            </p>
+            <x-input
+                :label="__('Counted (€)')"
+                wire:model="countedAmount"
+                inputmode="decimal"
+                autofocus />
+            <x-textarea
+                :label="__('Notes')"
+                wire:model="countNotes"
+                rows="2"
+                maxlength="500"
+                :placeholder="__('Optional notes...')" />
         </div>
         <x-slot:actions>
-            <x-button :label="__('Cancel')" @click="$wire.createRegisterModal = false" class="btn-ghost" />
-            <x-button :label="__('Create')" icon="o-check" class="btn-primary" wire:click="createRegister" spinner />
+            <x-button :label="__('Cancel')" @click="$wire.countModal = false" class="btn-ghost" />
+            <x-button :label="__('Record the count')" icon="o-check" class="btn-primary" wire:click="saveCount" spinner />
         </x-slot:actions>
     </x-app-modal>
 
@@ -256,7 +243,7 @@
             <x-input
                 :label="__('Amount (€)')"
                 wire:model="entryAmount"
-                type="number"
+                inputmode="decimal"
                 :hint="__('Positive = cash in, negative = cash out')" />
             <x-select
                 :label="__('Reason')"

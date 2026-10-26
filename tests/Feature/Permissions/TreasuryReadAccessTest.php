@@ -75,7 +75,7 @@ it('refuses a reader a manual cash entry', function (string $method): void {
 
     Livewire::actingAs($this->reader)
         ->test('pages::club-admin.treasury.cash-register')
-        ->set('entryAmount', 50)
+        ->set('entryAmount', '50')
         ->set('entryReason', 'manual')
         ->call($method)
         ->assertForbidden();

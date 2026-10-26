@@ -53,6 +53,7 @@ erDiagram
     BankAccount
     BankImport
     CashRegister
+    CashRegisterCount
     CashRegisterEntry
     Payment
     PaymentCredit
@@ -159,6 +160,7 @@ erDiagram
     Fine ||--o| Payment : "payment"
     BankAccount ||--o{ Transaction : "transactions"
     BankImport ||--o{ Transaction : "transactions"
+    CashRegister ||--o{ CashRegisterCount : "counts"
     CashRegister ||--o{ CashRegisterEntry : "entries"
     CashRegisterEntry }o--o{ SupportingDocument : "supportingDocuments"
     Payment ||--o{ PaymentCredit : "credits"

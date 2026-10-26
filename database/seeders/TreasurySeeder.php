@@ -41,8 +41,11 @@ class TreasurySeeder extends Seeder
         $treasurer = User::where('email', 'gilles.herpigny@test.com')->firstOrFail();
         $season = Season::find(1) ?? Season::factory()->create();
 
+        // The club's only till — the bar, the tournaments and the treasurer
+        // all put their cash in it.
         $cashRegister = CashRegister::create([
             'name' => 'Caisse du club',
+            'held_by_user_id' => $treasurer->id,
             'balance' => 15000,
             'notes' => 'Caisse principale saison 2024-2025.',
         ]);

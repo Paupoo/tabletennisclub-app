@@ -21,6 +21,13 @@ use Illuminate\Support\Collection;
 class InterclubPreparationService
 {
     /**
+     * How far ahead a fixture starts asking something of its captain. Further
+     * out, availabilities still move: a lineup composed in October for April
+     * would only be sent again. The captains' reminder reads the same window.
+     */
+    public const int HORIZON_DAYS = 21;
+
+    /**
      * Neither prepared nor behind: a round without an opponent, or a fixture
      * the federation has cancelled by forfeit. Like a match already played, it
      * asks nothing and leaves the preparation score.
@@ -33,8 +40,8 @@ class InterclubPreparationService
      */
     public const array SETTLED = ['confirmed', 'short'];
 
-    /** What still asks something of a captain: compose, send, or both in a hurry. */
-    public const array TO_DO = ['urgent', 'to_send', 'actionable'];
+    /** What still asks something of a captain: compose, send, find players, or all in a hurry. */
+    public const array TO_DO = ['urgent', 'missing_players', 'to_send', 'actionable'];
 
     /**
      * @param  EloquentCollection<int, Interclub>  $fixtures
@@ -88,11 +95,14 @@ class InterclubPreparationService
             // Le club veut les compos chez les joueurs à J-14 : passé ce cap,
             // tout ce qui n'est pas parti est à traiter, composé ou non.
             $daysUntil <= 14 => 'urgent',
+            $daysUntil > self::HORIZON_DAYS => 'future',
             // Composée, enregistrée, pas envoyée : il reste un geste, et ce
             // n'est plus « composer ».
             $selectedCount >= $maxPlayers => 'to_send',
             $availableCount >= $maxPlayers => 'actionable',
-            default => 'future',
+            // Trois semaines avant, trop peu de disponibles : il reste à
+            // relancer ou à chercher un renfort, et c'est déjà du travail.
+            default => 'missing_players',
         };
     }
 
@@ -479,7 +489,7 @@ class InterclubPreparationService
      */
     private function worstOf(string $a, string $b): string
     {
-        $rank = ['confirmed' => 0, 'short' => 1, 'future' => 2, 'to_send' => 3, 'actionable' => 4, 'urgent' => 5];
+        $rank = ['confirmed' => 0, 'short' => 1, 'future' => 2, 'to_send' => 3, 'actionable' => 4, 'missing_players' => 5, 'urgent' => 6];
 
         return ($rank[$b] ?? 0) > ($rank[$a] ?? 0) ? $b : $a;
     }

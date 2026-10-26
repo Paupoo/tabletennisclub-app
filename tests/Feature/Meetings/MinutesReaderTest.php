@@ -8,7 +8,6 @@ use App\Domains\Meetings\Models\MeetingActionItem;
 use App\Domains\Meetings\Models\MeetingMinutes;
 use App\Domains\Meetings\Pdf\MinutesPdf;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
@@ -192,8 +191,9 @@ describe('ticking an action', function (): void {
 
         $this->actingAs($admin);
 
-        expect(fn () => Livewire::test(READER, ['meeting' => $meeting])->call('toggleAction', $elsewhere->id))
-            ->toThrow(ModelNotFoundException::class);
+        Livewire::test(READER, ['meeting' => $meeting])
+            ->call('toggleAction', $elsewhere->id)
+            ->assertNotFound();
 
         expect($elsewhere->fresh()->is_completed)->toBeFalse();
     });

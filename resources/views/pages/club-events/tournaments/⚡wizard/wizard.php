@@ -434,17 +434,10 @@ new class extends Component
             return;
         }
 
-        $register = CashRegister::first();
-        if (! $register) {
-            $this->error(__('No cash register found.'));
-
-            return;
-        }
-
         $tournament = Tournament::findOrFail($this->tournamentId);
         $user = User::findOrFail($this->paymentActionUserId);
 
-        app(TournamentService::class)->recordCashPayment($tournament, $user, $register);
+        app(TournamentService::class)->recordCashPayment($tournament, $user, CashRegister::club());
 
         unset($this->registrationRows, $this->registrationTabCounts, $this->registrations);
         $this->reset(['showCashConfirmModal', 'paymentActionUserId']);
@@ -975,13 +968,6 @@ new class extends Component
 
     public function openCashConfirmModal(int $userId): void
     {
-        $register = CashRegister::first();
-        if (! $register) {
-            $this->error(__('No cash register found. Create one in Treasury first.'));
-
-            return;
-        }
-
         $this->paymentActionUserId = $userId;
         $this->showCashConfirmModal = true;
     }

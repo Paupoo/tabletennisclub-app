@@ -10,6 +10,7 @@ use App\Support\LocaleSort;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -70,6 +71,7 @@ new class extends Component
             'cash_deposit_linked' => __('Linked to a bank deposit'),
             'cash_deposit_unlinked' => __('Unlinked from a bank deposit'),
             'reconciliation_removed' => __('Bank transfer removed'),
+            'bar_cash_sheet_sent' => __('Cash sheet sent'),
             default => $event,
         };
     }
@@ -246,7 +248,7 @@ new class extends Component
         $col = $this->sortBy['column'];
         $dir = $this->sortBy['direction'];
 
-        return Activity::with(['causer', 'subject'])
+        $activities = Activity::with(['causer', 'subject'])
             ->when($this->search, fn (Builder $q) => $q->where(
                 fn (Builder $group) => $this->applySearch($group, $this->search)
             ))
@@ -257,6 +259,15 @@ new class extends Component
             ->when($this->dateTo, fn ($q) => $q->whereDate('created_at', '<=', $this->dateTo))
             ->orderBy($col, $dir)
             ->paginate(25);
+
+        $subjectLabels = $this->subjectLabels();
+
+        $activities->getCollection()->each(function (Activity $activity) use ($subjectLabels): void {
+            $activity->setAttribute('audit_subject_name', $this->subjectName($activity, $subjectLabels));
+            $activity->setAttribute('audit_event_details', $this->eventDetails($activity));
+        });
+
+        return $activities;
     }
 
     /**
@@ -313,6 +324,23 @@ new class extends Component
             ->map(fn (User $user): array => ['id' => $user->id, 'name' => "{$user->first_name} {$user->last_name}"]);
 
         return LocaleSort::byKey($authors, 'name')->all();
+    }
+
+    /**
+     * Human-readable properties for audited actions without model changes.
+     *
+     * @return array<string, string>
+     */
+    protected function eventDetails(Activity $activity): array
+    {
+        if ($activity->event !== 'bar_cash_sheet_sent') {
+            return [];
+        }
+
+        return [
+            __('Report date') => (string) ($activity->properties['report_date'] ?? '—'),
+            __('Recipient') => (string) ($activity->properties['recipient'] ?? '—'),
+        ];
     }
 
     /**
@@ -378,5 +406,23 @@ new class extends Component
             ->searchName($term)
             ->pluck('id')
             ->all();
+    }
+
+    /**
+     * Label a subject-less activity without assuming every event has a model.
+     *
+     * @param  array<string, string>  $subjectLabels
+     */
+    protected function subjectName(Activity $activity, array $subjectLabels): string
+    {
+        if ($activity->event === 'bar_cash_sheet_sent') {
+            return __('Cash sheet for :date', ['date' => $activity->properties['report_date'] ?? '—']);
+        }
+
+        if ($activity->subject_type === null) {
+            return '—';
+        }
+
+        return $subjectLabels[$activity->subject_type] ?? Str::afterLast($activity->subject_type, '\\');
     }
 };

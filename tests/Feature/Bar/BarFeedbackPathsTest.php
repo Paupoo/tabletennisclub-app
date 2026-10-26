@@ -12,6 +12,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Models\AppSetting;
 use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
+use Spatie\Activitylog\Models\Activity;
 
 /*
 |--------------------------------------------------------------------------
@@ -104,6 +105,7 @@ it('reaches the cart screen under the name the controller redirects to', functio
 });
 
 it('says so out loud when the cash sheet cannot be sent', function (): void {
+    AppSetting::set('treasurer_email', 'previous@example.test');
     $this->partialMock(
         CashSheetService::class,
         fn ($mock) => $mock->shouldReceive('sendCsv')->once()->andReturn(false)
@@ -117,8 +119,12 @@ it('says so out loud when the cash sheet cannot be sent', function (): void {
         ->post(route('bar.cashSheet.send'), [
             'date' => now()->toDateString(),
             'to' => 'tresorier@example.test',
+            'save_default' => true,
         ])
         ->assertSessionHas('error');
+
+    expect(AppSetting::get('treasurer_email'))->toBe('previous@example.test');
+    expect(Activity::query()->where('event', 'bar_cash_sheet_sent')->count())->toBe(0);
 });
 
 it('keeps after-midnight sales in the same cash sheet business day', function (): void {
@@ -186,9 +192,27 @@ it('can email a cash sheet containing payments for orders created on an earlier 
         ->post(route('bar.cashSheet.send'), [
             'date' => now()->toDateString(),
             'to' => 'treasurer@example.test',
+            'save_default' => true,
         ])
         ->assertRedirect(route('bar.cashSheet.index', ['date' => now()->toDateString()]))
         ->assertSessionHas('success');
+
+    expect(AppSetting::get('treasurer_email'))->toBe('treasurer@example.test');
+
+    $activity = Activity::query()->where('event', 'bar_cash_sheet_sent')->sole();
+
+    expect($activity->causer_id)->toBe($this->manager->id)
+        ->and($activity->properties['report_date'])->toBe(now()->toDateString())
+        ->and($activity->properties['recipient'])->toBe('treasurer@example.test')
+        ->and($activity->created_at)->not->toBeNull();
+
+    Livewire::actingAs($this->manager)
+        ->test('pages::club-admin.audit.index')
+        ->assertSee(__('Cash sheet sent'))
+        ->assertSee(__('Cash sheet for :date', ['date' => now()->toDateString()]))
+        ->assertSee(__('Report date'))
+        ->assertSee(__('Recipient'))
+        ->assertSee('treasurer@example.test');
 });
 
 it('lists active business days and navigates to payments made after the sale day', function (): void {
@@ -247,7 +271,7 @@ it('lists active business days and navigates to payments made after the sale day
         ->assertSee(route('bar.cashSheet.index', ['date' => $previousBusinessDate]), escape: false);
 });
 
-it('excludes offered orders from the total received', function (): void {
+it('excludes offered orders and counts unknown paid methods as other received', function (): void {
     BarOrder::create([
         'created_by' => $this->manager->id,
         'total_price' => 180,
@@ -260,13 +284,24 @@ it('excludes offered orders from the total received', function (): void {
         'is_paid' => true,
         'payment_method' => 'offered',
     ]);
+    BarOrder::create([
+        'created_by' => $this->manager->id,
+        'total_price' => 250,
+        'is_paid' => true,
+    ]);
 
-    $summary = app(CashSheetService::class)->build(now()->toDateString())[0];
+    $service = app(CashSheetService::class);
+    $summary = $service->build(now()->toDateString())[0];
+    $activeDay = collect($service->activity(now()->toDateString())['days'])
+        ->firstWhere('date', now()->toDateString());
 
-    expect($summary['sold_total_cents'])->toBe(480)
-        ->and($summary['received_total_cents'])->toBe(180)
+    expect($summary['sold_total_cents'])->toBe(730)
+        ->and($summary['received_total_cents'])->toBe(430)
         ->and($summary['by_method_cents']['cash'])->toBe(180)
-        ->and($summary['by_method_cents']['offered'])->toBe(300);
+        ->and($summary['by_method_cents']['other'])->toBe(250)
+        ->and($summary['by_method_cents']['offered'])->toBe(300)
+        ->and($summary['other_payments_cents'])->toBe(250)
+        ->and($activeDay['received_total_cents'])->toBe(430);
 });
 
 it('stores and retrieves the default treasurer email', function (): void {
@@ -482,12 +517,26 @@ it('says so out loud when there is nothing to send', function (): void {
     // d'en-tête : il ne se déclenchait donc jamais. Une journée sans vente partait
     // au trésorier sous la forme d'un CSV à zéro ligne, annoncée « Email envoyé
     // avec succès ». Le garde compte maintenant commandes et paiements.
+    AppSetting::set('treasurer_email', 'previous@example.test');
+    $date = now()->subMonth()->toDateString();
+
+    $this->actingAs($this->manager)
+        ->get(route('bar.cashSheet.index', ['date' => $date]))
+        ->assertOk()
+        ->assertSee('Aucune commande ni paiement enregistré pour cette journée.')
+        ->assertSeeInOrder(['name="to"', 'disabled', 'value='], escape: false)
+        ->assertDontSee(route('bar.cashSheet.download', ['date' => $date]), escape: false);
+
     $this->actingAs($this->manager)
         ->post(route('bar.cashSheet.send'), [
-            'date' => now()->subMonth()->toDateString(),
+            'date' => $date,
             'to' => 'tresorier@example.test',
+            'save_default' => true,
         ])
         ->assertSessionHas('error');
+
+    expect(AppSetting::get('treasurer_email'))->toBe('previous@example.test');
+    expect(Activity::query()->where('event', 'bar_cash_sheet_sent')->count())->toBe(0);
 });
 
 it('no longer registers a route towards a method that does not exist', function (): void {

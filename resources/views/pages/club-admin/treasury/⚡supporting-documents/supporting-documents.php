@@ -44,9 +44,6 @@ new class extends Component
 {
     use EditsSupportingDocument, HasBreadcrumbs, HasFilterDrawer, Toast, WithFileUploads, WithPagination;
 
-    /** The till a cash payment is recorded in. */
-    public ?int $cashRegisterId = null;
-
     #[Url(as: 'category')]
     public string $categoryFilter = '';
 
@@ -89,17 +86,6 @@ new class extends Component
         }
 
         return (new SupportingDocumentSuggestions)->cashEntriesFor($document);
-    }
-
-    /**
-     * @return array<int, array{id: int, name: string}>
-     */
-    #[Computed]
-    public function cashRegisterOptions(): array
-    {
-        return CashRegister::query()->orderBy('name')->orderBy('id')->get(['id', 'name'])
-            ->map(fn (CashRegister $register): array => ['id' => $register->id, 'name' => $register->name])
-            ->all();
     }
 
     public function clearFilters(): void
@@ -205,8 +191,6 @@ new class extends Component
     {
         Gate::authorize('viewAny', SupportingDocument::class);
 
-        $this->cashRegisterId = CashRegister::query()->orderBy('name')->value('id');
-
         if ($this->shownId !== null) {
             $this->show($this->shownId);
         }
@@ -220,8 +204,8 @@ new class extends Component
     }
 
     /**
-     * Pay the open document from the till: a movement of its amount, in the
-     * chosen register, out for an expense and in for an income — linked at once.
+     * Pay the open document from the club till: a movement of its amount, out
+     * for an expense and in for an income — linked at once.
      */
     public function payInCash(): void
     {
@@ -229,18 +213,10 @@ new class extends Component
         Gate::authorize('linkCashRegisterEntry', $document);
         Gate::authorize(Permission::CashRegisterEntryCreate->value);
 
-        $register = CashRegister::find($this->cashRegisterId);
-
-        if (! $register instanceof CashRegister) {
-            $this->error(__('No cash register selected.'));
-
-            return;
-        }
-
         $cents = (int) round($document->amount * 100);
 
         $entry = CashRegisterEntry::create([
-            'cash_register_id' => $register->id,
+            'cash_register_id' => CashRegister::club()->id,
             'amount' => $document->isExpense() ? -$cents : $cents,
             'reason' => $document->counterparty . ' — ' . $document->label,
             'recorded_by_id' => Auth::id(),

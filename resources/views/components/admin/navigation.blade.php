@@ -208,7 +208,7 @@
     @feature('treasury', 'cash_register')
     @canany(['financial_report.view', 'payments.view', 'fines.view', 'transactions.view', 'cash_register.view'])
     <x-menu-sub icon="o-banknotes">
-        <x-slot:title><x-admin.menu-sub-title :title="__('Treasury')" :badge="$badge('expense_reports_to_archive', 'transactions', 'cash_movements', 'expense_reports')" /></x-slot:title>
+        <x-slot:title><x-admin.menu-sub-title :title="__('Treasury')" :badge="$badge('transactions', 'cash_movements', 'expense_reports')" /></x-slot:title>
         {{-- Three groups, following the money from the whole to the detail:
              the report; the money that moves (bank, till) and what justifies
              it; what is owed — by the members, to the members, and the fines
@@ -227,9 +227,7 @@
         @endphp
 
         @if ($seesReport)
-            {{-- Archiving the paid expense reports is downloading a year's ZIP from the report. --}}
-            <x-menu-item icon="o-presentation-chart-bar" link="{{ route('admin.treasury.report') }}" :title="__('Financial report')"
-                :badge="$badge('expense_reports_to_archive')" badge-classes="badge-warning" />
+            <x-menu-item icon="o-presentation-chart-bar" link="{{ route('admin.treasury.report') }}" :title="__('Financial report')" />
         @endif
 
         @if ($seesReport && $seesAccounts)

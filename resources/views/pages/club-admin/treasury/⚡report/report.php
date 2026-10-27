@@ -10,6 +10,7 @@ use App\Domains\ClubAdmin\Finance\Services\FinancialReport;
 use App\Domains\ClubAdmin\Finance\Services\FinancialReportFigures;
 use App\Domains\ClubAdmin\Finance\Services\FiscalYearsOnRecord;
 use App\Domains\ClubAdmin\Finance\Services\YearPieces;
+use App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument;
 use App\Domains\Shared\Enums\ExpenseCategory;
 use App\Domains\Shared\Enums\ExpenseReportDisplayStatus;
 use App\Domains\Shared\Enums\Feature;
@@ -20,6 +21,7 @@ use App\Domains\Shared\ValueObjects\FiscalYear;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -27,6 +29,7 @@ use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Mary\Traits\Toast;
 
 /**
@@ -45,7 +48,10 @@ use Mary\Traits\Toast;
  */
 new class extends Component
 {
-    use HasBreadcrumbs, Toast;
+    use HasBreadcrumbs, Toast, WithPagination;
+
+    /** Lines a block of the « Documents & exports » tab shows at a time. */
+    private const int PIECES_PER_PAGE = 25;
 
     /** The report is on the overview tab already: an export carries it on request. */
     public bool $exportIncludesReport = false;
@@ -69,6 +75,39 @@ new class extends Component
      * originals — narrowed to a poste and to the pieces asked for, and tell
      * the requester when it is ready.
      */
+    /**
+     * The ZIP of a year's expense reports, in one click from the notice: the
+     * export whose download archives them, the right year and scope already
+     * chosen.
+     */
+    public function archiveExpenseReports(int $fiscalYear): void
+    {
+        Gate::authorize(Permission::FinancialReportView->value);
+        Gate::authorize('archive', ExpenseReport::class);
+
+        $this->queueExport('zip', $fiscalYear, null, FinancialExportScope::ExpenseReports, false);
+    }
+
+    /**
+     * The year's supporting documents, a page at a time, paged on their own.
+     *
+     * @return LengthAwarePaginator<int, SupportingDocument>
+     */
+    public function documentsPage(): LengthAwarePaginator
+    {
+        return $this->piecesPage($this->pieces->documents(), 'documentsPage');
+    }
+
+    /**
+     * The year's paid expense reports, a page at a time, paged on their own.
+     *
+     * @return LengthAwarePaginator<int, array<string, mixed>>
+     */
+    public function expenseReportsPage(): LengthAwarePaginator
+    {
+        return $this->piecesPage($this->pieces->expenseReports(), 'expenseReportsPage');
+    }
+
     public function export(string $format): void
     {
         Gate::authorize(Permission::FinancialReportView->value);
@@ -183,6 +222,16 @@ new class extends Component
     }
 
     /**
+     * The year's website payments, a page at a time, paged on their own.
+     *
+     * @return LengthAwarePaginator<int, array<string, mixed>>
+     */
+    public function sitePaymentsPage(): LengthAwarePaginator
+    {
+        return $this->piecesPage($this->pieces->sitePayments(), 'sitePaymentsPage');
+    }
+
+    /**
      * The paid expense reports nobody archived yet, counted per financial
      * year — for whoever's ZIP download archives them. Their year is the one
      * the refund left the account in, as the export files them.
@@ -212,6 +261,10 @@ new class extends Component
     public function updatedFiscalYear(): void
     {
         unset($this->report, $this->previousReport, $this->pieces);
+
+        foreach (['documentsPage', 'expenseReportsPage', 'sitePaymentsPage'] as $pageName) {
+            $this->resetPage($pageName);
+        }
     }
 
     protected function breadcrumbChain(): Breadcrumb
@@ -219,6 +272,28 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('Financial report'));
+    }
+
+    /**
+     * One page of a block, its page number kept under its own name.
+     *
+     * @template TValue
+     *
+     * @param  iterable<int, TValue>  $items
+     * @return LengthAwarePaginator<int, TValue>
+     */
+    private function piecesPage(iterable $items, string $pageName): LengthAwarePaginator
+    {
+        $items = collect($items);
+        $page = $this->getPage($pageName);
+
+        return new LengthAwarePaginator(
+            $items->forPage($page, self::PIECES_PER_PAGE)->values(),
+            $items->count(),
+            self::PIECES_PER_PAGE,
+            $page,
+            ['path' => LengthAwarePaginator::resolveCurrentPath(), 'pageName' => $pageName],
+        );
     }
 
     private function queueExport(string $format, int $fiscalYear, ?string $poste, FinancialExportScope $scope, bool $includeReport): void

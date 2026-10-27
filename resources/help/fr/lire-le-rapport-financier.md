@@ -77,4 +77,4 @@ Les justificatifs des notes de frais ne vivent que sur le serveur de l'applicati
 
 Ce téléchargement n'archive que s'il est fait par **la trésorerie** — ou par un membre du comité qui traite aussi les notes de frais. Un vérificateur ou un autre membre du comité télécharge le même ZIP sans rien archiver. Le relais du trésorier (la délégation **Notes de frais**, sans être au comité) décide des notes, mais ne les exporte ni ne les archive.
 
-Tant que des notes payées attendent leur archivage, l'onglet l'indique, exercice par exercice. Un rappel est aussi envoyé à chaque trimestre de l'exercice, et le 5 du mois qui suit sa clôture.
+Tant que des notes payées attendent leur archivage, l'onglet l'indique. Pour l'exercice affiché, le bouton **Préparer l'archive ZIP** lance directement le bon export (notes de frais uniquement) : il ne reste qu'à le télécharger depuis **Mes exports**. Les autres exercices concernés sont listés en lien. Un rappel est aussi envoyé par e-mail à chaque trimestre de l'exercice, et le 5 du mois qui suit sa clôture.

@@ -6,12 +6,17 @@ use App\Actions\ClubAdmin\Payments\AllocateTransactionAction;
 use App\Domains\ClubAdmin\ExpenseReports\Actions\AcceptExpenseReport;
 use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
 use App\Domains\ClubAdmin\ExpenseReports\Notifications\ExpenseReportsToArchiveNotification;
+use App\Domains\ClubAdmin\Finance\Jobs\GenerateFinancialExport;
+use App\Domains\ClubAdmin\Finance\Models\FinancialExport;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Shared\Enums\FinancialExportScope;
 use App\Domains\Shared\Enums\Role;
+use App\Services\ClubAdmin\Dashboard\PendingTasks;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -48,11 +53,47 @@ describe('archiving from the financial report', function (): void {
             ->test('pages::club-admin.treasury.report')
             ->set('tab', 'pieces')
             ->html();
-        $notice = Str::before(Str::after($html, 'data-unarchived'), '</div>');
+        $notice = Str::before(Str::after($html, 'data-unarchived'), 'data-unarchived-end');
 
-        expect($notice)->toContain('2 en 2026')
+        expect($notice)->toContain(e(trans_choice(':count paid expense report has no copy of its receipts outside the application yet.|:count paid expense reports have no copy of their receipts outside the application yet.', 2, ['count' => 2])))
+            ->toContain(e(__('Download the ZIP archive of :year to keep them safe.', ['year' => '2026'])))
+            ->toContain('wire:click="archiveExpenseReports(2026)"')
             ->toContain('1 en 2025')
             ->toContain(e(route('admin.treasury.report', ['year' => 2025, 'tab' => 'pieces'])));
+    });
+
+    it('prepares the ZIP of the expense reports of the year in one click', function (): void {
+        Carbon::setTestNow('2026-09-30 10:00:00');
+        Bus::fake();
+        paidUnarchivedExpenseReport(10, [], '2026-02-10');
+        $treasurer = User::factory()->isCommitteeMember()->withRole(Role::TREASURY)->create();
+
+        Livewire::actingAs($treasurer)
+            ->test('pages::club-admin.treasury.report')
+            ->call('archiveExpenseReports', 2026)
+            ->assertHasNoErrors();
+
+        $export = FinancialExport::sole();
+
+        expect([$export->requested_by, $export->format, $export->fiscal_year, $export->scope, $export->poste, $export->include_report])
+            ->toBe([$treasurer->id, 'zip', 2026, FinancialExportScope::ExpenseReports, null, false]);
+        Bus::assertDispatched(GenerateFinancialExport::class);
+    });
+
+    it('refuses the one-click archive to whoever may not archive', function (): void {
+        Livewire::actingAs(User::factory()->isCommitteeMember()->create())
+            ->test('pages::club-admin.treasury.report')
+            ->call('archiveExpenseReports', 2026)
+            ->assertForbidden();
+
+        expect(FinancialExport::count())->toBe(0);
+    });
+
+    it('no longer counts the reports to archive in the menu nor on the dashboard', function (): void {
+        paidUnarchivedExpenseReport();
+        $treasurer = User::factory()->isCommitteeMember()->withRole(Role::TREASURY)->create();
+
+        expect(new PendingTasks()->for($treasurer))->not->toHaveKey('expense_reports_to_archive');
     });
 
     it('says nothing to a reader, whose download would archive nothing', function (): void {
@@ -168,14 +209,15 @@ describe('the reminder to archive', function (): void {
         expect(archivingRemindersDueNow())->toBe([]);
     });
 
-    it('shows the dashboard alert to whoever may archive', function (): void {
+    // The reminder lives in the report, where the ZIP is made: no dashboard
+    // alert, no menu badge (decided on 2026-10-27).
+    it('raises no dashboard alert, even to whoever may archive', function (): void {
         $treasurer = User::factory()->withRole(Role::TREASURY)->create();
         paidUnarchivedExpenseReport();
 
         $alerts = collect($this->actingAs($treasurer)->get(route('dashboard'))->viewData('alerts'));
 
-        expect($alerts->firstWhere('label', '1 note de frais payée à archiver')['route'] ?? null)
-            ->toBe(route('admin.treasury.report', ['tab' => 'pieces']));
+        expect($alerts->firstWhere('label', '1 note de frais payée à archiver'))->toBeNull();
     });
 });
 

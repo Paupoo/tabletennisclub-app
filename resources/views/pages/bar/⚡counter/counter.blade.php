@@ -138,4 +138,30 @@
             </div>
         @endif
     @endif
+
+    <x-app-modal wire:model="stockAdjustmentModal" :open="$stockAdjustmentModal"
+        :title="__('Correct stock')" :subtitle="$stockAdjustmentProductName">
+        <p class="text-muted text-sm">
+            {{ __('Expected :count', ['count' => $stockAdjustmentExpected]) }}
+        </p>
+
+        <x-input type="number" min="0" step="1" inputmode="numeric"
+            :label="__('Counted for :product', ['product' => $stockAdjustmentProductName])"
+            wire:model.live.debounce.300ms="stockAdjustmentCount" />
+
+        @if ($showStockAdjustmentCause)
+            <x-select class="mt-3" :label="__('What happened to :product', ['product' => $stockAdjustmentProductName])"
+                :options="$stockAdjustmentCauseOptions" option-value="id" option-label="name"
+                placeholder="{{ __('Choose what happened…') }}" wire:model="stockAdjustmentCause" />
+        @elseif ($isFirstStockAdjustment)
+            <x-alert class="alert-info mt-3" icon="o-information-circle"
+                :title="__('Added to the bar')" />
+        @endif
+
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="resetStockAdjustment" />
+            <x-button class="btn-primary" :label="__('Correct stock')"
+                wire:click="applyStockAdjustment" spinner="applyStockAdjustment" />
+        </x-slot:actions>
+    </x-app-modal>
 </div>

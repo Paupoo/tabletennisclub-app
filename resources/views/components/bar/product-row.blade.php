@@ -58,4 +58,13 @@
             <x-icon name="o-plus" class="h-4 w-4" />
         </button>
     </div>
+
+    @can('bar.stock.adjust')
+        <button type="button"
+            wire:click="openStockAdjustment({{ $product->id }})"
+            class="tap-comfort text-primary h-11 w-11 shrink-0 rounded-lg"
+            aria-label="{{ __('Correct stock for :product', ['product' => $product->name]) }}">
+            <x-icon name="o-pencil-square" class="h-5 w-5" />
+        </button>
+    @endcan
 </div>

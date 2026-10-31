@@ -8,11 +8,14 @@ use App\Domains\Bar\Models\BarCategory;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\Bar\Models\BarProduct;
 use App\Domains\Bar\Services\BarCartService;
+use App\Domains\Bar\Services\BarInventories;
+use App\Domains\Shared\Enums\BarInventoryCause;
 use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use App\Support\LocaleSort;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -51,7 +54,80 @@ new class extends Component
 
     public string $search = '';
 
+    public bool $stockAdjustmentModal = false;
+
+    public string $stockAdjustmentCause = '';
+
+    public string $stockAdjustmentCount = '';
+
+    public int $stockAdjustmentExpected = 0;
+
+    public bool $stockAdjustmentHasHistory = false;
+
+    public ?int $stockAdjustmentProductId = null;
+
+    public string $stockAdjustmentProductName = '';
+
     public string $tabNameInput = '';
+
+    public function applyStockAdjustment(BarInventories $inventories): void
+    {
+        $this->authorizeStockAdjustments();
+
+        $this->validate([
+            'stockAdjustmentProductId' => ['required', 'integer', 'exists:bar_products,id'],
+            'stockAdjustmentCount' => ['required', 'integer', 'min:0'],
+        ]);
+
+        $counted = (int) $this->stockAdjustmentCount;
+        $needsCause = $counted !== $this->stockAdjustmentExpected
+            && ! ($counted > $this->stockAdjustmentExpected && ! $this->stockAdjustmentHasHistory);
+        $validCauses = array_map(
+            static fn (BarInventoryCause $cause): string => $cause->value,
+            BarInventoryCause::cases(),
+        );
+
+        $this->validate([
+            'stockAdjustmentCause' => [
+                $needsCause ? 'required' : 'nullable',
+                'string',
+                Rule::in($needsCause ? $validCauses : [...$validCauses, '']),
+            ],
+        ]);
+
+        try {
+            $inventories->correctProductStock(
+                (int) $this->stockAdjustmentProductId,
+                $counted,
+                BarInventoryCause::tryFrom($this->stockAdjustmentCause),
+                auth()->user(),
+            );
+        } catch (\DomainException $exception) {
+            $this->addError('stockAdjustmentCause', $exception->getMessage());
+
+            return;
+        }
+
+        $this->resetStockAdjustment();
+        unset($this->catalogue);
+
+        $this->success(__('The stock count was recorded.'));
+    }
+
+    public function openStockAdjustment(int $productId): void
+    {
+        $this->authorizeStockAdjustments();
+
+        $product = BarProduct::query()->withStock()->findOrFail($productId);
+
+        $this->stockAdjustmentModal = true;
+        $this->stockAdjustmentCause = '';
+        $this->stockAdjustmentCount = '';
+        $this->stockAdjustmentExpected = $product->stock;
+        $this->stockAdjustmentHasHistory = $product->stockMovements()->exists();
+        $this->stockAdjustmentProductId = $product->id;
+        $this->stockAdjustmentProductName = $product->name;
+    }
 
     public function add(int $productId, BarCartService $cartService): void
     {
@@ -251,15 +327,49 @@ new class extends Component
 
     public function with(): array
     {
+        $counted = ctype_digit($this->stockAdjustmentCount) ? (int) $this->stockAdjustmentCount : null;
+        $gap = $counted === null ? 0 : $counted - $this->stockAdjustmentExpected;
+        $showStockAdjustmentCause = $gap !== 0
+            && ! ($gap > 0 && ! $this->stockAdjustmentHasHistory);
+        $causes = match (true) {
+            $gap < 0 => BarInventoryCause::forShortage(),
+            $gap > 0 && $this->stockAdjustmentHasHistory => BarInventoryCause::forSurplus(),
+            default => [],
+        };
+
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
             'isChoosing' => $this->tabName === null && ! session()->get('bar_walk_in', false),
+            'stockAdjustmentCauseOptions' => array_map(
+                fn (BarInventoryCause $cause): array => ['id' => $cause->value, 'name' => $cause->label()],
+                $causes,
+            ),
+            'showStockAdjustmentCause' => $showStockAdjustmentCause,
+            'isFirstStockAdjustment' => $gap > 0 && ! $this->stockAdjustmentHasHistory,
         ];
     }
 
     protected function authorizeOrders(): void
     {
         abort_unless(auth()->user()?->can(Permission::BarOrdersManage->value), 403);
+    }
+
+    protected function authorizeStockAdjustments(): void
+    {
+        abort_unless(auth()->user()?->can(Permission::BarStockAdjust->value), 403);
+    }
+
+    protected function resetStockAdjustment(): void
+    {
+        $this->reset(
+            'stockAdjustmentModal',
+            'stockAdjustmentCause',
+            'stockAdjustmentCount',
+            'stockAdjustmentExpected',
+            'stockAdjustmentHasHistory',
+            'stockAdjustmentProductId',
+            'stockAdjustmentProductName',
+        );
     }
 
     protected function breadcrumbChain(): Breadcrumb

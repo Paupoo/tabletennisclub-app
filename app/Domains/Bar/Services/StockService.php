@@ -62,7 +62,8 @@ class StockService
         int $countedStock,
         int $currentStock,
         ?string $reason = null,
-        ?int $userId = null
+        ?int $userId = null,
+        ?int $inventoryId = null,
     ): bool {
         if ($countedStock < 0) {
             throw new RuntimeException('Un stock compté ne peut pas être négatif.');
@@ -75,12 +76,12 @@ class StockService
         }
 
         if ($delta > 0) {
-            $this->addIncomingStock($productId, $delta, $reason, $userId, $userId);
+            $this->addIncomingStock($productId, $delta, $reason, $userId, $userId, inventoryId: $inventoryId);
 
             return true;
         }
 
-        $this->consumeFIFO($productId, abs($delta), $reason, $userId, $userId);
+        $this->consumeFIFO($productId, abs($delta), $reason, $userId, $userId, inventoryId: $inventoryId);
 
         return true;
     }

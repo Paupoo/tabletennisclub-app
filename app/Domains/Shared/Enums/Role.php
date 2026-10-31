@@ -140,7 +140,7 @@ enum Role: string
             self::TRAININGS => __('Build the training offer, packs and season planning.'),
             self::COACH => __('Lead training sessions and record attendance.'),
             self::MEETINGS => __('Convene meetings, write and publish the minutes.'),
-            self::BARMAN => __('Serve drinks and snacks, close orders and take over others.'),
+            self::BARMAN => __('Serve drinks and snacks, correct a stock count, close orders and take over others.'),
             self::STORE_KEEPER => __('Manage the stock, the products and the categories.'),
             self::FACILITIES => __('Manage rooms, tables and entrusted equipment.'),
             self::FEEDBACK => __('Sort the members\' feedback, run the yearly survey and follow up on the offers of help.'),
@@ -402,6 +402,7 @@ enum Role: string
                 Permission::BarOrdersClose,
                 Permission::BarOrdersPay,
                 Permission::BarOrdersTakeover,
+                Permission::BarStockAdjust,
             ],
             self::STORE_KEEPER => [
                 Permission::BarAccess,

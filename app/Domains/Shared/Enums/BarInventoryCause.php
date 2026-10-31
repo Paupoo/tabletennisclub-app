@@ -71,7 +71,7 @@ enum BarInventoryCause: string
         return match ($this) {
             self::AddedToBar => __('Added to the bar'),
             self::Broken => __('Broken'),
-            self::Expired => __('Expired'),
+            self::Expired => __('Expired product'),
             self::ReceivedOutsideShopping => __('Received outside the shopping'),
             self::StockNotRecorded => __('Stock not recorded in the system'),
             self::UnrecordedSale => __('Drunk or eaten without going through the till'),

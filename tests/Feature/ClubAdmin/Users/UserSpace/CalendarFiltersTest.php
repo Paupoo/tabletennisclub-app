@@ -77,9 +77,9 @@ it('links every club match tile to its match page, not only the member own', fun
     ]);
 
     $component = Livewire::actingAs($user)
-    ->test(CALENDAR_COMPONENT, ['user' => $user])
-    ->set('showAllEvents', true)
-    ->call('selectDay', $match->start_date_time->toDateString());
+        ->test(CALENDAR_COMPONENT, ['user' => $user])
+        ->set('showAllEvents', true)
+        ->call('selectDay', $match->start_date_time->toDateString());
 
     $component->assertSeeHtml(
         route('admin.interclubs.my-match', $match)

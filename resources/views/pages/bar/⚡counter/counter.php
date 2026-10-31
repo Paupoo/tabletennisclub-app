@@ -54,8 +54,6 @@ new class extends Component
 
     public string $search = '';
 
-    public bool $stockAdjustmentModal = false;
-
     public string $stockAdjustmentCause = '';
 
     public string $stockAdjustmentCount = '';
@@ -64,11 +62,28 @@ new class extends Component
 
     public bool $stockAdjustmentHasHistory = false;
 
+    public bool $stockAdjustmentModal = false;
+
     public ?int $stockAdjustmentProductId = null;
 
     public string $stockAdjustmentProductName = '';
 
     public string $tabNameInput = '';
+
+    public function add(int $productId, BarCartService $cartService): void
+    {
+        $this->authorizeOrders();
+
+        $result = $cartService->addProductToSessionCart($productId);
+
+        // Seul l'échec parle. Trente toasts « ajouté au panier » dans une tournée
+        // finiraient par masquer le seul qui compte.
+        if ($result['status'] !== 'success') {
+            $this->error($result['message']);
+        }
+
+        unset($this->cart, $this->catalogue);
+    }
 
     public function applyStockAdjustment(BarInventories $inventories): void
     {
@@ -112,36 +127,6 @@ new class extends Component
         unset($this->catalogue);
 
         $this->success(__('The stock count was recorded.'));
-    }
-
-    public function openStockAdjustment(int $productId): void
-    {
-        $this->authorizeStockAdjustments();
-
-        $product = BarProduct::query()->withStock()->findOrFail($productId);
-
-        $this->stockAdjustmentModal = true;
-        $this->stockAdjustmentCause = '';
-        $this->stockAdjustmentCount = '';
-        $this->stockAdjustmentExpected = $product->stock;
-        $this->stockAdjustmentHasHistory = $product->stockMovements()->exists();
-        $this->stockAdjustmentProductId = $product->id;
-        $this->stockAdjustmentProductName = $product->name;
-    }
-
-    public function add(int $productId, BarCartService $cartService): void
-    {
-        $this->authorizeOrders();
-
-        $result = $cartService->addProductToSessionCart($productId);
-
-        // Seul l'échec parle. Trente toasts « ajouté au panier » dans une tournée
-        // finiraient par masquer le seul qui compte.
-        if ($result['status'] !== 'success') {
-            $this->error($result['message']);
-        }
-
-        unset($this->cart, $this->catalogue);
     }
 
     #[Computed]
@@ -188,6 +173,21 @@ new class extends Component
         $cartService->clearSessionCart();
 
         unset($this->cart, $this->openTabs);
+    }
+
+    public function openStockAdjustment(int $productId): void
+    {
+        $this->authorizeStockAdjustments();
+
+        $product = BarProduct::query()->withStock()->findOrFail($productId);
+
+        $this->stockAdjustmentModal = true;
+        $this->stockAdjustmentCause = '';
+        $this->stockAdjustmentCount = '';
+        $this->stockAdjustmentExpected = $product->stock;
+        $this->stockAdjustmentHasHistory = $product->stockMovements()->exists();
+        $this->stockAdjustmentProductId = $product->id;
+        $this->stockAdjustmentProductName = $product->name;
     }
 
     public function openTab(BarCartService $cartService): void
@@ -359,6 +359,11 @@ new class extends Component
         abort_unless(auth()->user()?->can(Permission::BarStockAdjust->value), 403);
     }
 
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()->home()->bar()->current($this->tabName ?? __('New order'));
+    }
+
     protected function resetStockAdjustment(): void
     {
         $this->reset(
@@ -370,10 +375,5 @@ new class extends Component
             'stockAdjustmentProductId',
             'stockAdjustmentProductName',
         );
-    }
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()->home()->bar()->current($this->tabName ?? __('New order'));
     }
 };

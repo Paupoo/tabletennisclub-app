@@ -63,35 +63,18 @@ The field starts **empty**: a ring never finds its own way back to the person wh
 
 ### Why?
 
-Each of the club's cash registers is entrusted to a member (usually the treasurer or a delegate), so that responsibility for every register is known at all times.
+The club has a single cash register: the bar, the tournaments and the treasury all put their cash in it. It is entrusted to a member (usually the treasurer or a delegate), so that responsibility for it is known at all times. It opens by itself with the first cash taken: there is no register to create, and none to pick.
 
-### Creating a register with a holder
-
-1. Go to **Administration → Treasury → Cash Register**.
-2. Click **New register**.
-3. Enter the register name and search for the holder by name.
-4. Click **Create**.
-
-> This action is reserved for **administrators** and **treasurers**.
-
-### Changing a register's holder
+### Changing the register's holder
 
 1. Go to **Administration → Treasury → Cash Register**.
-2. Select the register concerned (if there are several).
-3. Next to the current holder's name, click **Change**.
-4. Search for the new holder by name.
-5. Click **Save**.
+2. Next to the current holder's name, click **Change**.
+3. Search for the new holder by name.
+4. Click **Save**.
 
 > This action is reserved for **administrators** and **treasurers**.
 
 Changing the holder **does not settle the register and moves no money**: it only moves the displayed responsibility.
-
-### Retiring a cash register
-
-1. Go to **Administration → Treasury → Cash Register** and select the register.
-2. Click **Retire**, then confirm.
-
-The register leaves the list but **its ledger is kept in full**: not a single movement is erased. Tick **Show retired registers** to find it again, and **Put back in service** to reactivate it.
 
 ---
 

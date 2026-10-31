@@ -191,13 +191,10 @@ describe('ticking an action', function (): void {
 
         $this->actingAs($admin);
 
-        /*expect(fn () => Livewire::test(READER, ['meeting' => $meeting])->call('toggleAction', $elsewhere->id))
-            ->toThrow(ModelNotFoundException::class);
-
-        expect($elsewhere->fresh()->is_completed)->toBeFalse();*/
         Livewire::test(READER, ['meeting' => $meeting])
             ->call('toggleAction', $elsewhere->id)
             ->assertNotFound();
+
         expect($elsewhere->fresh()->is_completed)->toBeFalse();
     });
 });

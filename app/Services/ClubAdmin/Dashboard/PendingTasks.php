@@ -12,10 +12,12 @@ use App\Domains\ClubAdmin\ExpenseReports\Models\ExpenseReport;
 use App\Domains\ClubAdmin\ExternalParticipants\Services\ExternalParticipantErasure;
 use App\Domains\ClubAdmin\Feedback\Models\FeedbackEntry;
 use App\Domains\ClubAdmin\Feedback\Models\HelpOffer;
+use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Subscriptions\Models\SubscriptionTrainingPack;
+use App\Domains\ClubAdmin\SupportingDocuments\Models\SupportingDocument;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubAdmin\Users\Services\GuardianDuplicates;
 use App\Domains\ClubPosts\Models\NewsPost;
@@ -145,6 +147,7 @@ class PendingTasks
             $this->newContacts($user),
             $this->feedbackToHandle($user),
             $this->transactionsToReconcile($user),
+            $this->cashMovementsToProcess($user),
             $this->externalErasuresHeldBack($user),
             $this->expenseReportsToDecide($user),
             $this->expenseReportsToArchive($user),
@@ -188,6 +191,30 @@ class PendingTasks
         return $this->task('camp_requests', $count,
             '1 demande de stage à décider', ':count demandes de stage à décider',
             'o-sun', $camps->count() === 1 ? route('admin.trainings.show', ['pack' => $camps->first()]) : route('admin.trainings.index'));
+    }
+
+    /**
+     * Till movements nobody explained: no payment of the website, no
+     * document, no count, not the opening balance, not a bank deposit. A
+     * task of whoever can justify them or link them to the bank.
+     */
+    private function cashMovementsToProcess(User $user): ?PendingTask
+    {
+        if (! $user->can('linkCashDeposit', SupportingDocument::class)) {
+            return null;
+        }
+
+        $count = CashRegisterEntry::query()
+            ->whereNull('payable_type')
+            ->whereNull('category')
+            ->whereNull('transaction_id')
+            ->where('reason', '!=', CashRegisterEntry::OPENING_REASON)
+            ->whereDoesntHave('supportingDocuments')
+            ->count();
+
+        return $this->task('cash_movements', $count,
+            '1 mouvement de caisse à justifier', ':count mouvements de caisse à justifier',
+            'o-currency-euro', route('admin.treasury.cash'));
     }
 
     private function draftArticles(User $user): ?PendingTask

@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Payments\CountCashRegisterAction;
+use App\Actions\ClubAdmin\Payments\DeclareOpeningBalanceAction;
 use App\Actions\ClubAdmin\Payments\LinkCashDepositAction;
 use App\Actions\ClubAdmin\Payments\UnlinkCashDepositAction;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
+use App\Domains\ClubAdmin\Payment\Models\CashRegisterCount;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\SupportingDocuments\Actions\LinkSupportingDocument;
@@ -32,7 +35,12 @@ new class extends Component
 
     public bool $changeHolderModal = false;
 
-    public bool $createRegisterModal = false;
+    /** What the treasurer found in the drawer, in euros as typed. */
+    public string $countedAmount = '';
+
+    public bool $countModal = false;
+
+    public ?string $countNotes = null;
 
     /** « Versement de/vers la banque » : links a movement of the till to its bank line. */
     public bool $depositDrawer = false;
@@ -40,8 +48,10 @@ new class extends Component
     /** The movement of the till whose documents or bank deposit are open. */
     public ?int $documentEntryId = null;
 
-    #[Rule('required|integer|not_in:0')]
-    public int $entryAmount = 0;
+    /**
+     * In euros as typed — a comma or a dot, down to the cent.
+     */
+    public string $entryAmount = '';
 
     public bool $entryDocumentsDrawer = false;
 
@@ -58,19 +68,6 @@ new class extends Component
     #[Rule('nullable|exists:users,id')]
     public ?int $newHolderUserId = null;
 
-    #[Rule('nullable|exists:users,id')]
-    public ?int $newRegisterHolderUserId = null;
-
-    #[Rule('required|string|max:100')]
-    public string $newRegisterName = 'Caisse principale';
-
-    public bool $retireRegisterModal = false;
-
-    public ?int $selectedRegisterId = null;
-
-    /** Retired registers stay out of the way until you ask for them. */
-    public bool $showRetired = false;
-
     #[Computed]
     public function balance(): int
     {
@@ -83,8 +80,7 @@ new class extends Component
 
         $this->validateOnly('newHolderUserId');
 
-        $register = CashRegister::findOrFail($this->selectedRegisterId);
-        $register->update(['held_by_user_id' => $this->newHolderUserId]);
+        CashRegister::club()->update(['held_by_user_id' => $this->newHolderUserId]);
 
         $this->changeHolderModal = false;
         unset($this->register);
@@ -114,22 +110,23 @@ new class extends Component
         $this->afterEntryChange(__('Supporting document :reference filed and linked.', ['reference' => $document->reference()]));
     }
 
-    public function createRegister(): void
+    /**
+     * « C'est le solde d'ouverture » : what the drawer held before the app
+     * followed it, out of the income.
+     */
+    public function declareOpeningBalance(int $entryId): void
     {
-        $this->validateOnly('newRegisterName');
-        $this->validateOnly('newRegisterHolderUserId');
+        Gate::authorize('linkCashDeposit', SupportingDocument::class);
 
-        Gate::authorize(Permission::CashRegisterHolderChange->value);
+        try {
+            (new DeclareOpeningBalanceAction)(CashRegisterEntry::findOrFail($entryId));
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
 
-        $register = CashRegister::create([
-            'name' => $this->newRegisterName,
-            'held_by_user_id' => $this->newRegisterHolderUserId,
-        ]);
+            return;
+        }
 
-        $this->selectedRegisterId = $register->id;
-        $this->reset(['newRegisterName', 'newRegisterHolderUserId', 'createRegisterModal']);
-        unset($this->register, $this->registers);
-        $this->success(__('Cash register created.'));
+        $this->afterEntryChange(__('Declared as the opening balance of the till: it is not income.'));
     }
 
     /**
@@ -195,6 +192,15 @@ new class extends Component
             : new Illuminate\Database\Eloquent\Collection;
     }
 
+    /**
+     * The till's latest count, the one the next difference starts from.
+     */
+    #[Computed]
+    public function lastCount(): ?CashRegisterCount
+    {
+        return CashRegisterCount::query()->with('countedBy')->latest('created_at')->latest('id')->first();
+    }
+
     public function linkDeposit(int $transactionId): void
     {
         Gate::authorize('linkCashDeposit', SupportingDocument::class);
@@ -227,18 +233,21 @@ new class extends Component
         $this->afterEntryChange(__('Supporting document linked.'));
     }
 
-    public function mount(): void
-    {
-        $register = CashRegister::first();
-        $this->selectedRegisterId = $register?->id;
-    }
-
     public function openChangeHolder(): void
     {
         Gate::authorize(Permission::CashRegisterHolderChange->value);
 
         $this->newHolderUserId = $this->register?->held_by_user_id;
         $this->changeHolderModal = true;
+    }
+
+    public function openCount(): void
+    {
+        Gate::authorize(Permission::CashRegisterEntryCreate->value);
+
+        $this->reset(['countedAmount', 'countNotes']);
+        $this->resetErrorBag();
+        $this->countModal = true;
     }
 
     public function openDeposit(int $entryId): void
@@ -276,13 +285,6 @@ new class extends Component
         $this->manualEntryModal = true;
     }
 
-    public function openRetireRegister(): void
-    {
-        Gate::authorize(Permission::CashRegisterManage->value);
-
-        $this->retireRegisterModal = true;
-    }
-
     public function reasonOptions(): array
     {
         return [
@@ -292,23 +294,16 @@ new class extends Component
         ];
     }
 
+    /**
+     * The club's till, once something has opened it — reading the screen
+     * opens nothing.
+     */
     #[Computed]
     public function register(): ?CashRegister
     {
-        if (! $this->selectedRegisterId) {
-            return null;
-        }
-
-        return CashRegister::with(['entries.recordedBy', 'entries.supportingDocuments', 'entries.transaction', 'heldBy'])->find($this->selectedRegisterId);
-    }
-
-    #[Computed]
-    public function registers(): Illuminate\Database\Eloquent\Collection
-    {
-        return CashRegister::query()
-            ->when($this->showRetired, fn ($query) => $query->withTrashed())
-            ->orderBy('name')
-            ->get();
+        return CashRegister::with(['entries.recordedBy', 'entries.supportingDocuments', 'entries.transaction', 'heldBy'])
+            ->orderBy('id')
+            ->first();
     }
 
     public function render(): View
@@ -320,59 +315,58 @@ new class extends Component
         ]);
     }
 
-    public function restoreRegister(int $registerId): void
-    {
-        Gate::authorize(Permission::CashRegisterManage->value);
-
-        $register = CashRegister::onlyTrashed()->findOrFail($registerId);
-        $register->restore();
-
-        unset($this->register, $this->registers);
-
-        $this->success(__('The cash register :name is back in service.', ['name' => $register->name]));
-    }
-
     /**
-     * Take a register out of service without erasing its books.
-     *
-     * `cash_register_entries` cascades on delete, so a real DELETE would take
-     * the whole ledger with it. Retiring keeps every movement and lets the
-     * register come back.
+     * Record what the drawer held: the app files the difference itself.
      */
-    public function retireRegister(): void
+    public function saveCount(): void
     {
-        Gate::authorize(Permission::CashRegisterManage->value);
+        Gate::authorize(Permission::CashRegisterEntryCreate->value);
 
-        $register = CashRegister::findOrFail($this->selectedRegisterId);
-        $register->delete();
+        $this->countedAmount = str_replace(',', '.', trim($this->countedAmount));
 
-        $this->reset(['retireRegisterModal']);
-        $this->selectedRegisterId = CashRegister::value('id');
-        unset($this->register, $this->registers);
+        $this->validate([
+            'countedAmount' => ['required', 'numeric', 'decimal:0,2', 'min:0'],
+            'countNotes' => ['nullable', 'string', 'max:500'],
+        ]);
 
-        $this->success(__('The cash register :name has been retired.', ['name' => $register->name]));
+        $count = (new CountCashRegisterAction)(
+            CashRegister::club(),
+            (int) round((float) $this->countedAmount * 100),
+            Auth::user(),
+            $this->countNotes ?: null,
+        );
+
+        unset($this->register, $this->balance, $this->lastCount);
+        $this->reset(['countedAmount', 'countNotes', 'countModal']);
+
+        $count->difference() === 0
+            ? $this->success(__('The till is right.'))
+            : $this->warning(__('A difference of :amount € was recorded and filed.', ['amount' => number_format($count->difference() / 100, 2, ',', ' ')]));
     }
 
     public function saveManualEntry(): void
     {
         Gate::authorize(Permission::CashRegisterEntryCreate->value);
 
+        $this->entryAmount = str_replace(',', '.', trim($this->entryAmount));
+
         $this->validate([
-            'entryAmount' => 'required|integer|not_in:0',
+            'entryAmount' => ['required', 'numeric', 'decimal:0,2', 'not_in:0'],
             'entryReason' => 'required|string',
             'entryNotes' => 'nullable|string|max:500',
         ]);
 
-        $register = CashRegister::find($this->selectedRegisterId);
-        if (! $register) {
-            $this->error(__('No cash register selected.'));
+        $cents = (int) round((float) $this->entryAmount * 100);
+
+        if ($cents === 0) {
+            $this->addError('entryAmount', __('Enter an amount other than zero.'));
 
             return;
         }
 
         CashRegisterEntry::create([
-            'cash_register_id' => $register->id,
-            'amount' => $this->entryAmount * 100,
+            'cash_register_id' => CashRegister::club()->id,
+            'amount' => $cents,
             'reason' => $this->entryReason,
             'notes' => $this->entryNotes,
             'recorded_by_id' => Auth::id(),
@@ -381,6 +375,15 @@ new class extends Component
         unset($this->register);
         $this->reset(['entryAmount', 'entryReason', 'entryNotes', 'manualEntryModal']);
         $this->success(__('Entry recorded.'));
+    }
+
+    public function undoOpeningBalance(int $entryId): void
+    {
+        Gate::authorize('linkCashDeposit', SupportingDocument::class);
+
+        (new DeclareOpeningBalanceAction)->undo(CashRegisterEntry::findOrFail($entryId));
+
+        $this->afterEntryChange(__('No longer the opening balance: the movement is back among those to process.'));
     }
 
     public function unlinkDeposit(int $entryId): void

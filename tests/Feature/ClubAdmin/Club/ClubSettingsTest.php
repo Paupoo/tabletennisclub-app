@@ -272,6 +272,7 @@ describe('Test Club Settings', function (): void {
                 ->call('removeMember', 99999)
                 ->assertNotFound();
         });
+
     });
 
     // ─────────────────────────────────────────────────────────────────────────────

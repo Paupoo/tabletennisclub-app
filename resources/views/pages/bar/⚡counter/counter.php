@@ -249,6 +249,19 @@ new class extends Component
         return $this->view();
     }
 
+    public function resetStockAdjustment(): void
+    {
+        $this->reset(
+            'stockAdjustmentModal',
+            'stockAdjustmentCause',
+            'stockAdjustmentCount',
+            'stockAdjustmentExpected',
+            'stockAdjustmentHasHistory',
+            'stockAdjustmentProductId',
+            'stockAdjustmentProductName',
+        );
+    }
+
     /**
      * L'état d'un produit dans la grille.
      *
@@ -362,18 +375,5 @@ new class extends Component
     protected function breadcrumbChain(): Breadcrumb
     {
         return Breadcrumb::make()->home()->bar()->current($this->tabName ?? __('New order'));
-    }
-
-    protected function resetStockAdjustment(): void
-    {
-        $this->reset(
-            'stockAdjustmentModal',
-            'stockAdjustmentCause',
-            'stockAdjustmentCount',
-            'stockAdjustmentExpected',
-            'stockAdjustmentHasHistory',
-            'stockAdjustmentProductId',
-            'stockAdjustmentProductName',
-        );
     }
 };

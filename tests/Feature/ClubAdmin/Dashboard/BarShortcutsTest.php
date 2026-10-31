@@ -6,6 +6,7 @@ use App\Domains\Bar\Models\BarInventory;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Role;
+use App\Services\ClubAdmin\Dashboard\PendingTasks;
 
 /*
 | The Bar section of the dashboard (decided on 2026-10-31): the counter and
@@ -77,4 +78,21 @@ it('drops the section with the bar', function (): void {
 it('shows the section open on a phone, right after the member space', function (): void {
     $this->actingAs(User::factory()->withRole(Role::BARMAN)->create())->get(route('dashboard'))
         ->assertSeeInOrder(['Mon espace', 'Le comptoir']);
+});
+
+describe('a storekeeper who does not serve', function (): void {
+    it('is not led to the counter by the menu', function (): void {
+        $this->actingAs(User::factory()->withRole(Role::STORE_KEEPER)->create())->get(route('dashboard'))
+            ->assertDontSee(route('bar.index') . '"', escape: false)
+            ->assertDontSee(route('bar.orders.index') . '"', escape: false)
+            ->assertDontSee(route('bar.orders.history'), escape: false)
+            ->assertSee(route('bar.restocking.index'), escape: false);
+    });
+
+    it('is not told of tabs to cash in it cannot open', function (): void {
+        BarOrder::create(['total_price' => 5, 'is_paid' => 0]);
+
+        expect((new PendingTasks)->for(User::factory()->withRole(Role::STORE_KEEPER)->create()))->not->toHaveKey('bar_tabs')
+            ->and((new PendingTasks)->for(User::factory()->withRole(Role::BARMAN)->create())['bar_tabs']->count)->toBe(1);
+    });
 });

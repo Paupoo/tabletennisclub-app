@@ -272,7 +272,9 @@
         impayées — c'est une file d'encaissement, pas un historique.
 
         Chaque entrée reprend le verrou de sa route (routes/bar.php) : sans ça,
-        un barman voit trois liens qui mènent à un 403.
+        un barman voit trois liens qui mènent à un 403. Le comptoir demande
+        bar.orders.manage et pas seulement bar.access, que le magasinier a aussi :
+        il voyait la commande, la file et l'historique, et chacun lui répondait 403.
     --}}
     @feature('bar')
     {{-- Le sous-menu s'ouvre aussi à qui ne lit que les ventes (le comité) : il n'y
@@ -292,13 +294,13 @@
     @php
         // The counter, then the stock: a separator only between two groups this
         // reader actually sees.
-        $seesCounter = auth()->user()->canAny(['bar.access', 'bar.cash_sheet.send']);
+        $seesCounter = auth()->user()->canAny(['bar.orders.manage', 'bar.cash_sheet.send']);
         $seesStock = auth()->user()->canAny(['bar.products.manage', 'bar.categories.manage', 'bar.restocking.shop', 'bar.stats.view']);
     @endphp
     <x-menu-sub icon="o-shopping-bag">
         <x-slot:title><x-admin.menu-sub-title :title="__('Bar')" :badge="$badge('bar_tabs', 'bar_shopping')" /></x-slot:title>
         {{-- At the counter, in the order of an evening. --}}
-        @can('bar.access')
+        @can('bar.orders.manage')
         <x-menu-item
             icon="o-shopping-bag"
             link="{{ route('bar.index') }}"

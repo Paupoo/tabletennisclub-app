@@ -96,7 +96,7 @@ new class extends Component
 
         $counted = (int) $this->stockAdjustmentCount;
         $needsCause = $counted !== $this->stockAdjustmentExpected
-            && ! ($counted > $this->stockAdjustmentExpected && ! $this->stockAdjustmentHasHistory);
+            && ($counted <= $this->stockAdjustmentExpected || $this->stockAdjustmentHasHistory);
         $validCauses = array_map(
             static fn (BarInventoryCause $cause): string => $cause->value,
             BarInventoryCause::cases(),
@@ -330,7 +330,7 @@ new class extends Component
         $counted = ctype_digit($this->stockAdjustmentCount) ? (int) $this->stockAdjustmentCount : null;
         $gap = $counted === null ? 0 : $counted - $this->stockAdjustmentExpected;
         $showStockAdjustmentCause = $gap !== 0
-            && ! ($gap > 0 && ! $this->stockAdjustmentHasHistory);
+            && ($gap <= 0 || $this->stockAdjustmentHasHistory);
         $causes = match (true) {
             $gap < 0 => BarInventoryCause::forShortage(),
             $gap > 0 && $this->stockAdjustmentHasHistory => BarInventoryCause::forSurplus(),

@@ -152,7 +152,7 @@
         @if ($showStockAdjustmentCause)
             <x-select class="mt-3" :label="__('What happened to :product', ['product' => $stockAdjustmentProductName])"
                 :options="$stockAdjustmentCauseOptions" option-value="id" option-label="name"
-                placeholder="{{ __('Choose what happened…') }}" wire:model="stockAdjustmentCause" />
+                :placeholder="__('Choose what happened…')" wire:model="stockAdjustmentCause" />
         @elseif ($isFirstStockAdjustment)
             <x-alert class="alert-info mt-3" icon="o-information-circle"
                 :title="__('Added to the bar')" />

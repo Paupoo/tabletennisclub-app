@@ -15,7 +15,8 @@ namespace App\Domains\Shared\Enums;
 enum BarInventoryCause: string
 {
     case AddedToBar = 'added_to_bar';
-    case Expired = 'Expired product';
+    case Broken = 'broken';
+    case Expired = 'expired';
     case ReceivedOutsideShopping = 'received_outside_shopping';
     case StockNotRecorded = 'stock_not_recorded';
     case Unknown = 'unknown';
@@ -28,7 +29,7 @@ enum BarInventoryCause: string
      */
     public static function forShortage(): array
     {
-        return [self::UnrecordedSale, self::AddedToBar, self::Expired, self::StockNotRecorded, self::Unknown];
+        return [self::UnrecordedSale, self::AddedToBar, self::Broken, self::Expired, self::StockNotRecorded, self::Unknown];
     }
 
     /**

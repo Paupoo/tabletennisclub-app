@@ -50,7 +50,7 @@ class TrainingPackFactory extends Factory
         return [
             'season_id' => Season::factory(),
             'pack_start_date' => CarbonImmutable::today()->addMonth()->startOfMonth()->toDateString(),
-            'pack_end_date' => CarbonImmutable::today()->addMonths(10)->endOfMonth()->toDateString(),
+            'pack_end_date' => CarbonImmutable::today()->startOfMonth()->addMonths(10)->endOfMonth()->toDateString(),
             'name' => fake()->words(3, true),
             // 'description' => fake()->sentence(),
             'price' => fake()->numberBetween(50, 200),
@@ -84,7 +84,7 @@ class TrainingPackFactory extends Factory
     {
         return $this->state(fn (): array => [
             'pack_start_date' => CarbonImmutable::today()->subMonths(3)->startOfMonth()->toDateString(),
-            'pack_end_date' => CarbonImmutable::today()->addMonths(6)->endOfMonth()->toDateString(),
+            'pack_end_date' => CarbonImmutable::today()->startOfMonth()->addMonths(6)->endOfMonth()->toDateString(),
         ]);
     }
 }

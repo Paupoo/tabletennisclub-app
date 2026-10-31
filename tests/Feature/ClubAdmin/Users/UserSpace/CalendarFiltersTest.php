@@ -70,12 +70,18 @@ it('links every club match tile to its match page, not only the member own', fun
         'league_id' => $league->id,
         'visited_team_id' => $team->id,
         'is_bye' => false,
-        'start_date_time' => now()->addDays(2)->setTime(19, 45),
+        'start_date_time' => now()
+            ->startOfMonth()
+            ->addDays(2)
+            ->setTime(19, 45),
     ]);
 
-    Livewire::actingAs($user)
-        ->test(CALENDAR_COMPONENT, ['user' => $user])
-        ->set('showAllEvents', true)
-        ->call('selectDay', $match->start_date_time->toDateString())
-        ->assertSeeHtml(route('admin.interclubs.my-match', $match));
+    $component = Livewire::actingAs($user)
+    ->test(CALENDAR_COMPONENT, ['user' => $user])
+    ->set('showAllEvents', true)
+    ->call('selectDay', $match->start_date_time->toDateString());
+
+    $component->assertSeeHtml(
+        route('admin.interclubs.my-match', $match)
+    );
 });

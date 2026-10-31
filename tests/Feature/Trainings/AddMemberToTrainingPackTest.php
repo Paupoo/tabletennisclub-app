@@ -178,7 +178,7 @@ describe('AddMemberToTrainingPackAction', function (): void {
             'max_participants' => 5,
             'price' => 90,
             'pack_start_date' => CarbonImmutable::today()->subMonths(3)->startOfMonth()->toDateString(),
-            'pack_end_date' => CarbonImmutable::today()->addMonths(6)->endOfMonth()->toDateString(),
+            'pack_end_date' => CarbonImmutable::today()->startOfMonth()->addMonths(6)->endOfMonth()->toDateString(),
         ]);
 
         $subscription = invoicedSubscription($pack);

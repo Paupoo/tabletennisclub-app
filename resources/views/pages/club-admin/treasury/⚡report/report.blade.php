@@ -351,6 +351,42 @@
                         </table>
                     </div>
                 </x-card>
+
+                {{-- Income by channel: what went through the bank, what went through the till --}}
+                <x-card :title="__('Income by transfer and in cash')" class="shadow-sm" separator data-print-keep data-income-channels>
+                    <p class="mb-2 text-xs text-subtle">{{ __(':year. A QR code payment is a transfer: nothing on the statement tells them apart.', ['year' => $yearLabel]) }}</p>
+                    <div class="overflow-x-auto">
+                        <table class="table table-xs sm:table-sm max-sm:[&_td]:px-1 max-sm:[&_th]:px-1">
+                            <thead>
+                                <tr>
+                                    <th>{{ __('Poste') }}</th>
+                                    <th class="text-right">{{ __('By transfer') }}</th>
+                                    <th class="text-right">{{ __('In cash') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($incomeChannels['rows'] as $row)
+                                    <tr @class(['text-warning-content' => $row['uncategorised']])>
+                                        <td>{{ $row['label'] }}</td>
+                                        <td class="text-right tabular-nums">{{ $euros($row['bank']) }}</td>
+                                        <td class="text-right tabular-nums">{{ $euros($row['cash']) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="3" class="text-muted">{{ __('Nothing came in this year.') }}</td></tr>
+                                @endforelse
+                            </tbody>
+                            @if ($incomeChannels['bank_share'] !== null)
+                                <tfoot>
+                                    <tr>
+                                        <th>{{ __('Total') }}</th>
+                                        <th class="text-right tabular-nums">{{ $euros($incomeChannels['bank']) }}<span class="block text-xs font-normal text-muted">{{ $incomeChannels['bank_share'] }} %</span></th>
+                                        <th class="text-right tabular-nums">{{ $euros($incomeChannels['cash']) }}<span class="block text-xs font-normal text-muted">{{ $incomeChannels['cash_share'] }} %</span></th>
+                                    </tr>
+                                </tfoot>
+                            @endif
+                        </table>
+                    </div>
+                </x-card>
             </div>
 
             {{-- Internal movements: closed and out of the flows, shown for the record --}}
@@ -406,20 +442,33 @@
                 {{-- Whoever's ZIP download archives the expense reports: where
                      paid reports still wait for it. --}}
                 @if ($this->unarchivedByYear !== [])
+                    @php
+                        $shownStart = $this->fiscalYear ?? \App\Domains\Shared\ValueObjects\FiscalYear::current()->startYear();
+                        $shownCount = $this->unarchivedByYear[$shownStart] ?? 0;
+                        $otherYears = array_diff_key($this->unarchivedByYear, [$shownStart => true]);
+                    @endphp
                     <div class="mt-4 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm" data-unarchived>
-                        <x-icon name="o-archive-box" class="me-1 size-4 text-warning-content" />
-                        {{ __('Paid expense reports not archived yet:') }}
-                        @foreach ($this->unarchivedByYear as $start => $count)
-                            @php $label = \App\Domains\Shared\ValueObjects\FiscalYear::startingIn($start)->label(); @endphp
-                            @if ($label === $yearLabel)
-                                <strong>{{ trans_choice(':count in :year|:count in :year', $count, ['year' => $label]) }}</strong>
-                            @else
-                                <a class="link" href="{{ route('admin.treasury.report', ['year' => $start, 'tab' => 'pieces']) }}" wire:navigate>{{ trans_choice(':count in :year|:count in :year', $count, ['year' => $label]) }}</a>
-                            @endif
-                            @unless ($loop->last) · @endunless
-                        @endforeach
-                        <div class="mt-1 text-xs text-muted">{{ __('Downloading the ZIP of a year archives its expense reports.') }}</div>
+                        @if ($shownCount > 0)
+                            <p>
+                                <x-icon name="o-archive-box" class="me-1 size-4 text-warning-content" />
+                                {{ trans_choice(':count paid expense report has no copy of its receipts outside the application yet.|:count paid expense reports have no copy of their receipts outside the application yet.', $shownCount, ['count' => $shownCount]) }}
+                                {{ __('Download the ZIP archive of :year to keep them safe.', ['year' => $yearLabel]) }}
+                            </p>
+                            <x-button :label="__('Prepare the ZIP archive of :year', ['year' => $yearLabel])" icon="o-archive-box-arrow-down" class="btn-sm mt-2"
+                                wire:click="archiveExpenseReports({{ $shownStart }})" spinner="archiveExpenseReports" />
+                        @endif
+                        @if ($otherYears !== [])
+                            <p @class(['mt-2' => $shownCount > 0])>
+                                {{ __('Paid expense reports not archived yet:') }}
+                                @foreach ($otherYears as $start => $count)
+                                    @php $label = \App\Domains\Shared\ValueObjects\FiscalYear::startingIn($start)->label(); @endphp
+                                    <a class="link" href="{{ route('admin.treasury.report', ['year' => $start, 'tab' => 'pieces']) }}" wire:navigate>{{ trans_choice(':count in :year|:count in :year', $count, ['year' => $label]) }}</a>
+                                    @unless ($loop->last) · @endunless
+                                @endforeach
+                            </p>
+                        @endif
                     </div>
+                    <span data-unarchived-end hidden></span>
                 @endif
             </x-card>
 
@@ -471,12 +520,13 @@
 
             @php
                 $pieces = [
-                    'documents' => $this->pieces->documents(),
-                    'expenseReports' => $this->pieces->expenseReports(),
-                    'sitePayments' => $this->pieces->sitePayments(),
+                    'documents' => $this->documentsPage(),
+                    'expenseReports' => $this->expenseReportsPage(),
+                    'sitePayments' => $this->sitePaymentsPage(),
                 ];
             @endphp
 
+            <div id="pieces-documents" class="scroll-mt-4">
             <x-card :title="__('Supporting documents')" class="mb-6 shadow-sm" separator>
                 @if ($pieces['documents']->isEmpty())
                     <p class="text-sm text-muted">{{ __('No supporting document dated in this year.') }}</p>
@@ -517,12 +567,15 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="mt-3">{{ $pieces['documents']->links(data: ['scrollTo' => '#pieces-documents']) }}</div>
                 @endif
             </x-card>
+            </div>
 
             @feature('expense_reports')
+                <div id="pieces-expense-reports" class="scroll-mt-4">
                 <x-card :title="__('Expense reports')" class="mb-6 shadow-sm" separator>
-                    @if ($pieces['expenseReports'] === [])
+                    @if ($pieces['expenseReports']->isEmpty())
                         <p class="text-sm text-muted">{{ __('No expense report paid in this year.') }}</p>
                     @else
                         <div class="overflow-x-auto">
@@ -550,12 +603,15 @@
                                 </tbody>
                             </table>
                         </div>
+                        <div class="mt-3">{{ $pieces['expenseReports']->links(data: ['scrollTo' => '#pieces-expense-reports']) }}</div>
                     @endif
                 </x-card>
+                </div>
             @endfeature
 
+            <div id="pieces-site-payments" class="scroll-mt-4">
             <x-card :title="__('Website payments')" class="mb-6 shadow-sm" separator>
-                @if ($pieces['sitePayments'] === [])
+                @if ($pieces['sitePayments']->isEmpty())
                     <p class="text-sm text-muted">{{ __('No website payment reconciled in this year.') }}</p>
                 @else
                     <div class="overflow-x-auto">
@@ -587,8 +643,10 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="mt-3">{{ $pieces['sitePayments']->links(data: ['scrollTo' => '#pieces-site-payments']) }}</div>
                 @endif
             </x-card>
+            </div>
         </x-tab>
     </x-tabs>
 </div>

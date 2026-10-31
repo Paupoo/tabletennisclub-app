@@ -46,15 +46,26 @@ it('search filters users via Livewire reactive update', function (): void {
      *
      * Le champ est en `wire:model.live.debounce.300ms` : entre la frappe et la
      * liste filtrée il y a 300 ms plus un aller-retour serveur, pendant lesquels
-     * `assertDontSee` voyait encore la ligne. La seule attente réelle offerte est
-     * `wait()`, donc on l'utilise, largement au-dessus du debounce.
+     * `assertDontSee` voyait encore la ligne. Une attente fixe de 2 s a suffi
+     * deux mois, puis perdu la course une fois sur un runner lent (2026-10-26).
+     * On attend désormais l'effet lui-même : la page est relue jusqu'à ce que la
+     * ligne ait disparu, dix secondes au plus.
      */
-    visit(route('admin.users.index', ['allMembers' => 1]))
+    $page = visit(route('admin.users.index', ['allMembers' => 1]))
         ->assertSee('Juliette')
         ->assertSee('ZzzZzz')
-        ->type('input[id$="search"]', 'Juliette')
-        ->wait(2)
-        ->assertSee('Juliette')
+        ->type('input[id$="search"]', 'Juliette');
+
+    $page->script(<<<'JS'
+        (async () => {
+          const deadline = Date.now() + 10000;
+          while (document.body.innerText.includes('ZzzZzz') && Date.now() < deadline) {
+            await new Promise(resolve => setTimeout(resolve, 50));
+          }
+        })()
+        JS);
+
+    $page->assertSee('Juliette')
         ->assertDontSee('ZzzZzz');
 });
 

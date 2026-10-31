@@ -55,6 +55,14 @@ JS_WRAP;
 
 const BAR_CASHSHEET_CAROUSEL = <<<'JS_WRAP'
 (async () => {
+  // Les boutons du carrousel sont des liens : un clic n'attend que le début du
+  // chargement de la page suivante. Lue en cours d'analyse du HTML, la piste
+  // n'existe pas encore et la sonde répondait `seen: 0` — l'échec intermittent
+  // de la CI. On attend que le document soit entièrement analysé.
+  const parseDeadline = Date.now() + 5000;
+  while (document.readyState === 'loading' && Date.now() < parseDeadline) {
+    await new Promise(resolve => setTimeout(resolve, 25));
+  }
   const track = document.querySelector('#cashsheet-active-days');
   const card = track?.querySelector('[aria-current="date"]') ?? track?.firstElementChild;
   if (!track || !card) return JSON.stringify({seen: 0});

@@ -29,7 +29,6 @@ use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingActionItem;
 use App\Domains\Meetings\Models\MeetingUser;
-use App\Domains\Shared\Enums\ExpenseReportDisplayStatus;
 use App\Domains\Shared\Enums\ExpenseReportStatus;
 use App\Domains\Shared\Enums\Feature;
 use App\Domains\Shared\Enums\FeedbackStatus;
@@ -150,7 +149,6 @@ class PendingTasks
             $this->cashMovementsToProcess($user),
             $this->externalErasuresHeldBack($user),
             $this->expenseReportsToDecide($user),
-            $this->expenseReportsToArchive($user),
             $this->barTabsToCashIn($user),
             $this->barProductsToBuy($user),
             $this->sessionsToRecord($user),
@@ -226,26 +224,6 @@ class PendingTasks
         return $this->task('draft_articles', NewsPost::where('status', NewsPostStatusEnum::DRAFT)->count(),
             '1 article en brouillon', ':count articles en brouillon',
             'o-newspaper', route('admin.website.articles.index'), 'info');
-    }
-
-    /**
-     * Whoever downloads the archives: a decider, or whoever wires refunds.
-     * Archiving is downloading a year's ZIP from the report.
-     */
-    private function expenseReportsToArchive(User $user): ?PendingTask
-    {
-        if (! Feature::ExpenseReports->enabled() || ! Gate::forUser($user)->allows('archive', ExpenseReport::class)) {
-            return null;
-        }
-
-        $count = ExpenseReport::query()
-            ->whereDisplayStatus(ExpenseReportDisplayStatus::Paid)
-            ->whereNull('archived_at')
-            ->count();
-
-        return $this->task('expense_reports_to_archive', $count,
-            '1 note de frais payée à archiver', ':count notes de frais payées à archiver',
-            'o-archive-box', route('admin.treasury.report', ['tab' => 'pieces']), 'info');
     }
 
     /**

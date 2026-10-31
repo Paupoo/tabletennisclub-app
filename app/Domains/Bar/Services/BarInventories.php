@@ -48,6 +48,70 @@ class BarInventories
     }
 
     /**
+     * Correct one product during service while keeping the count in inventory history.
+     */
+    public function correctProductStock(
+        int $productId,
+        int $counted,
+        ?BarInventoryCause $cause,
+        User $by,
+    ): BarInventory {
+        if ($counted < 0) {
+            throw new \RuntimeException('Un stock compté ne peut pas être négatif.');
+        }
+
+        $inventory = DB::transaction(function () use ($productId, $counted, $cause, $by): BarInventory {
+            $product = BarProduct::query()->withStock()->findOrFail($productId);
+            $expected = $product->stock;
+            $gap = $counted - $expected;
+            $hasStockHistory = $product->stockMovements()->exists();
+
+            if ($gap > 0 && ! $hasStockHistory) {
+                $cause = BarInventoryCause::AddedToBar;
+            } elseif ($gap === 0) {
+                $cause = null;
+            } elseif ($cause === null || ! $cause->fits($gap) || $cause === BarInventoryCause::AddedToBar) {
+                throw new \DomainException(__('This does not explain a gap in that direction.'));
+            }
+
+            $now = now();
+            $inventory = BarInventory::query()->create([
+                'status' => BarInventory::STATUS_VALIDATED,
+                'opened_by' => $by->id,
+                'closed_by' => $by->id,
+                'opened_at' => $now,
+                'closed_at' => $now,
+                'comment' => __('Quick stock adjustment from the bar counter'),
+            ]);
+
+            $inventory->lines()->create([
+                'product_id' => $product->id,
+                'expected' => $expected,
+                'counted' => $counted,
+                'counted_by' => $by->id,
+                'counted_at' => $now,
+                'cause' => $cause,
+                'unit_price' => $product->sale_price,
+            ]);
+
+            $this->stockService->adjustStockTo(
+                $product->id,
+                $counted,
+                $expected,
+                'Quick stock adjustment',
+                $by->id,
+                $inventory->id,
+            );
+
+            return $inventory;
+        });
+
+        $this->tellTheTreasurer($inventory);
+
+        return $inventory;
+    }
+
+    /**
      * Enregistrer ce qui a été compté sur l'étagère, contre le stock du moment.
      *
      * Le premier comptage d'un produit qui n'a jamais eu de stock n'est pas un

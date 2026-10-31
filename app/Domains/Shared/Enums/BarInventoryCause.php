@@ -18,6 +18,7 @@ enum BarInventoryCause: string
     case Broken = 'broken';
     case Expired = 'expired';
     case ReceivedOutsideShopping = 'received_outside_shopping';
+    case StockNotRecorded = 'stock_not_recorded';
     case Unknown = 'unknown';
     case UnrecordedSale = 'unrecorded_sale';
 
@@ -28,7 +29,7 @@ enum BarInventoryCause: string
      */
     public static function forShortage(): array
     {
-        return [self::UnrecordedSale, self::Broken, self::Expired, self::Unknown];
+        return [self::UnrecordedSale, self::AddedToBar, self::Broken, self::Expired, self::StockNotRecorded, self::Unknown];
     }
 
     /**
@@ -38,7 +39,7 @@ enum BarInventoryCause: string
      */
     public static function forSurplus(): array
     {
-        return [self::ReceivedOutsideShopping];
+        return [self::ReceivedOutsideShopping, self::StockNotRecorded];
     }
 
     /**
@@ -70,8 +71,9 @@ enum BarInventoryCause: string
         return match ($this) {
             self::AddedToBar => __('Added to the bar'),
             self::Broken => __('Broken'),
-            self::Expired => __('Expired'),
+            self::Expired => __('Expired product'),
             self::ReceivedOutsideShopping => __('Received outside the shopping'),
+            self::StockNotRecorded => __('Stock not recorded in the system'),
             self::UnrecordedSale => __('Drunk or eaten without going through the till'),
             self::Unknown => __('I don\'t know'),
         };

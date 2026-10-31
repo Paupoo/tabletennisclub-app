@@ -20,7 +20,7 @@ Trois familles cohabitent, et une seule décide :
 
 Accès sans restriction à toute l'application.
 
-Détient les 79 permissions. Accordées explicitement plutôt que
+Détient les 80 permissions. Accordées explicitement plutôt que
 par un court-circuit `Gate::before`, car certaines policies encodent des règles qui
 doivent survivre à un administrateur — il ne peut toujours pas supprimer son propre
 compte.
@@ -86,13 +86,14 @@ Délivrer les attestations mutuelle, et détenir le cachet du club et la signatu
 
 ### Barman — `barman`
 
-Servir les boissons et collations, fermer les commandes et reprendre celles d'autres.
+Servir les boissons et collations, corriger un comptage de stock, fermer et reprendre les commandes.
 
 - `bar.access`
 - `bar.orders.manage`
 - `bar.orders.close`
 - `bar.orders.pay`
 - `bar.orders.takeover`
+- `bar.stock.adjust`
 
 ### Caisse — `caisse`
 

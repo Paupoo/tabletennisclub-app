@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubAdmin;
 
+use App\Domains\Bar\Models\BarInventory;
 use App\Domains\ClubAdmin\Feedback\Services\SurveyPrompts;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -60,6 +61,9 @@ class DashboardController extends Controller
         // c'est ce que dit déjà TrainingPolicy::recordAttendance(). Trois des cinq
         // entraîneurs du club n'ont aucune délégation.
         $showCoach = Feature::Trainings->enabled() && Gate::allows('access-coach-area');
+        // La porte du bar, pas ses chiffres : le comité lit les statistiques du
+        // bar (bar.stats.view), il ne sert ni ne range.
+        $showBar = Feature::Bar->enabled() && $user->can(Permission::BarAccess->value);
         $showCommittee = $isAdmin || in_array($role, [
             CommitteeRolesEnum::PRESIDENT,
             CommitteeRolesEnum::VICE_PRESIDENT,
@@ -68,6 +72,7 @@ class DashboardController extends Controller
 
         $alerts = $this->buildAlerts($user);
         $coachTiles = $showCoach ? $this->buildCoachTiles($user) : [];
+        $barTiles = $showBar ? $this->buildBarTiles($user) : [];
         $memberTiles = $this->buildMemberTiles($user);
         // The proxy tiles are rendered by the act-for component, which holds the
         // action; the dashboard only needs to know how many to count.
@@ -79,8 +84,10 @@ class DashboardController extends Controller
             'showTreasurer',
             'showCaptain',
             'showCoach',
+            'showBar',
             'showCommittee',
             'coachTiles',
+            'barTiles',
             'alerts',
             'memberTiles',
             'proxyTileCount',
@@ -162,6 +169,73 @@ class DashboardController extends Controller
      *
      * @return array<int, array<string, mixed>>
      */
+    /**
+     * Les gestes du bar qui reviennent : le comptoir d'un soir pour le barman,
+     * le stock d'une semaine pour le magasinier (décidé le 2026-10-31). Le reste
+     * — historique, catégories, sorties de stock — vit dans le menu.
+     *
+     * Chaque tuile reprend le verrou de sa route (routes/bar.php), et le nom et
+     * l'icône de l'entrée du menu : un écran, un nom.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildBarTiles(User $user): array
+    {
+        // Les mêmes comptes que les pastilles du menu : voir PendingTasks.
+        $tasks = $this->pendingTasks->for($user);
+        $tiles = [];
+
+        if ($user->can(Permission::BarOrdersManage->value)) {
+            $tiles[] = [
+                'icon' => 'o-shopping-bag',
+                'label' => 'Nouvelle commande',
+                'sub' => 'Le comptoir',
+                'href' => route('bar.index'),
+                // La couleur club : l'entrée que le barman doit trouver en premier.
+                'color' => 'secondary',
+            ];
+            $tiles[] = [
+                'icon' => 'o-banknotes',
+                'label' => 'À encaisser',
+                'sub' => 'Ardoises ouvertes',
+                'href' => route('bar.orders.index'),
+                'badge' => $tasks['bar_tabs']->count ?? 0,
+            ];
+        }
+
+        if ($user->can(Permission::BarRestockingShop->value)) {
+            $tiles[] = [
+                'icon' => 'o-shopping-cart',
+                'label' => 'Courses',
+                'sub' => "Ce qu'il faut acheter",
+                'href' => route('bar.restocking.index'),
+                'badge' => $tasks['bar_shopping']->count ?? 0,
+            ];
+        }
+
+        if ($user->can(Permission::BarStockManage->value)) {
+            // Le libellé du bouton de la page Inventaires : un comptage laissé à
+            // moitié se reprend, il ne se recommence pas.
+            $tiles[] = [
+                'icon' => 'o-clipboard-document-check',
+                'label' => BarInventory::inProgress() !== null ? "Reprendre l'inventaire" : 'Nouvel inventaire',
+                'sub' => 'Compter le stock',
+                'href' => route('bar.inventories.current'),
+            ];
+        }
+
+        if ($user->can(Permission::BarProductsManage->value)) {
+            $tiles[] = [
+                'icon' => 'o-cube',
+                'label' => 'Produits',
+                'sub' => 'Carte & prix',
+                'href' => route('bar.products.index'),
+            ];
+        }
+
+        return $tiles;
+    }
+
     private function buildCoachTiles(User $user): array
     {
         // Le même compte que la pastille et le menu : voir PendingTasks.

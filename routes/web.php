@@ -362,6 +362,13 @@ Route::prefix('admin/club-admin/queue/')
         Route::livewire('list', 'pages::club-admin.queue.index')->name('admin.queue.index');
     });
 
+// Automatic emails — what the application sends by itself, beside the queue that carries it.
+Route::prefix('admin/club-admin/automatic-emails/')
+    ->middleware(['auth', 'verified', 'can:view-queue-monitoring', 'feature:supervision'])
+    ->group(function (): void {
+        Route::livewire('list', 'pages::club-admin.automatic-emails.index')->name('admin.automatic-emails.index');
+    });
+
 Route::prefix('admin/club-admin/')
     ->middleware(['auth', 'verified', 'can:club.view'])
     ->group(function (): void {

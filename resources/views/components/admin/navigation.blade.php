@@ -498,6 +498,11 @@
         :badge="$badge('failed_jobs')"
         badge-classes="badge-warning"
     />
+    <x-menu-item
+        icon="o-envelope"
+        link="{{ route('admin.automatic-emails.index') }}"
+        :title="__('Automatic emails')"
+    />
     @endcan
     @endfeature
 

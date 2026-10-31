@@ -344,7 +344,7 @@ describe('DashboardController', function (): void {
             ->assertSee('sm:grid-cols-2 lg:grid-cols-1', false);
     });
 
-    it('leaves only Mon espace open below the sidebar breakpoint', function (): void {
+    it('leaves only Mon espace and the bar open below the sidebar breakpoint', function (): void {
         $response = $this->actingAs(User::factory()->isAdmin()->create())
             ->get(route('dashboard'))
             ->assertOk();
@@ -358,13 +358,16 @@ describe('DashboardController', function (): void {
             fn (string $state): bool => str_contains($state, 'min-width: 1024px'),
         );
 
-        // Five of the six accordions an administrator gets: Mon espace stays
-        // open, so the page still lands on something. The sixth is Entraîneur,
-        // added when coaching stopped being read as a délégation — an admin
-        // holds `coach_area.access` like every other permission.
-        expect($sections[1])->toHaveCount(6)
+        // Five of the seven accordions an administrator gets: Mon espace stays
+        // open, so the page still lands on something. Entraîneur came when
+        // coaching stopped being read as a délégation — an admin holds
+        // `coach_area.access` like every other permission. Bar is the one other
+        // section left open (decided on 2026-10-31): the barman uses it at the
+        // counter, phone in hand, several times an evening.
+        expect($sections[1])->toHaveCount(7)
             ->and($collapsed)->toHaveCount(5)
-            ->and($sections[1][0])->not->toContain('min-width: 1024px');
+            ->and($sections[1][0])->not->toContain('min-width: 1024px')
+            ->and($sections[1][1])->not->toContain('min-width: 1024px');
     });
 
 });

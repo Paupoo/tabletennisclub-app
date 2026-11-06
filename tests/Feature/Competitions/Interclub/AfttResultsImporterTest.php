@@ -25,7 +25,7 @@ beforeEach(function (): void {
     // de les remplacer, donc un second appel dans un test ne corrigerait rien —
     // la séquence se pose ici, une fois.
     Http::fake([
-        'api.aftt.be/*' => Http::sequence()
+        'api.vttl.be/*' => Http::sequence()
             ->push(file_get_contents(base_path('tests/Fixtures/Aftt/get-matches-with-details.xml')))
             ->whenEmpty(Http::response(
                 file_get_contents(base_path('tests/Fixtures/Aftt/get-division-ranking-8860.xml'))
@@ -291,7 +291,7 @@ it('keeps the pair and drops the marker', function (string $raw, bool $homeFf, b
         isAwayForfeited: $awayFf,
     );
 
-    Http::fake(['api.aftt.be/*' => Http::response(
+    Http::fake(['api.vttl.be/*' => Http::response(
         file_get_contents(base_path('tests/Fixtures/Aftt/get-division-ranking-8860.xml'))
     )]);
 

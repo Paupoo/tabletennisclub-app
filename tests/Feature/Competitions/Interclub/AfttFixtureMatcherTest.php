@@ -24,7 +24,7 @@ function fakeDivision9611(): void
     // merges rather than replaces, so a later call cannot extend this sequence:
     // it has to be long enough here.
     Http::fake([
-        'api.aftt.be/*' => Http::sequence()
+        'api.vttl.be/*' => Http::sequence()
             ->push($teams)->push($matches)
             ->push($teams)->push($matches),
     ]);

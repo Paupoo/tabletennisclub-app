@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Interclub;
 
+use App\Console\Concerns\LogsErrors;
 use App\Data\Interclub\AfttSeasons;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
@@ -32,6 +33,8 @@ use Throwable;
  */
 class ImportAfttCalendarCommand extends Command
 {
+    use LogsErrors;
+
     protected $description = 'Import the AFTT interclub calendar for a season';
 
     protected $signature = 'interclubs:import-aftt

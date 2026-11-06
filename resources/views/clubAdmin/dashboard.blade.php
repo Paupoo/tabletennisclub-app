@@ -57,6 +57,22 @@
                     </div>
                 </x-section-accordion>
 
+                {{-- BAR — ouvert sur téléphone, contrairement au coach : c'est au
+                     comptoir, téléphone en main, que le barman s'en sert, et un
+                     groupe replié lui coûterait un geste à chaque commande. --}}
+                @if($showBar)
+                <x-section-accordion
+                    :label="__('Bar')"
+                    :count="count($barTiles) . ' accès'"
+                    color="gray">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pb-2">
+                        @foreach($barTiles as $tile)
+                            @include('clubAdmin._dashboard_tile', $tile)
+                        @endforeach
+                    </div>
+                </x-section-accordion>
+                @endif
+
                 {{-- ENTRAÎNEUR — une relation, pas une délégation : encadrer un pack
                      ou une séance suffit. Le groupe reste court parce que le monde
                      admin d'un coach tient en un écran ; on ne le remplit pas de

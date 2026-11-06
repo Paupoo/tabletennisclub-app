@@ -173,6 +173,12 @@ anti-spam, transformation d'un contact en membre.
 Réglages applicatifs, journal d'audit, supervision de la file d'attente, feature
 flags. **Délégation** `supervision`.
 
+Le catalogue des e-mails automatiques (`app/Support/AutomaticEmails`) dit, à côté de
+la file d'attente, ce que l'application envoie d'elle-même : quand, à qui, à quelle
+condition. Il est écrit à la main, mais un test échoue dès qu'une notification ou un
+mailable n'y figure pas (ou n'est pas exclu nommément), et la cadence se lit dans le
+planning, jamais recopiée.
+
 ---
 
 ## Ce qui peut être éteint

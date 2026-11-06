@@ -115,10 +115,13 @@ class PendingTasks
             'o-shopping-cart', route('bar.restocking.index'));
     }
 
-    /** The queue « To cash in » lists. */
+    /**
+     * The queue « To cash in » lists — for whoever can open it: the route asks
+     * bar.orders.manage, which the storekeeper's bar.access does not give.
+     */
     private function barTabsToCashIn(User $user): ?PendingTask
     {
-        if (! Feature::Bar->enabled() || ! $user->can(Permission::BarAccess->value)) {
+        if (! Feature::Bar->enabled() || ! $user->can(Permission::BarOrdersManage->value)) {
             return null;
         }
 

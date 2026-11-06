@@ -11,13 +11,14 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 uses(RefreshDatabase::class);
 
 function fakeFederation(): void
 {
     Http::fake([
-        'api.aftt.be/*' => Http::sequence()
+        'api.vttl.be/*' => Http::sequence()
             ->push(file_get_contents(base_path('tests/Fixtures/Aftt/get-seasons.xml')))
             ->whenEmpty(Http::response(
                 file_get_contents(base_path('tests/Fixtures/Aftt/get-matches-with-details.xml'))
@@ -92,4 +93,22 @@ it('says so when no division of the season carries a federation id', function ()
     $this->artisan('interclubs:import-results')
         ->expectsOutputToContain('nothing to ask for')
         ->assertFailed();
+});
+
+it('writes why it stopped to the log, which is all a scheduled run leaves behind', function (): void {
+    Log::spy();
+
+    $this->artisan('interclubs:import-results', ['--season' => '2019-2020'])->assertFailed();
+
+    Log::shouldHaveReceived('error')->withArgs(fn (string $message, array $context): bool => str_contains($message, 'No such season')
+        && $context === ['command' => 'interclubs:import-results']);
+});
+
+it('logs the empty run too, since it fails without raising an error', function (): void {
+    Log::spy();
+    $this->league->update(['aftt_division_id' => null]);
+
+    $this->artisan('interclubs:import-results')->assertFailed();
+
+    Log::shouldHaveReceived('error')->withArgs(fn (string $message): bool => str_contains($message, 'nothing to ask for'));
 });

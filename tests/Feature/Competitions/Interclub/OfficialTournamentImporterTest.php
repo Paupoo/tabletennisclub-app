@@ -27,7 +27,7 @@ beforeEach(function (): void {
 function fakeClubTournamentResults(): void
 {
     Http::fake([
-        'api.aftt.be/*' => Http::response(
+        'api.vttl.be/*' => Http::response(
             file_get_contents(base_path('tests/Fixtures/Aftt/get-members-with-results-bbw214.xml'))
         ),
     ]);
@@ -105,7 +105,7 @@ it('leaves every other season alone', function (): void {
 
 it('touches nothing when the federation refuses the call', function (): void {
     Http::fake([
-        'api.aftt.be/*' => Http::response(
+        'api.vttl.be/*' => Http::response(
             '<?xml version="1.0" encoding="UTF-8"?>'
             . '<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"><SOAP-ENV:Body><SOAP-ENV:Fault>'
             . '<faultcode>8</faultcode><faultstring>Internal error</faultstring>'
@@ -138,7 +138,7 @@ it('hands a member the matches filed under their licence before the roster knew 
 it('waits for the quota to drain and asks once more', function (): void {
     Sleep::fake();
     Http::fake([
-        'api.aftt.be/*' => Http::sequence()
+        'api.vttl.be/*' => Http::sequence()
             ->push(afttQuotaRefusal())
             ->push(file_get_contents(base_path('tests/Fixtures/Aftt/get-members-with-results-bbw214.xml'))),
     ]);
@@ -152,7 +152,7 @@ it('waits for the quota to drain and asks once more', function (): void {
 it('gives up after a second quota refusal, touching nothing', function (): void {
     Sleep::fake();
     Http::fake([
-        'api.aftt.be/*' => Http::sequence()->push(afttQuotaRefusal())->push(afttQuotaRefusal()),
+        'api.vttl.be/*' => Http::sequence()->push(afttQuotaRefusal())->push(afttQuotaRefusal()),
     ]);
 
     expect(fn () => importTournaments())->toThrow(TabtQuotaExceeded::class)

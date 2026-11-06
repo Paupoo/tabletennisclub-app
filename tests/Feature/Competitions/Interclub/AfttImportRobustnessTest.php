@@ -25,7 +25,7 @@ it('reads a numbered bye as a bye', function (): void {
     // A division with two byes calls them "Bye 1" and "Bye 2". Compared for
     // equality with "Bye", both came through as ordinary fixtures — and the
     // import then asked the federation about a club called "-".
-    Http::fake(['api.aftt.be/*' => Http::response(
+    Http::fake(['api.vttl.be/*' => Http::response(
         file_get_contents(base_path('tests/Fixtures/Aftt/get-matches-numbered-byes.xml'))
     )]);
 
@@ -61,7 +61,7 @@ it('holds a play-off identifier, which is longer than a division one', function 
 
 it('adopts the division the club typed in rather than building a twin', function (): void {
     Http::fake([
-        'api.aftt.be/*' => Http::sequence()
+        'api.vttl.be/*' => Http::sequence()
             ->push(file_get_contents(base_path('tests/Fixtures/Aftt/get-divisions.xml')))
             ->push(file_get_contents(base_path('tests/Fixtures/Aftt/get-club-teams-bbw214.xml')))
             ->whenEmpty(Http::response(

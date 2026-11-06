@@ -13,6 +13,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Sleep;
 
 uses(RefreshDatabase::class);
@@ -25,7 +26,7 @@ beforeEach(function (): void {
     $this->refusing = false;
 
     Http::fake([
-        'api.aftt.be/*' => fn (Request $request) => Http::response(match (true) {
+        'api.vttl.be/*' => fn (Request $request) => Http::response(match (true) {
             str_contains($request->body(), 'GetSeasons') => file_get_contents(base_path('tests/Fixtures/Aftt/get-seasons.xml')),
             test()->refusing => afttQuotaRefusal(),
             default => file_get_contents(base_path('tests/Fixtures/Aftt/get-members-with-results-bbw214.xml')),
@@ -153,3 +154,13 @@ function tournamentHistorySeasons(): void
         ]);
     }
 }
+
+it('writes why it stopped to the log, which is all a scheduled run leaves behind', function (): void {
+    Log::spy();
+    $this->refusing = true;
+
+    $this->artisan('interclubs:import-tournaments')->assertFailed();
+
+    Log::shouldHaveReceived('error')->withArgs(fn (string $message, array $context): bool => str_contains($message, 'nothing was changed')
+        && $context === ['command' => 'interclubs:import-tournaments']);
+});

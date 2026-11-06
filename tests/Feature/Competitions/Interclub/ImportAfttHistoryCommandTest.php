@@ -16,7 +16,7 @@ beforeEach(function (): void {
     // Only the season list is ever reached in these tests: the dry run stops
     // before the calendar, and the refusals stop before the federation.
     Http::fake([
-        'api.aftt.be/*' => Http::response(
+        'api.vttl.be/*' => Http::response(
             file_get_contents(base_path('tests/Fixtures/Aftt/get-seasons.xml'))
         ),
     ]);

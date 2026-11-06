@@ -10,6 +10,7 @@ use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 beforeEach(function (): void {
@@ -150,4 +151,14 @@ it('names the team it had to refuse, rather than failing the whole run', functio
     $this->artisan('interclubs:import-aftt')
         ->expectsOutputToContain('Refused, a team of ours we cannot place')
         ->assertSuccessful();
+});
+
+it('writes why it stopped to the log, which is all a scheduled run leaves behind', function (): void {
+    Log::spy();
+    $this->ownClub->update(['licence' => '']);
+
+    $this->artisan('interclubs:import-aftt')->assertFailed();
+
+    Log::shouldHaveReceived('error')->withArgs(fn (string $message, array $context): bool => str_contains($message, 'no federation licence')
+        && $context === ['command' => 'interclubs:import-aftt']);
 });

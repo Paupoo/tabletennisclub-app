@@ -13,7 +13,7 @@ function afttFixture(string $name): string
 
 it('reads the season the federation considers current', function (): void {
     Http::fake([
-        'api.aftt.be/*' => Http::response(afttFixture('get-seasons.xml')),
+        'api.vttl.be/*' => Http::response(afttFixture('get-seasons.xml')),
     ]);
 
     $seasons = app(TabtClient::class)->seasons();
@@ -29,7 +29,7 @@ it('reads the season the federation considers current', function (): void {
 
 it('reads the divisions our own teams play in', function (): void {
     Http::fake([
-        'api.aftt.be/*' => Http::response(afttFixture('get-club-teams-bbw214.xml')),
+        'api.vttl.be/*' => Http::response(afttFixture('get-club-teams-bbw214.xml')),
     ]);
 
     $teams = app(TabtClient::class)->clubTeams('BBW214', 27);
@@ -48,7 +48,7 @@ it('reads the divisions our own teams play in', function (): void {
 
 it('reads a fixture with its venue', function (): void {
     Http::fake([
-        'api.aftt.be/*' => Http::response(afttFixture('get-matches-division-9611.xml')),
+        'api.vttl.be/*' => Http::response(afttFixture('get-matches-division-9611.xml')),
     ]);
 
     $matches = app(TabtClient::class)->divisionMatches(9611, 27);
@@ -75,7 +75,7 @@ it('reads a fixture with its venue', function (): void {
 
 it('recognises a bye, which has no opponent and no date', function (): void {
     Http::fake([
-        'api.aftt.be/*' => Http::response(afttFixture('get-matches-division-9611.xml')),
+        'api.vttl.be/*' => Http::response(afttFixture('get-matches-division-9611.xml')),
     ]);
 
     $matches = app(TabtClient::class)->divisionMatches(9611, 27);
@@ -92,7 +92,7 @@ it('recognises a bye, which has no opponent and no date', function (): void {
 
 it('reads a club and the hall it plays in', function (): void {
     Http::fake([
-        'api.aftt.be/*' => Http::response(afttFixture('get-clubs-bbw145.xml')),
+        'api.vttl.be/*' => Http::response(afttFixture('get-clubs-bbw145.xml')),
     ]);
 
     $club = app(TabtClient::class)->club('BBW145', 27);
@@ -106,7 +106,7 @@ it('reads a club and the hall it plays in', function (): void {
 
 it('returns nothing for a club the federation does not know', function (): void {
     Http::fake([
-        'api.aftt.be/*' => Http::response(
+        'api.vttl.be/*' => Http::response(
             '<?xml version="1.0" encoding="UTF-8"?>'
             . '<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" '
             . 'xmlns:ns1="http://api.frenoy.net/TabTAPI"><SOAP-ENV:Body><ns1:GetClubsResponse>'
@@ -119,7 +119,7 @@ it('returns nothing for a club the federation does not know', function (): void 
 
 it('reads the level of a division, which only the division list carries', function (): void {
     Http::fake([
-        'api.aftt.be/*' => Http::response(afttFixture('get-divisions.xml')),
+        'api.vttl.be/*' => Http::response(afttFixture('get-divisions.xml')),
     ]);
 
     $divisions = app(TabtClient::class)->divisions(27);
@@ -134,7 +134,7 @@ it('reads the level of a division, which only the division list carries', functi
 
 it('reads the tournament matches of every member of a club, and nothing else', function (): void {
     Http::fake([
-        'api.aftt.be/*' => Http::response(afttFixture('get-members-with-results-bbw214.xml')),
+        'api.vttl.be/*' => Http::response(afttFixture('get-members-with-results-bbw214.xml')),
     ]);
 
     $results = app(TabtClient::class)->clubTournamentResults('BBW214', 27);
@@ -161,7 +161,7 @@ it('reads the tournament matches of every member of a club, and nothing else', f
 
 it('tells a quota refusal apart from any other fault', function (): void {
     Http::fake([
-        'api.aftt.be/*' => Http::response(afttQuotaRefusal()),
+        'api.vttl.be/*' => Http::response(afttQuotaRefusal()),
     ]);
 
     app(TabtClient::class)->clubTournamentResults('BBW214', 27);

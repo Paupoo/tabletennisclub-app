@@ -12,7 +12,7 @@ function sheetFixture(): string
 
 function sheets(): array
 {
-    Http::fake(['api.aftt.be/*' => Http::response(sheetFixture())]);
+    Http::fake(['api.vttl.be/*' => Http::response(sheetFixture())]);
 
     return app(TabtClient::class)->divisionMatchSheets(8860, 26);
 }

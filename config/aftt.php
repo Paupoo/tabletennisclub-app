@@ -9,14 +9,19 @@ return [
     | TabT API Endpoint
     |--------------------------------------------------------------------------
     |
-    | The federation's competition database. AFTT and VTTL both run TabT behind
-    | their own host, so a club on the other wing changes this one line rather
-    | than the importer. Versioned rather than read from the environment: it is
-    | not deployment configuration, and a wrong value here would silently import
-    | another federation's calendar.
+    | The federation's competition database. Versioned rather than read from
+    | the environment: it is not deployment configuration.
+    |
+    | Yes, VTTL. Both wings share one TabT database, and every request names
+    | our club by its licence, so this serves the AFTT calendar all the same.
+    | In October 2026 api.aftt.be started answering with api.vttl.be's
+    | certificate — every call died in the TLS handshake — and its plain-HTTP
+    | side now redirects here. resultats.aftt.be/api/ also answers, but still
+    | calls 2025-2026 the current season: the hourly sync, which follows the
+    | federation's idea of "current", would quietly re-import last year.
     |
     */
 
-    'base_url' => 'https://api.aftt.be/',
+    'base_url' => 'https://api.vttl.be/',
 
 ];

@@ -33,7 +33,7 @@ beforeEach(function (): void {
     // Un seul stub, posé une fois : `Http::fake()` empile, et un second appel
     // dans un test ne serait jamais consulté.
     Http::fake([
-        'api.aftt.be/*' => Http::sequence()
+        'api.vttl.be/*' => Http::sequence()
             ->push(file_get_contents(base_path('tests/Fixtures/Aftt/get-matches-with-details.xml')))
             ->whenEmpty(Http::response(
                 file_get_contents(base_path('tests/Fixtures/Aftt/get-division-ranking-8860.xml'))

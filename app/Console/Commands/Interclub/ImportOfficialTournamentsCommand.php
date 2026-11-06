@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Interclub;
 
+use App\Console\Concerns\LogsErrors;
 use App\Data\Interclub\AfttSeasons;
 use App\Domains\Competitions\Interclub\Models\InterclubIndividualMatch;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -28,6 +29,8 @@ use Throwable;
  */
 class ImportOfficialTournamentsCommand extends Command
 {
+    use LogsErrors;
+
     protected $description = 'Import the official tournament matches of the club members from the federation';
 
     protected $signature = 'interclubs:import-tournaments

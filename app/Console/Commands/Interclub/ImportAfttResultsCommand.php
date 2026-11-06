@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Interclub;
 
+use App\Console\Concerns\LogsErrors;
 use App\Data\Interclub\AfttSeasons;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Services\AfttResultsImporter;
@@ -26,6 +27,8 @@ use Throwable;
  */
 class ImportAfttResultsCommand extends Command
 {
+    use LogsErrors;
+
     protected $description = 'Import AFTT interclub match sheets: team scores and individual results';
 
     protected $signature = 'interclubs:import-results
@@ -74,7 +77,7 @@ class ImportAfttResultsCommand extends Command
          * season that never was reports success while doing nothing at all.
          */
         if ($tally['divisions_read'] === 0) {
-            $this->warn(sprintf(
+            $this->error(sprintf(
                 'No division of %s carries a federation id, so there was nothing to ask for.',
                 $season->name,
             ));
@@ -119,7 +122,7 @@ class ImportAfttResultsCommand extends Command
             $this->error('Divisions the federation would not serve:');
 
             foreach ($report['divisions_failed'] as $line) {
-                $this->line('  ' . $line);
+                $this->error('  ' . $line);
             }
 
             return self::FAILURE;

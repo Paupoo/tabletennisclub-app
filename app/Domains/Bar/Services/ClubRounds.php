@@ -148,7 +148,7 @@ final class ClubRounds
 
             // Une ligne par équipe : la même équipe ne joue qu'un match par soir,
             // mais une double saisie ne doit pas la montrer deux fois.
-            $teams[BarOrder::normaliseName($name)] = self::team($name, $category, $servedAt instanceof Carbon ? $servedAt : null);
+            $teams[BarOrder::normaliseName($name)] = $this->team($name, $category, $servedAt instanceof Carbon ? $servedAt : null);
         }
 
         uasort($teams, fn (array $a, array $b): int => strnatcasecmp($a['name'], $b['name']));
@@ -159,7 +159,7 @@ final class ClubRounds
     /**
      * @return array{name: string, category: string, cap: int, served_at: string}
      */
-    private static function team(string $name, ?LeagueCategory $category, ?Carbon $servedAt): array
+    private function team(string $name, ?LeagueCategory $category, ?Carbon $servedAt): array
     {
         return [
             'name' => $name,

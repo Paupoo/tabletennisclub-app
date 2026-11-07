@@ -184,15 +184,14 @@ it('hides the nav entries a barman has no permission for', function (): void {
     $response->assertDontSee(route('bar.cashSheet.index'), escape: false);
 });
 
-it('shows the stock state of each product on the order screen', function (): void {
-    // Une ardoise en session : sans elle, /bar demande d'abord pour qui on sert, et
-    // le catalogue n'est pas encore à l'écran.
+it('shows the stock state of a product only when it matters at the counter', function (): void {
+    // « 24 en stock » sur chaque tuile n'apprenait rien au comptoir et coûtait la
+    // place d'un nom sur un petit écran : seul ce qui empêche de servir parle.
     $this->actingAs($this->manager)
-        ->withSession(['bar_tab_name' => 'Alpa A'])
         ->get(route('bar.index'))
         ->assertOk()
-        ->assertSee('24 en stock')
-        ->assertSee('Rupture de stock');
+        ->assertDontSee('24 en stock')
+        ->assertSee(__('Sold out'));
 });
 
 it('searches products on the order screen', function (): void {
@@ -206,14 +205,14 @@ it('searches products on the order screen', function (): void {
         ->assertDontSee('Chimay bleue');
 });
 
-it('asks who the round is for before showing the catalogue', function (): void {
-    // Servir à l'aveugle produisait des commandes qu'on ne savait plus rattacher à
-    // personne une heure plus tard — le défaut que le nommage répare.
+it('opens the counter on the products, not on a question', function (): void {
+    // On sert d'abord, on choisit ensuite où va la tournée : le nom d'une ardoise se
+    // donne à la fin, parmi les ardoises ouvertes.
     $this->actingAs($this->manager)
         ->get(route('bar.index'))
         ->assertOk()
-        ->assertSee(__('Who is this round for?'))
-        ->assertDontSee('24 en stock');
+        ->assertSee('Jupiler 25 cl')
+        ->assertDontSee(__('Who is this round for?'));
 });
 
 it('serves the bar through the application stylesheet built by vite', function (): void {
@@ -315,21 +314,18 @@ it('no longer badges the menu entry with the items in the cart', function (): vo
         ->toBe(substr_count((string) $without, 'class="badge badge-sm'));
 });
 
-it('floats the cart pill only once the cart holds something', function (): void {
+it('shows the finish bar only once the cart holds something', function (): void {
     $empty = $this->actingAs($this->manager)
-        ->withSession(['bar_tab_name' => 'Alpa A'])
         ->get(route('bar.index'))->assertOk();
-    expect($empty->getContent())->not->toContain(__('Review the tab'));
+    expect($empty->getContent())->not->toContain('wire:click="openFinishSheet"');
 
     $this->actingAs($this->manager)
-        ->withSession(['bar_tab_name' => 'Alpa A', 'cart' => [$this->inStock->id => 2]])
+        ->withSession(['cart' => [$this->inStock->id => 2]])
         ->get(route('bar.index'))
         ->assertOk()
-        ->assertSee(__('Review the tab'))
-        // Le nom de l'ardoise voyage avec la pilule : c'est ce qui dit où l'on sert
-        // quand on a la tête dans le catalogue.
-        ->assertSee('Alpa A')
-        // Le total prouve que $totalPrice arrive jusqu'à la pilule : 2 × 1,80 €.
+        ->assertSee('wire:click="openFinishSheet"', false)
+        ->assertSee(trans_choice(':count article|:count articles', 2, ['count' => 2]))
+        // Le total prouve que $totalPrice arrive jusqu'à la barre : 2 × 1,80 €.
         ->assertSee(euros(360));
 });
 

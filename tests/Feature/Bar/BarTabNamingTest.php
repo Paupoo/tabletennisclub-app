@@ -63,31 +63,31 @@ beforeEach(function (): void {
 });
 
 /**
- * Ouvre une ardoise et y sert `$qty` bières, tap par tap, comme le ferait le barman.
+ * Sert `$qty` bières, tap par tap, puis pose la tournée sur l'ardoise `$name` —
+ * comme le fait le barman : on sert d'abord, on choisit l'ardoise à la fin.
  *
- * Les « + » passent par le composant et non par une session forcée : rejoindre une
- * ardoise précharge le panier de ce qu'elle porte déjà, et écraser ce panier ferait
- * dire au test ce qu'il veut entendre au lieu de ce que l'écran fait.
+ * Les « + » passent par le composant et non par une session forcée : c'est l'écran
+ * qui décide si la tournée rejoint une ardoise ouverte ou en crée une.
  */
 function serveOnTab(User $user, string $name, int $productId, int $qty): void
 {
-    $counter = Livewire::actingAs($user)
-        ->test('pages::bar.counter')
-        ->set('tabNameInput', $name)
-        ->call('openTab');
+    $counter = Livewire::actingAs($user)->test('pages::bar.counter');
 
     for ($i = 0; $i < $qty; $i++) {
         $counter->call('add', $productId);
     }
 
-    Livewire::actingAs($user)->test('pages::bar.cart')->call('validateOrder', 'validate');
+    $counter->call('putOnTab', $name);
 }
 
-it('asks who the round is for before showing the catalogue', function (): void {
+it('opens straight on the products, the tab being chosen at the end', function (): void {
+    // On sert d'abord, on décide ensuite : la question « pour qui ? » avant la carte
+    // coûtait un écran et une saisie à chaque tournée.
     $this->actingAs($this->barman)
         ->get(route('bar.index'))
         ->assertOk()
-        ->assertSee(__('Who is this round for?'));
+        ->assertSee($this->product->name)
+        ->assertDontSee(__('Who is this round for?'));
 });
 
 it('names the tab it opens', function (): void {
@@ -209,10 +209,8 @@ it('frees the name once the tab is settled, keeping it on the record', function 
 it('lets a walk-in pay without naming anything', function (): void {
     Livewire::actingAs($this->barman)
         ->test('pages::bar.counter')
-        ->call('openWalkIn')
-        ->call('add', $this->product->id);
-
-    Livewire::actingAs($this->barman)->test('pages::bar.cart')->call('validateOrder', 'pay_now');
+        ->call('add', $this->product->id)
+        ->call('payCash');
 
     $order = BarOrder::query()->sole();
 
@@ -254,9 +252,9 @@ it('lets a colleague cash in and add to a tab they did not open', function (): v
         ->assertSessionHas('success');
 
     Livewire::actingAs($this->colleague)
-        ->test('pages::bar.cart')
+        ->test('pages::bar.counter')
         ->call('add', $this->product->id)
-        ->call('validateOrder', 'validate');
+        ->call('putOnTab', null);
 
     expect((int) $order->fresh()->items()->sum('quantity'))->toBe(3);
 });
@@ -294,31 +292,33 @@ it('renames a tab, and refuses a rename onto a name already open', function (): 
         ->and($vague->fresh()->open_name_key)->toBe('alpa a');
 });
 
-it('sends the barman back to the counter after saving a tab', function (): void {
-    // La boucle du bar est « servir → encaisser → servir le suivant ». Atterrir sur
-    // la liste de ce qu'on vient de faire sort du flux au moment où le suivant attend.
+it('keeps the barman on the counter after putting a round on a tab', function (): void {
+    // La boucle du bar est « servir → encaisser → servir le suivant ». Quitter le
+    // comptoir sortirait du flux au moment où le suivant attend.
     Livewire::actingAs($this->barman)
         ->test('pages::bar.counter')
+        ->call('add', $this->product->id)
         ->set('tabNameInput', 'Alpa A')
-        ->call('openTab')
-        ->call('add', $this->product->id);
+        ->call('putOnTab', null)
+        ->assertNoRedirect()
+        ->assertSet('tabSheet', false);
 
-    Livewire::actingAs($this->barman)
-        ->test('pages::bar.cart')
-        ->call('validateOrder', 'validate')
-        ->assertRedirect(route('bar.index'));
-
-    expect(session('success'))->toContain('Alpa A');
+    expect(BarOrder::query()->sole()->name)->toBe('Alpa A')
+        ->and(session('cart'))->toBeNull();
 });
 
 it('shows the tab it is serving, so the counter never lies about its state', function (): void {
     // Le défaut le plus sournois de l'ancien écran : en mode modification, cinq
     // éléments affirmaient « nouvelle commande » alors qu'on réécrivait la commande
     // d'un client, et le seul indice était un bouton dans la pilule flottante.
+    serveOnTab($this->barman, 'Alpa A', $this->product->id, 1);
+
     $this->actingAs($this->barman)
-        ->withSession(['bar_tab_name' => 'Alpa A'])
+        ->get(route('bar.orders.modify', BarOrder::query()->sole()));
+
+    $this->actingAs($this->barman)
         ->get(route('bar.index'))
         ->assertOk()
         ->assertSee('Alpa A')
-        ->assertDontSee(__('Who is this round for?'));
+        ->assertSee(__('Stop serving on this tab'));
 });

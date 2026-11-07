@@ -676,6 +676,17 @@ select:focus-visible {
 }
 
 /* =============================================================================
+   Bar counter — on a phone the counter starts with its own toolbar: the
+   breadcrumb trail would push the first products a screen lower, on the one
+   page served one-handed with someone waiting.
+   ============================================================================= */
+@media (max-width: 1023.98px) {
+  body:has([data-bar-counter]) .breadcrumb-trail {
+    display: none;
+  }
+}
+
+/* =============================================================================
    Print — the financial report's overview on paper: no sidebar, no menu, no
    tabs, no tooltip; cards kept whole, colours kept.
    ============================================================================= */

@@ -68,25 +68,30 @@ afterEach(function (): void {
     Carbon::setTestNow();
 });
 
-function barVisitingClubForToday(?Carbon $fixtureDate = null): Club
+/**
+ * Une équipe visiteuse attendue ce jour-là chez nous, et son nom complet
+ * (« Visiting Club B ») : c'est l'équipe, et non le club, qui reçoit le verre.
+ */
+function barVisitingTeamForToday(?Carbon $fixtureDate = null, string $letter = 'B', string $category = 'MEN', string $clubName = 'Visiting Club'): string
 {
-    $season = Season::factory()->create(['is_active' => true]);
+    $season = Season::query()->where('is_active', true)->first() ?? Season::factory()->create(['is_active' => true]);
     $league = League::create([
         'division' => '1A',
         'level' => 'PROVINCIAL_BW',
-        'category' => 'MEN',
+        'category' => $category,
         'season_id' => $season->id,
     ]);
     $ownClub = Club::query()->where('is_own_club', true)->sole();
-    $visitingClub = Club::factory()->create(['name' => 'Visiting Club']);
+    $visitingClub = Club::query()->where('name', $clubName)->first() ?? Club::factory()->create(['name' => $clubName]);
+    // Une équipe à nous par match : deux « A » dans la même catégorie seraient refusées.
     $ownTeam = Team::create([
-        'name' => 'A',
+        'name' => chr(65 + Team::query()->where('club_id', $ownClub->id)->count()),
         'season_id' => $season->id,
         'league_id' => $league->id,
         'club_id' => $ownClub->id,
     ]);
     $visitingTeam = Team::create([
-        'name' => 'B',
+        'name' => $letter,
         'season_id' => $season->id,
         'league_id' => $league->id,
         'club_id' => $visitingClub->id,
@@ -94,7 +99,7 @@ function barVisitingClubForToday(?Carbon $fixtureDate = null): Club
 
     Interclub::create([
         'address' => 'Clubhouse',
-        'start_date_time' => ($fixtureDate ?? now())->setTime(20, 0),
+        'start_date_time' => ($fixtureDate ?? now())->copy()->setTime(20, 0),
         'total_players' => 4,
         'visited_team_id' => $ownTeam->id,
         'visiting_team_id' => $visitingTeam->id,
@@ -102,7 +107,7 @@ function barVisitingClubForToday(?Carbon $fixtureDate = null): Club
         'league_id' => $league->id,
     ]);
 
-    return $visitingClub;
+    return $visitingTeam->fullName();
 }
 
 it('sends a QR payment to the treasurer, waiting to be reconciled', function (): void {
@@ -165,7 +170,7 @@ it('leaves cash and offered rounds out of the bank list', function (string $meth
     $reason = 'Tournoi du club';
 
     if ($method === 'offered') {
-        $reason = barVisitingClubForToday()->name;
+        $reason = barVisitingTeamForToday();
     }
 
     $this->actingAs($this->barman)
@@ -176,66 +181,66 @@ it('leaves cash and offered rounds out of the bank list', function (string $meth
         ->and(Payment::where('payable_type', BarOrder::class)->count())->toBe(0);
 })->with(['cash', 'offered']);
 
-it('offers a scheduled visiting club only once per business day', function (): void {
+it('offers a scheduled visiting team only once per business day', function (): void {
     Carbon::setTestNow('2026-09-20 20:00:00');
-    $club = barVisitingClubForToday();
+    $team = barVisitingTeamForToday();
     $first = barOrderToSettle($this->barman);
     $second = barOrderToSettle($this->barman);
 
     $this->actingAs($this->barman)
         ->get(route('bar.payment.show', $first))
         ->assertOk()
-        ->assertSee($club->name);
+        ->assertSee($team);
 
     $this->actingAs($this->barman)
-        ->post(route('bar.payment.pay', $first), ['method' => 'offered', 'reason' => $club->name])
+        ->post(route('bar.payment.pay', $first), ['method' => 'offered', 'reason' => $team])
         ->assertRedirect();
 
-    expect($first->fresh()->reason)->toBe($club->name);
+    expect($first->fresh()->reason)->toBe($team);
 
     $this->actingAs($this->barman)
-        ->post(route('bar.payment.pay', $second), ['method' => 'offered', 'reason' => $club->name])
-        ->assertSessionHas('error', 'Ce club visiteur a déjà reçu une commande offerte aujourd’hui.');
+        ->post(route('bar.payment.pay', $second), ['method' => 'offered', 'reason' => $team])
+        ->assertSessionHas('error', 'Cette équipe a déjà reçu son verre du club aujourd’hui.');
 
     expect($second->fresh()->is_paid)->toBe(0);
 });
 
-it('hides a visiting club already used for an offered order', function (): void {
+it('hides a visiting team already used for an offered order', function (): void {
     Carbon::setTestNow('2026-09-20 20:00:00');
-    $club = barVisitingClubForToday();
+    $team = barVisitingTeamForToday();
     $first = barOrderToSettle($this->barman);
     $second = barOrderToSettle($this->barman);
 
     $this->actingAs($this->barman)
-        ->post(route('bar.payment.pay', $first), ['method' => 'offered', 'reason' => $club->name])
+        ->post(route('bar.payment.pay', $first), ['method' => 'offered', 'reason' => $team])
         ->assertRedirect();
 
     $this->actingAs($this->barman)
         ->get(route('bar.payment.show', $second))
         ->assertOk()
-        ->assertDontSee('value="' . $club->name . '"', false);
+        ->assertDontSee('value="' . $team . '"', false);
 });
 
 it('counts an offered order on the day it is closed, not when it was opened', function (): void {
     Carbon::setTestNow('2026-09-20 20:00:00');
-    $club = barVisitingClubForToday();
+    $team = barVisitingTeamForToday();
     $first = barOrderToSettle($this->barman);
     $second = barOrderToSettle($this->barman);
 
     $this->actingAs($this->barman)
-        ->post(route('bar.payment.pay', $first), ['method' => 'offered', 'reason' => $club->name])
+        ->post(route('bar.payment.pay', $first), ['method' => 'offered', 'reason' => $team])
         ->assertRedirect();
 
     $first->forceFill(['created_at' => '2026-09-19 23:00:00'])->saveQuietly();
 
     $this->actingAs($this->barman)
-        ->post(route('bar.payment.pay', $second), ['method' => 'offered', 'reason' => $club->name])
-        ->assertSessionHas('error', 'Ce club visiteur a déjà reçu une commande offerte aujourd’hui.');
+        ->post(route('bar.payment.pay', $second), ['method' => 'offered', 'reason' => $team])
+        ->assertSessionHas('error', 'Cette équipe a déjà reçu son verre du club aujourd’hui.');
 
     expect($second->fresh()->is_paid)->toBe(0);
 });
 
-it('accepts a manual reason when the visiting club cannot be selected', function (): void {
+it('accepts a manual reason when the visiting team cannot be selected', function (): void {
     $order = barOrderToSettle($this->barman);
 
     $this->actingAs($this->barman)
@@ -249,9 +254,9 @@ it('accepts a manual reason when the visiting club cannot be selected', function
         ->and($order->fresh()->reason)->toBe('Bénévole du club');
 });
 
-it('keeps the visiting club available when an order is closed later', function (): void {
+it('keeps the visiting team available when an order is closed later', function (): void {
     Carbon::setTestNow('2026-09-21 10:00:00');
-    $club = barVisitingClubForToday(Carbon::parse('2026-09-20'));
+    $team = barVisitingTeamForToday(Carbon::parse('2026-09-20'));
     $order = barOrderToSettle($this->barman);
     $order->created_at = Carbon::parse('2026-09-20 12:00:00');
     $order->save();
@@ -259,18 +264,18 @@ it('keeps the visiting club available when an order is closed later', function (
     $this->actingAs($this->barman)
         ->get(route('bar.payment.show', $order))
         ->assertOk()
-        ->assertSee($club->name);
+        ->assertSee($team);
 
     $this->actingAs($this->barman)
-        ->post(route('bar.payment.pay', $order), ['method' => 'offered', 'reason' => $club->name])
+        ->post(route('bar.payment.pay', $order), ['method' => 'offered', 'reason' => $team])
         ->assertRedirect();
 
-    expect($order->fresh()->reason)->toBe($club->name);
+    expect($order->fresh()->reason)->toBe($team);
 });
 
 it('rejects an offered order with more than four articles', function (): void {
     Carbon::setTestNow('2026-09-20 20:00:00');
-    $club = barVisitingClubForToday();
+    $team = barVisitingTeamForToday();
     $category = BarCategory::create(['name' => 'Snacks']);
     $product = BarProduct::create([
         'name' => 'Snack',
@@ -288,10 +293,98 @@ it('rejects an offered order with more than four articles', function (): void {
     ]);
 
     $this->actingAs($this->barman)
-        ->post(route('bar.payment.pay', $order), ['method' => 'offered', 'reason' => $club->name])
-        ->assertSessionHas('error', 'Une commande offerte ne peut pas contenir plus de 4 articles.');
+        ->post(route('bar.payment.pay', $order), ['method' => 'offered', 'reason' => $team])
+        ->assertSessionHas('error', 'Un verre du club ne peut pas contenir plus de 4 articles pour cette équipe.');
 
     expect($order->fresh()->is_paid)->toBe(0);
+});
+
+/** Une commande à régler qui porte `$articles` consommations d'un même produit. */
+function barOrderWithArticles(User $barman, int $articles): BarOrder
+{
+    $category = BarCategory::firstOrCreate(['name' => 'Bières']);
+    $product = BarProduct::create([
+        'name' => 'Jupiler ' . uniqid(),
+        'sale_price' => 300,
+        'is_available' => true,
+        'category_id' => $category->id,
+    ]);
+    $order = barOrderToSettle($barman, 300 * $articles);
+    BarOrderItem::create([
+        'order_id' => $order->id,
+        'product_id' => $product->id,
+        'quantity' => $articles,
+        'unit_price' => 300,
+        'total_price' => 300 * $articles,
+    ]);
+
+    return $order;
+}
+
+it('gives a club round to each visiting team, even two teams of the same club', function (): void {
+    // Braine-L'Alleud B et F viennent le même soir : la règle comptait par club, et
+    // l'équipe F se voyait refuser le verre que l'équipe B avait déjà reçu.
+    Carbon::setTestNow('2026-09-20 20:00:00');
+    $teamB = barVisitingTeamForToday(letter: 'B', clubName: "Braine-L'Alleud");
+    $teamF = barVisitingTeamForToday(letter: 'F', clubName: "Braine-L'Alleud");
+    $first = barOrderToSettle($this->barman);
+    $second = barOrderToSettle($this->barman);
+
+    $this->actingAs($this->barman)
+        ->get(route('bar.payment.show', $first))
+        ->assertOk()
+        ->assertSee("Braine-L'Alleud B")
+        ->assertSee("Braine-L'Alleud F");
+
+    $this->actingAs($this->barman)
+        ->post(route('bar.payment.pay', $first), ['method' => 'offered', 'reason' => $teamB])
+        ->assertSessionHas('success');
+
+    $this->actingAs($this->barman)
+        ->post(route('bar.payment.pay', $second), ['method' => 'offered', 'reason' => $teamF])
+        ->assertSessionHas('success');
+
+    expect($first->fresh()->reason)->toBe("Braine-L'Alleud B")
+        ->and($second->fresh()->reason)->toBe("Braine-L'Alleud F");
+});
+
+it('caps a club round at three articles for veterans and women', function (string $category): void {
+    // Les vétérans et les dames jouent à trois : trois consommations, pas quatre.
+    Carbon::setTestNow('2026-09-20 20:00:00');
+    $team = barVisitingTeamForToday(category: $category);
+    $tooMany = barOrderWithArticles($this->barman, 4);
+    $enough = barOrderWithArticles($this->barman, 3);
+
+    $this->actingAs($this->barman)
+        ->post(route('bar.payment.pay', $tooMany), ['method' => 'offered', 'reason' => $team])
+        ->assertSessionHas('error', 'Un verre du club ne peut pas contenir plus de 3 articles pour cette équipe.');
+
+    $this->actingAs($this->barman)
+        ->post(route('bar.payment.pay', $enough), ['method' => 'offered', 'reason' => $team])
+        ->assertSessionHas('success');
+
+    expect($tooMany->fresh()->is_paid)->toBe(0)
+        ->and($enough->fresh()->is_paid)->toBe(1);
+})->with(['VETERANS', 'WOMEN']);
+
+it('keeps four articles for a men team and for a beneficiary typed by hand', function (): void {
+    Carbon::setTestNow('2026-09-20 20:00:00');
+    $team = barVisitingTeamForToday(category: 'MEN');
+    $forTeam = barOrderWithArticles($this->barman, 4);
+    $byHand = barOrderWithArticles($this->barman, 4);
+    $tooManyByHand = barOrderWithArticles($this->barman, 5);
+
+    $this->actingAs($this->barman)
+        ->post(route('bar.payment.pay', $forTeam), ['method' => 'offered', 'reason' => $team])
+        ->assertSessionHas('success');
+
+    $this->actingAs($this->barman)
+        ->post(route('bar.payment.pay', $byHand), ['method' => 'offered', 'manual_reason' => 'Arbitre'])
+        ->assertSessionHas('success');
+
+    $this->actingAs($this->barman)
+        ->post(route('bar.payment.pay', $tooManyByHand), ['method' => 'offered', 'manual_reason' => 'Arbitre'])
+        ->assertSessionHas('error', 'Un verre du club ne peut pas contenir plus de 4 articles.');
 });
 
 it('describes a bar order in the treasurer list, without inventing a payer', function (): void {

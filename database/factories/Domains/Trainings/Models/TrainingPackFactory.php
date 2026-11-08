@@ -50,7 +50,7 @@ class TrainingPackFactory extends Factory
         return [
             'season_id' => Season::factory(),
             'pack_start_date' => CarbonImmutable::today()->addMonth()->startOfMonth()->toDateString(),
-            'pack_end_date' => CarbonImmutable::today()->addMonths(10)->endOfMonth()->toDateString(),
+            'pack_end_date' => CarbonImmutable::today()->addMonthsNoOverflow(10)->endOfMonth()->toDateString(),
             'name' => fake()->words(3, true),
             // 'description' => fake()->sentence(),
             'price' => fake()->numberBetween(50, 200),
@@ -82,9 +82,12 @@ class TrainingPackFactory extends Factory
      */
     public function started(): self
     {
+        // NoOverflow: on the 31st, addMonths(6) lands on a month without one and
+        // rolls into the next — a ten-month pack became eleven, and every pro
+        // rata built on it was off on the last days of the month.
         return $this->state(fn (): array => [
-            'pack_start_date' => CarbonImmutable::today()->subMonths(3)->startOfMonth()->toDateString(),
-            'pack_end_date' => CarbonImmutable::today()->addMonths(6)->endOfMonth()->toDateString(),
+            'pack_start_date' => CarbonImmutable::today()->subMonthsNoOverflow(3)->startOfMonth()->toDateString(),
+            'pack_end_date' => CarbonImmutable::today()->addMonthsNoOverflow(6)->endOfMonth()->toDateString(),
         ]);
     }
 }

@@ -284,8 +284,8 @@ it('claims the whole pack from a member the committee says was there from the st
     $pack = makeTrainingPack($this->season, [
         'price' => 135,
         'allow_discount' => false,
-        'pack_start_date' => today()->subMonths(3)->startOfMonth()->toDateString(),
-        'pack_end_date' => today()->addMonths(6)->endOfMonth()->toDateString(),
+        'pack_start_date' => today()->subMonthsNoOverflow(3)->startOfMonth()->toDateString(),
+        'pack_end_date' => today()->addMonthsNoOverflow(6)->endOfMonth()->toDateString(),
     ]);
 
     Livewire::actingAs($this->manager)

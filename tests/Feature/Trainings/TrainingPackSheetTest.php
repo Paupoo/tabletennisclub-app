@@ -192,8 +192,8 @@ it('renders the sheet with its roster and its facts', function (): void {
 
 it('reads an enrolment dated from the first day of the pack as there from the start', function (): void {
     $pack = sheetPack([
-        'pack_start_date' => today()->subMonths(3)->startOfMonth()->toDateString(),
-        'pack_end_date' => today()->addMonths(6)->endOfMonth()->toDateString(),
+        'pack_start_date' => today()->subMonthsNoOverflow(3)->startOfMonth()->toDateString(),
+        'pack_end_date' => today()->addMonthsNoOverflow(6)->endOfMonth()->toDateString(),
     ]);
 
     enrol($pack, 'enrolled', ['starts_on' => $pack->pack_start_date->toDateString()], ['last_name' => 'Encode']);

@@ -60,7 +60,7 @@ describe('aucune saison', function (): void {
 
 describe('saison future (is_active=false, start_at dans le futur)', function (): void {
     it('affiche le bandeau "dès le" pour une saison future', function (): void {
-        $startAt = now()->addMonths(2)->startOfMonth();
+        $startAt = now()->addMonthsNoOverflow(2)->startOfMonth();
 
         seasonWithActivePack([
             'is_active' => false,
@@ -81,7 +81,7 @@ describe('saison future (is_active=false, start_at dans le futur)', function ():
 
 describe('saison active avec start_at dans le passé', function (): void {
     it('n’affiche aucun bandeau pour une saison active déjà commencée', function (): void {
-        $startAt = now()->subMonths(2)->startOfMonth();
+        $startAt = now()->subMonthsNoOverflow(2)->startOfMonth();
 
         seasonWithActivePack([
             'is_active' => true,
@@ -103,7 +103,7 @@ describe('saison active avec start_at dans le passé', function (): void {
 
 describe('saison active avec start_at dans le futur', function (): void {
     it('affiche le bandeau "dès le" pour une saison active pas encore commencée', function (): void {
-        $startAt = now()->addMonths(3)->startOfMonth();
+        $startAt = now()->addMonthsNoOverflow(3)->startOfMonth();
 
         seasonWithActivePack([
             'is_active' => true,
@@ -157,7 +157,7 @@ describe('priorité de saison', function (): void {
         ]);
 
         // Saison future avec pack
-        $futureStart = now()->addMonths(2)->startOfMonth();
+        $futureStart = now()->addMonthsNoOverflow(2)->startOfMonth();
         seasonWithActivePack([
             'is_active' => false,
             'start_at' => $futureStart,

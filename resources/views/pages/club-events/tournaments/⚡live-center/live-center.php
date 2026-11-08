@@ -30,6 +30,7 @@ use App\Support\UploadLimits;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL as SignedUrl;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -195,6 +196,8 @@ new class extends Component
         $menu = $this->canManageTournament ? [
             ['label' => __('Print the draw'), 'icon' => 'o-printer', 'href' => route('admin.tournaments.print.pools', $this->tournament)],
             ['label' => __('Print the match sheets'), 'icon' => 'o-scissors', 'href' => route('admin.tournaments.print.matches', $this->tournament)],
+            // Un lien signé : l'écran affiche des noms de mineurs, il n'est jamais public.
+            ['label' => __('Open the hall screen'), 'icon' => 'o-tv', 'href' => SignedUrl::signedRoute('tournament.screen', $this->tournament)],
         ] : [];
 
         return ['facts' => implode(' · ', $facts), 'alert' => $alert, 'action' => $action, 'menu' => $menu];

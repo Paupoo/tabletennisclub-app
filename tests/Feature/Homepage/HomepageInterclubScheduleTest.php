@@ -27,7 +27,7 @@ beforeEach(function (): void {
  */
 function activeSeasonForInterclub(array $seasonOverrides = []): Season
 {
-    $startAt = now()->subMonths(2)->startOfMonth();
+    $startAt = now()->subMonthsNoOverflow(2)->startOfMonth();
 
     $season = Season::factory()->create(array_merge([
         'is_active' => true,

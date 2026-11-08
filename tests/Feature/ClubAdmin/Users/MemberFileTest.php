@@ -104,7 +104,9 @@ describe('what the file shows', function (): void {
         $this->actingAs($this->committeeOnly)
             ->get(route('admin.users.show', $target))
             ->assertSee('BE** **** **** 7034')
-            ->assertDontSee('5390');
+            // The middle digits alone ('5390') also turn up in random fixture
+            // data elsewhere on the page: look for the account as it would leak.
+            ->assertDontSee(['BE68539007547034', 'BE68 5390', '5390 0754', '539007547034']);
     });
 
     it('shows the bank account to whoever edits the file or pays the refunds', function (Role $role): void {

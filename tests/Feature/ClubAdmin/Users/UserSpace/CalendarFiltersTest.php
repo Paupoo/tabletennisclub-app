@@ -53,6 +53,10 @@ it('keeps the view mode segmented control out of the filter chips', function ():
 | la page du match, que tout membre peut lire depuis le 2026-09-24.
 */
 it('links every club match tile to its match page, not only the member own', function (): void {
+    // Mid-month: the calendar loads the weeks of the month on screen, and a
+    // match two days ahead fell outside them on the last days of a month.
+    $this->travelTo(now()->startOfMonth()->addDays(9)->setTime(12, 0));
+
     $season = makeActiveSeason();
     $user = User::factory()->create();
 

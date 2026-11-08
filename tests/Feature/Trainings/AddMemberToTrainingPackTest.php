@@ -31,7 +31,7 @@ describe('AddMemberToTrainingPackAction', function (): void {
         // Le membre venait déjà depuis deux mois sans être inscrit : la matrice
         // de présences l'a montré, le comité régularise. Le facturer à partir
         // d'aujourd'hui offrirait les deux mois consommés.
-        $wasThereSince = CarbonImmutable::today()->subMonths(2)->startOfMonth()->toDateString();
+        $wasThereSince = CarbonImmutable::today()->subMonthsNoOverflow(2)->startOfMonth()->toDateString();
 
         (new AddMemberToTrainingPackAction)($subscription, $pack, $wasThereSince);
 
@@ -177,8 +177,8 @@ describe('AddMemberToTrainingPackAction', function (): void {
         $pack = TrainingPack::factory()->create([
             'max_participants' => 5,
             'price' => 90,
-            'pack_start_date' => CarbonImmutable::today()->subMonths(3)->startOfMonth()->toDateString(),
-            'pack_end_date' => CarbonImmutable::today()->addMonths(6)->endOfMonth()->toDateString(),
+            'pack_start_date' => CarbonImmutable::today()->subMonthsNoOverflow(3)->startOfMonth()->toDateString(),
+            'pack_end_date' => CarbonImmutable::today()->addMonthsNoOverflow(6)->endOfMonth()->toDateString(),
         ]);
 
         $subscription = invoicedSubscription($pack);

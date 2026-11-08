@@ -93,11 +93,14 @@
                             : null;
                     @endphp
 
+                    {{-- Inscrit ou en attente : le tournoi mène à sa page joueur dès
+                         l'inscription, pas seulement le jour J. --}}
                     <x-admin.shared.compact-event-preview
                         :location="null"
                         :remainingSlots="$remaining"
                         :startDateTime="$tournament->startsAt()?->format('Y-m-d H:i:s')"
                         :name="$tournament->name"
+                        :link="($isActive || $isSpotOffered || $isWaiting) && $this->user->is(auth()->user()) ? route('admin.tournaments.live', $tournament) : '#'"
                         type="tournament"
                     >
                         <x-slot:actions>

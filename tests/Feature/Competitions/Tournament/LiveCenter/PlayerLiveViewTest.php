@@ -194,13 +194,13 @@ it('shows the count on the page, and marks my line in the queue', function (): v
     playerMatch($pool, $c->id, $d->id, 2);
     $mine = playerMatch($pool, $me->id, $opponent->id, 3);
 
-    $html = Livewire::actingAs($me)
-        ->test(PLAYER_LIVE_COMPONENT, ['tournament' => $tournament])
-        ->html();
+    $page = Livewire::actingAs($me)
+        ->test(PLAYER_LIVE_COMPONENT, ['tournament' => $tournament]);
 
-    expect($html)->toContain(e(trans_choice('{1} match before yours|[2,*] matches before yours', 2)));
+    expect($page->html())->toContain(e(trans_choice('{1} match before yours|[2,*] matches before yours', 2)));
 
-    // La ligne de la file qui est la mienne, et elle seule, porte le repère.
+    // La file entière s'ouvre depuis sa carte ; ma ligne, et elle seule, porte le repère.
+    $html = $page->set('activeTab', 'queue')->html();
     $start = strpos($html, 'wire:key="queue-' . $mine->id . '"');
     $next = strpos($html, 'wire:key="', (int) $start + 10);
     $row = substr($html, (int) $start, $next === false ? null : $next - (int) $start);
@@ -248,14 +248,14 @@ it('is linked from the member events page while the tournament is being played',
         ->assertSee(route('admin.tournaments.live', $tournament), escape: false);
 });
 
-it('is not linked before the tournament starts', function (): void {
+it('is linked as soon as the player has signed up', function (): void {
     $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PUBLISHED]);
     $player = User::factory()->create();
     playerRegister($tournament, $player);
 
     Livewire::actingAs($player)
         ->test('pages::club-admin.users.user-space.event-subscription', ['user' => $player])
-        ->assertDontSee(route('admin.tournaments.live', $tournament), escape: false);
+        ->assertSee(route('admin.tournaments.live', $tournament), escape: false);
 });
 
 it('is not linked to somebody who did not sign up', function (): void {
@@ -295,14 +295,16 @@ it('shows the bracket and the rankings, from the same views as the control room'
         'match_order' => 1,
     ]);
 
-    $html = Livewire::actingAs($champion)
-        ->test(PLAYER_LIVE_COMPONENT, ['tournament' => $tournament])
-        ->html();
+    $page = Livewire::actingAs($champion)
+        ->test(PLAYER_LIVE_COMPONENT, ['tournament' => $tournament]);
 
     // L'arbre rend la carte de la finale, avec la même clé que dans la régie.
-    expect($html)->toContain('wire:key="bracket-' . $final->id . '"')
-        // Et le classement place le vainqueur.
-        ->and($html)->toContain(e(__('Champion')))
+    expect($page->set('activeTab', 'bracket')->html())->toContain('wire:key="bracket-' . $final->id . '"');
+
+    $html = $page->set('activeTab', 'rankings')->html();
+
+    // Et le classement place le vainqueur.
+    expect($html)->toContain(e(__('Champion')))
         ->and($html)->toContain(e(__('Runner-up')));
 });
 
@@ -313,6 +315,79 @@ it('leaves the empty states alone before anything is played', function (): void 
 
     Livewire::actingAs($player)
         ->test(PLAYER_LIVE_COMPONENT, ['tournament' => $tournament])
+        ->set('activeTab', 'bracket')
         ->assertSee(__('Bracket not yet generated.'))
+        ->set('activeTab', 'rankings')
         ->assertSee(__('Rankings will appear as matches are completed.'));
+});
+
+// ── Une seule page, du plus urgent au moins urgent ───────────────────────────
+
+/*
+ * Plus d'onglets : la page principale porte ma poule, et le reste s'ouvre
+ * depuis des cartes. Avant le début, elle dit où, quand et avec qui.
+ */
+it('puts my own pool on the page, and only mine', function (): void {
+    $tournament = playerTournament();
+    $mine = Pool::factory()->for($tournament)->create(['name' => 'Poule B']);
+    $other = Pool::factory()->for($tournament)->create(['name' => 'Poule C']);
+    [$me, $opponent, $a, $b] = User::factory(4)->create()->all();
+    playerRegister($tournament, $me, $opponent, $a, $b);
+    $mine->users()->attach([$me->id, $opponent->id]);
+    $other->users()->attach([$a->id, $b->id]);
+
+    $html = Livewire::actingAs($me)
+        ->test(PLAYER_LIVE_COMPONENT, ['tournament' => $tournament])
+        ->html();
+
+    expect($html)->toContain('data-my-pool')
+        ->and($html)->toContain('wire:key="pool-' . $mine->id . '"')
+        ->and($html)->not->toContain('wire:key="pool-' . $other->id . '"');
+});
+
+it('wears the same status as the committee pages, without a blinking dot', function (): void {
+    $tournament = playerTournament();
+    $player = User::factory()->create();
+    playerRegister($tournament, $player);
+
+    $html = Livewire::actingAs($player)
+        ->test(PLAYER_LIVE_COMPONENT, ['tournament' => $tournament])
+        ->html();
+
+    expect($html)->toContain(e(TournamentStatusEnum::PENDING->getLabel()))
+        ->and($html)->not->toContain('animate-ping')
+        ->and($html)->not->toContain('role="tablist"');
+});
+
+it('tells a doubles player before the start whether the partner is known', function (): void {
+    $tournament = Tournament::factory()->create([
+        'status' => TournamentStatusEnum::SETUP,
+        'match_type' => 'double',
+        'doubles_registration_mode' => 'club',
+        'pairs_published_at' => null,
+    ]);
+    [$me, $partner] = User::factory(2)->create()->all();
+    playerRegister($tournament, $me, $partner);
+    $tournament->pairs()->create(['player1_id' => $me->id, 'player2_id' => $partner->id, 'registered_by' => $me->id]);
+
+    Livewire::actingAs($me)
+        ->test(PLAYER_LIVE_COMPONENT, ['tournament' => $tournament])
+        ->assertSee(__('Your partner has not been announced yet.'))
+        ->assertDontSee($partner->full_name);
+
+    $tournament->update(['pairs_published_at' => now()]);
+
+    Livewire::actingAs($me)
+        ->test(PLAYER_LIVE_COMPONENT, ['tournament' => $tournament->fresh()])
+        ->assertSee(__('In doubles with :partner', ['partner' => $partner->full_name]));
+});
+
+it('gives a waiting player their place in the line before the start', function (): void {
+    $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PUBLISHED]);
+    $player = User::factory()->create();
+    $tournament->users()->attach($player->id, ['registration_status' => 'waiting', 'waitlist_position' => 3]);
+
+    Livewire::actingAs($player)
+        ->test(PLAYER_LIVE_COMPONENT, ['tournament' => $tournament])
+        ->assertSee(__('You are number :position on the waiting list.', ['position' => 3]));
 });

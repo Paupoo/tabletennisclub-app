@@ -23,6 +23,7 @@ use App\Domains\Competitions\Tournament\Services\TournamentSimulator;
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\TableStateEnum;
 use App\Domains\Shared\Enums\TournamentObjectiveEnum;
+use App\Domains\Shared\Enums\TournamentPhaseEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Shared\States\Tournament\TournamentStateMachine;
 use App\Jobs\SendTournamentCancellationJob;
@@ -188,6 +189,8 @@ new class extends Component
 
     public bool $showRequireCloseRegistrationsModal = false;
 
+    public bool $showValidateModal = false;
+
     public array $sortBy = ['column' => 'name', 'direction' => 'asc'];
 
     public string $startTime = '';
@@ -272,6 +275,101 @@ new class extends Component
                 'name' => $room->name . ' (' . $room->usableTournamentCapacity() . ' tables)',
             ])
             ->toArray();
+    }
+
+    /**
+     * What the banner says: one line of facts, an alert if any, at most one
+     * main action, the rest in the menu.
+     *
+     * @return array{facts: string, alert: string|null, action: array{label: string, icon: string, wire: string}|null, menu: list<array{label: string, icon: string, wire?: string, href?: string, danger?: bool}>}
+     */
+    #[Computed]
+    public function banner(): array
+    {
+        $tournament = $this->currentTournament;
+
+        if (! $tournament instanceof Tournament) {
+            return ['facts' => '', 'alert' => null, 'action' => null, 'menu' => []];
+        }
+
+        $date = $tournament->start_date?->isoFormat('dddd D MMMM') ?? '';
+        $counts = $this->registrationTabCounts;
+        $isDouble = $tournament->match_type === 'double';
+        $unpaidAlert = $tournament->isPaid() && $counts['unpaid'] > 0
+            ? trans_choice(':count registered player has not paid|:count registered players have not paid', $counts['unpaid'], ['count' => $counts['unpaid']])
+            : null;
+        $facts = [];
+        $alert = null;
+        $action = null;
+
+        switch ($tournament->status) {
+            case TournamentStatusEnum::DRAFT:
+                $facts = [$date, $isDouble ? __('Doubles') : __('Singles'), trans_choice(':count pool|:count pools', $this->nb_poules, ['count' => $this->nb_poules])];
+                $alert = $this->registration_deadline === '' ? __('The registration deadline is missing.') : null;
+                $action = ['label' => __('Validate the tournament'), 'icon' => 'o-lock-closed', 'wire' => "\$set('showValidateModal', true)"];
+                break;
+
+            case TournamentStatusEnum::LOCKED:
+                $facts = [$date, __('Name and price locked'), $tournament->isPaid() ? $tournament->eventPostPrice() : __('Free')];
+                $action = ['label' => __('Open registrations'), 'icon' => 'o-lock-open', 'wire' => "\$set('showOpenRegistrationsModal', true)"];
+                break;
+
+            case TournamentStatusEnum::PUBLISHED:
+                $facts = [
+                    $tournament->max_users > 0
+                        ? __(':count registered out of :max', ['count' => $counts['all'], 'max' => $tournament->max_users])
+                        : trans_choice(':count registered|:count registered', $counts['all'], ['count' => $counts['all']]),
+                    $tournament->registration_deadline ? __('closes on :date', ['date' => $tournament->registration_deadline->isoFormat('dddd D MMMM')]) : null,
+                ];
+                $alert = $unpaidAlert;
+                $action = ['label' => __('Close registrations'), 'icon' => 'o-lock-closed', 'wire' => "\$set('showCloseRegistrationsModal', true)"];
+                break;
+
+            case TournamentStatusEnum::SETUP:
+                if (TournamentPhaseEnum::activeFor($tournament) === TournamentPhaseEnum::MATCH_DAY) {
+                    $facts = [
+                        trans_choice(':count checked in|:count checked in', $counts['present'], ['count' => $counts['present']]),
+                        trans_choice(':count to check in|:count to check in', $counts['to_check'], ['count' => $counts['to_check']]),
+                        trans_choice(':count absent|:count absent', $counts['absent'], ['count' => $counts['absent']]),
+                    ];
+                    $action = ['label' => __('Launch the tournament'), 'icon' => 'o-rocket-launch', 'wire' => "\$set('step', 'launch')"];
+                    break;
+                }
+
+                $bench = $isDouble ? count($this->pairBoard['bench']) : 0;
+                $pairs = $isDouble ? count($this->pairBoard['pairs']) : 0;
+                $facts = [
+                    trans_choice(':count registered|:count registered', $counts['all'], ['count' => $counts['all']]),
+                    $isDouble ? trans_choice(':count pair|:count pairs', $pairs, ['count' => $pairs]) : null,
+                    $tournament->start_date ? __('tournament :when', ['when' => $tournament->start_date->diffForHumans(today(), ['syntax' => Carbon::DIFF_RELATIVE_TO_NOW, 'parts' => 1])]) : null,
+                ];
+
+                if ($bench > 0) {
+                    $alert = trans_choice(':count player has no partner|:count players have no partner', $bench, ['count' => $bench]);
+                    $action = ['label' => __('Compose the pairs'), 'icon' => 'o-user-group', 'wire' => "\$set('step', 'pairs')"];
+                } elseif ($isDouble && $pairs > 0 && ! $tournament->pairsAreKnownToPlayers()) {
+                    $action = ['label' => __('Publish the pairs'), 'icon' => 'o-paper-airplane', 'wire' => 'publishPairs'];
+                } else {
+                    $facts[] = __('Ready for the match day');
+                }
+
+                $alert ??= $unpaidAlert;
+                break;
+
+            case TournamentStatusEnum::CANCELLED:
+                $facts = [__('Cancelled'), $date];
+                break;
+
+            default:
+                $facts = [$date];
+        }
+
+        return [
+            'facts' => implode(' · ', array_filter($facts, fn (?string $fact): bool => $fact !== null && $fact !== '')),
+            'alert' => $alert,
+            'action' => $action,
+            'menu' => $this->bannerMenu($tournament),
+        ];
     }
 
     public function cancelTournament(): void
@@ -806,21 +904,6 @@ new class extends Component
     /**
      * How far the tournament lets the committee go in the steps.
      */
-    public function maxReachableStepIndex(): int
-    {
-        $keys = array_column($this->wizardSteps(), 'key');
-
-        $reachable = match (true) {
-            in_array($this->currentTournament?->status, [TournamentStatusEnum::SETUP, TournamentStatusEnum::PENDING, TournamentStatusEnum::CLOSED], true) => '6',
-            $this->currentTournament?->status === TournamentStatusEnum::PUBLISHED => in_array('pairs', $keys, true) ? 'pairs' : '5',
-            $this->currentTournament?->status === TournamentStatusEnum::LOCKED => '4',
-            $this->tournamentId !== null => '3',
-            default => '1',
-        };
-
-        return (int) array_search($reachable, $keys, true);
-    }
-
     // ── Computed: members from DB
 
     #[Computed]
@@ -905,14 +988,18 @@ new class extends Component
              * pas l'étape déduite du statut.
              */
             if ($this->step === '') {
-                $this->step = match ($tournament->status) {
-                    TournamentStatusEnum::LOCKED => '4',
-                    TournamentStatusEnum::PUBLISHED => '4',
-                    TournamentStatusEnum::SETUP => '5',
-                    TournamentStatusEnum::PENDING,
-                    TournamentStatusEnum::CLOSED => '6',
+                // Lancé : le jour J et le bilan sont à la régie, que l'écran de
+                // lancement indique. Les liens de la fiche y mènent directement.
+                $this->step = $tournament->state()->hasBeenLaunched() ? 'launch' : match (TournamentPhaseEnum::activeFor($tournament)) {
+                    TournamentPhaseEnum::REGISTRATIONS => '5',
+                    TournamentPhaseEnum::MATCH_DAY => '6',
                     default => '1',
                 };
+            }
+
+            // La validation n'est plus une étape : c'est l'action du bandeau.
+            if ($this->step === '3') {
+                $this->step = '1';
             }
 
             $this->initEventPost($tournament->eventPost, $tournament->name);
@@ -1594,7 +1681,9 @@ new class extends Component
             $this->registrationRows, $this->registrationTabCounts, $this->registrations,
         );
 
-        if ($this->step === '1') {
+        // À la création seulement, on enchaîne sur la page web. Une fois la
+        // fiche ouverte, enregistrer les réglages laisse le comité où il est.
+        if ($tournament->wasRecentlyCreated && $this->step === '1') {
             $this->step = '2';
         }
 
@@ -1603,6 +1692,24 @@ new class extends Component
             description: __('Configuration updated.'),
             icon: 'o-check-circle',
         );
+    }
+
+    /**
+     * Validate from the banner: what the form holds is saved first, so the
+     * tournament locked is the one on screen.
+     */
+    public function saveAndValidate(): void
+    {
+        $this->save();
+
+        if ($this->capacityModal) {
+            $this->showValidateModal = false;
+
+            return;
+        }
+
+        $this->showValidateModal = false;
+        $this->validateAndLock();
     }
 
     // ── Invitations
@@ -1690,6 +1797,34 @@ new class extends Component
         $this->inviteMessage = '';
         $this->selectedMembers = [];
         unset($this->invitationHistory);
+    }
+
+    /**
+     * The phase the step on screen belongs to.
+     *
+     * The URL keeps its `step` -- links in mails and bookmarks point at it --
+     * but the committee reads the page in four phases, not in steps.
+     */
+    #[Computed]
+    public function shownPhase(): TournamentPhaseEnum
+    {
+        return match ($this->step) {
+            '4', '5', 'pairs' => TournamentPhaseEnum::REGISTRATIONS,
+            '6', 'launch' => TournamentPhaseEnum::MATCH_DAY,
+            'report' => TournamentPhaseEnum::REPORT,
+            default => TournamentPhaseEnum::PREPARATION,
+        };
+    }
+
+    /**
+     * Whether the phase on screen has anything to show yet.
+     */
+    #[Computed]
+    public function shownPhaseIsOpen(): bool
+    {
+        $tournament = $this->currentTournament;
+
+        return $tournament instanceof Tournament && $this->shownPhase->isOpenFor($tournament);
     }
 
     // ── Computed: simulation
@@ -1806,6 +1941,15 @@ new class extends Component
         }
     }
 
+    /**
+     * The registrations list and the roll call share the list but not its tabs.
+     */
+    public function updatedStep(): void
+    {
+        $this->registrationTab = 'all';
+        $this->selectedPeople = [];
+    }
+
     public function updatedTotalSets(): void
     {
         $this->markPoolsStaleIfGenerated();
@@ -1838,7 +1982,7 @@ new class extends Component
 
         unset($this->currentTournament, $this->isContractLocked, $this->registrationsOpen, $this->canOpenRegistrations);
 
-        $this->step = '4';
+        $this->step = '1';
         $this->success(__('Tournament validated! Name and price are now locked.'), icon: 'o-lock-closed');
     }
 
@@ -1876,41 +2020,14 @@ new class extends Component
         ];
     }
 
-    /**
-     * The steps of this tournament, in order.
-     *
-     * A doubles tournament has one more, for its pairs, between the
-     * registrations and the launch — pairs the players chose can be reworked
-     * on the day as well.
-     *
-     * @return list<array{key: string, label: string, icon: string}>
-     */
-    public function wizardSteps(): array
-    {
-        $steps = [
-            ['key' => '1', 'label' => __('Configuration'), 'icon' => 'o-cog-6-tooth'],
-            ['key' => '2', 'label' => __('Web event'), 'icon' => 'o-globe-alt'],
-            ['key' => '3', 'label' => __('Validation'), 'icon' => 'o-lock-closed'],
-            ['key' => '4', 'label' => __('Invitations'), 'icon' => 'o-envelope'],
-            ['key' => '5', 'label' => __('Registrations'), 'icon' => 'o-users'],
-        ];
-
-        if (($this->currentTournament?->match_type ?? $this->matchType) === 'double') {
-            $steps[] = ['key' => 'pairs', 'label' => __('Pairs'), 'icon' => 'o-user-group'];
-        }
-
-        $steps[] = ['key' => '6', 'label' => __('Launch'), 'icon' => 'o-rocket-launch'];
-
-        return $steps;
-    }
-
     // ── Render
 
     protected function breadcrumbChain(): Breadcrumb
     {
         return Breadcrumb::make()
             ->home()
-            ->current(__('Tournaments Wizard'));
+            ->tournaments()
+            ->current($this->currentTournament?->name ?? __('New tournament'));
     }
 
     protected function resolveEventPostData(): array
@@ -1935,6 +2052,31 @@ new class extends Component
             'price' => $tournament->eventPostPrice(),
             'max_participants' => $tournament->max_users ?: null,
         ];
+    }
+
+    /**
+     * The actions kept out of the way, behind « ⋯ ».
+     *
+     * @return list<array{label: string, icon: string, wire?: string, href?: string, danger?: bool}>
+     */
+    private function bannerMenu(Tournament $tournament): array
+    {
+        $menu = [];
+
+        if ($tournament->status === TournamentStatusEnum::SETUP) {
+            $menu[] = ['label' => __('Reopen registrations'), 'icon' => 'o-lock-open', 'wire' => "\$set('showOpenRegistrationsModal', true)"];
+        }
+
+        if ($this->poolsGenerated) {
+            $menu[] = ['label' => __('Print the draw'), 'icon' => 'o-printer', 'href' => route('admin.tournaments.print.pools', $tournament)];
+            $menu[] = ['label' => __('Print the match sheets'), 'icon' => 'o-scissors', 'href' => route('admin.tournaments.print.matches', $tournament)];
+        }
+
+        if (! in_array($tournament->status, [TournamentStatusEnum::CANCELLED, TournamentStatusEnum::CLOSED], true)) {
+            $menu[] = ['label' => __('Cancel tournament'), 'icon' => 'o-x-circle', 'wire' => "\$set('showCancelModal', true)", 'danger' => true];
+        }
+
+        return $menu;
     }
 
     /**

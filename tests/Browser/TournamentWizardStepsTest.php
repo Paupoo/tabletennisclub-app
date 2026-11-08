@@ -6,8 +6,9 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 
 /*
- * A doubles tournament walks from its registrations to its pairs, then to the
- * launch — which points back to the pairs while a player has no partner.
+ * The registrations of a doubles tournament sum the pairs up in a card; the
+ * card and the banner both open the pair board, and the launch screen points
+ * back to it while a player has no partner.
  */
 it('walks a doubles tournament from the registrations to the pairs, then to the launch', function (): void {
     $admin = User::factory()->isAdmin()->isCommitteeMember()->create();
@@ -16,6 +17,7 @@ it('walks a doubles tournament from the registrations to the pairs, then to the 
         'match_type' => 'double',
         'doubles_registration_mode' => 'club',
         'price' => 0,
+        'start_date' => now()->addDays(10)->toDateString(),
     ]);
     foreach (['Anna', 'Ben', 'Odd'] as $name) {
         $tournament->users()->attach(User::factory()->create(['first_name' => $name, 'last_name' => 'Joueur'])->id, ['registration_status' => 'registered']);
@@ -26,13 +28,21 @@ it('walks a doubles tournament from the registrations to the pairs, then to the 
     visit(route('admin.tournaments.wizard.edit', ['tournament' => $tournament, 'step' => 5]))
         ->resize(1440, 900)
         ->assertNoJavaScriptErrors()
-        ->assertSee('À pointer')
+        ->assertSee('3 joueurs sans partenaire')
+        ->assertDontSee('À pointer')
         ->assertDontSee('Composition des paires')
-        ->click('[data-step="pairs"]')
+        ->click('[data-summary-card="pairs"] button')
         ->wait(0.5)
         ->assertSee('Composition des paires')
-        ->click('[data-step="6"]')
+        ->click('[data-back]')
         ->wait(0.5)
+        ->assertDontSee('Composition des paires')
+        ->click('[data-banner-action]')
+        ->wait(0.5)
+        ->assertSee('Composition des paires');
+
+    visit(route('admin.tournaments.wizard.edit', ['tournament' => $tournament, 'step' => 'launch']))
+        ->resize(1440, 900)
         ->assertSee('3 joueurs n’ont pas encore de partenaire')
         ->click('[data-bench-reminder] button')
         ->wait(0.5)

@@ -874,7 +874,8 @@ new class extends Component
     {
         return Breadcrumb::make()
             ->home()
-            ->current(__('Live Center'));
+            ->tournaments()
+            ->current($this->tournament->name);
     }
 
     private function advanceFromBracket(?TournamentMatch $match): void

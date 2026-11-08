@@ -133,6 +133,112 @@ class BarCartService
         return $order;
     }
 
+    /**
+     * Poser le panier sur une ardoise, choisie après avoir servi.
+     *
+     * Au comptoir, on sert d'abord et on décide ensuite. Le panier ne porte donc que
+     * les consommations de cette tournée : elles s'**ajoutent** à l'ardoise ouverte de
+     * ce nom, ligne par ligne, sans toucher à ce qu'elle portait déjà — à l'inverse de
+     * `checkoutFromSessionCart`, qui réécrit l'ardoise qu'on a chargée pour la modifier.
+     * Un nom qui n'est pas ouvert crée l'ardoise.
+     */
+    public function checkoutOntoTab(string $name): BarOrder
+    {
+        $name = trim($name);
+
+        if (BarOrder::normaliseName($name) === '') {
+            throw new \RuntimeException('Donnez un nom à cette ardoise.');
+        }
+
+        $cart = $this->getSanitizedCart();
+
+        if ($cart === []) {
+            throw new \RuntimeException('Le panier est vide.');
+        }
+
+        $userId = auth()->id();
+
+        if (! is_int($userId)) {
+            throw new \RuntimeException('Utilisateur non authentifié.');
+        }
+
+        $order = DB::transaction(function () use ($cart, $userId, $name): BarOrder {
+            $order = BarOrder::query()
+                ->where('open_name_key', BarOrder::normaliseName($name))
+                ->lockForUpdate()
+                ->first();
+
+            if ($order instanceof BarOrder
+                && (int) $order->created_by !== $userId
+                && auth()->user()?->can(Permission::BarOrdersTakeover->value) !== true) {
+                throw new \RuntimeException("Vous n'êtes pas autorisé à modifier cette ardoise.");
+            }
+
+            $order ??= $this->loadOrCreateDraftOrder(null, $userId, $name);
+
+            $products = BarProduct::query()
+                ->whereIn('id', array_keys($cart))
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            foreach ($cart as $productId => $qty) {
+                $product = $products->get($productId);
+
+                if (! $product instanceof BarProduct) {
+                    throw new \RuntimeException(sprintf('Produit introuvable (ID %d).', $productId));
+                }
+
+                $this->validateProductStock($product, $qty);
+
+                $unitPrice = (int) $product->sale_price;
+
+                // Une ligne par produit : la modification d'une ardoise relit les
+                // quantités par produit, et deux lignes du même s'y écraseraient.
+                $orderItem = BarOrderItem::query()
+                    ->where('order_id', $order->id)
+                    ->where('product_id', $product->id)
+                    ->first();
+
+                if ($orderItem instanceof BarOrderItem) {
+                    $orderItem->update([
+                        'quantity' => (int) $orderItem->quantity + $qty,
+                        'total_price' => (int) $orderItem->total_price + $unitPrice * $qty,
+                    ]);
+                } else {
+                    $orderItem = BarOrderItem::query()->create([
+                        'order_id' => $order->id,
+                        'product_id' => $product->id,
+                        'quantity' => $qty,
+                        'unit_price' => $unitPrice,
+                        'total_price' => $unitPrice * $qty,
+                    ]);
+                }
+
+                $this->stockService->consumeFIFO(
+                    (int) $product->id,
+                    $qty,
+                    sprintf('Order #%d', (int) $order->id),
+                    $userId,
+                    $userId,
+                    (int) $order->id,
+                    (int) $orderItem->id,
+                );
+            }
+
+            $order->update([
+                'total_price' => (int) $order->items()->sum('total_price'),
+                'modified_by' => $userId,
+            ]);
+
+            return $order->fresh(['items.product']);
+        });
+
+        $this->clearSessionCart();
+
+        return $order;
+    }
+
     public function clearSessionCart(): void
     {
         session()->forget('cart');

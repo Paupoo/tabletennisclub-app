@@ -100,27 +100,27 @@
             </div>
 
             {{--
-                « Offert » n'est pas un troisième mode de paiement : c'est
-                l'inverse, une consommation qu'on renonce à encaisser. Il sort
-                donc de la rangée, sous une ligne de séparation, à une échelle
-                moindre — mais gardé bordé : un btn-ghost n'a aucune bordure au
-                repos et se lit comme du texte, pas comme un bouton.
+                Le verre du club n'est pas un troisième mode de paiement : c'est
+                l'inverse, une tournée que le club renonce à encaisser. Il sort donc
+                de la rangée, sous une ligne de séparation, à une échelle moindre.
+                Il se donne par équipe visiteuse — Braine-L'Alleud B et F sont deux
+                équipes — chacune sous le plafond de sa division.
             --}}
             <div class="border-base-300 mt-3 border-t pt-3">
                 <button type="button" class="btn btn-outline btn-sm text-muted tap-comfort gap-2"
                     @click="offered = ! offered" :aria-expanded="offered"
                     @disabled($offeredOrderLimitReached)>
                     <x-icon name="o-gift" class="h-4 w-4" />
-                    Offrir cette consommation
+                    Verre du club
                 </button>
                 @if ($offeredOrderLimitReached)
-                    <p class="text-warning mt-2 text-xs">Une commande offerte ne peut pas contenir plus de 4 articles.</p>
-                @elseif ($visitingClubs->isEmpty())
-                    <p class="text-muted mt-2 text-xs">Aucun club visiteur disponible. Utilisez la raison manuelle ci-dessous.</p>
+                    <p class="text-warning mt-2 text-xs">Un verre du club ne peut pas contenir plus de {{ \App\Domains\Bar\Services\ClubRounds::DEFAULT_CAP }} articles.</p>
+                @elseif ($visitingTeams->isEmpty())
+                    <p class="text-muted mt-2 text-xs">Aucune équipe visiteuse attendue aujourd’hui. Indiquez le bénéficiaire ci-dessous.</p>
                 @endif
             </div>
 
-            {{-- Le club reste le parcours normal ; le texte permet de contourner un club manquant. --}}
+            {{-- L'équipe reste le parcours normal ; le texte permet de contourner une équipe manquante. --}}
             <div x-show="offered" x-cloak x-collapse>
                 <form method="POST" action="{{ route('bar.payment.pay', $order) }}"
                     class="border-base-300 mt-3 flex flex-wrap items-end gap-2.5 rounded-lg border border-dashed p-3">
@@ -129,22 +129,24 @@
 
                     <div class="min-w-[12rem] flex-1">
                         <label class="label" for="offered-reason">
-                            <span class="label-text text-xs font-semibold">Club visiteur</span>
+                            <span class="label-text text-xs font-semibold">Équipe visiteuse</span>
                         </label>
                         <select id="offered-reason" name="reason" class="select select-bordered tap-comfort w-full">
-                            <option value="">Sélectionner un club</option>
-                            @foreach ($visitingClubs as $club)
-                                <option value="{{ $club->name }}">{{ $club->name }}</option>
+                            <option value="">Sélectionner une équipe</option>
+                            @foreach ($visitingTeams as $team)
+                                <option value="{{ $team['name'] }}" @disabled($articles > $team['cap'])>
+                                    {{ $team['name'] }} · max {{ $team['cap'] }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
 
                     <div class="min-w-[12rem] flex-1">
                         <label class="label" for="offered-manual-reason">
-                            <span class="label-text text-xs font-semibold">Autre raison</span>
+                            <span class="label-text text-xs font-semibold">Autre bénéficiaire</span>
                         </label>
                         <input id="offered-manual-reason" name="manual_reason" type="text" maxlength="255"
-                            placeholder="Ex. bénévole, erreur de sélection…"
+                            placeholder="Ex. bénévole, arbitre…"
                             class="input input-bordered tap-comfort w-full">
                     </div>
 

@@ -39,15 +39,12 @@ use Spatie\Activitylog\Models\Activity;
 |
 */
 
-/** Ouvre une ardoise, y sert une bière, et l'enregistre — le vrai parcours. */
+/** Sert une bière et la pose sur une ardoise — le vrai parcours. */
 function openTabAndServe(User $user, string $name, int $productId): void
 {
     Livewire::actingAs($user)->test('pages::bar.counter')
-        ->set('tabNameInput', $name)
-        ->call('openTab')
-        ->call('add', $productId);
-
-    Livewire::actingAs($user)->test('pages::bar.cart')->call('validateOrder', 'validate');
+        ->call('add', $productId)
+        ->call('putOnTab', $name);
 }
 
 beforeEach(function (): void {

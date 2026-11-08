@@ -500,7 +500,11 @@ new class extends Component
      *
      * La pastille ne parle que quand le stock compte : « Plus que 2 » ou « Épuisé ».
      * « 12 en stock » sur chaque tuile n'apprenait rien au comptoir, et coûtait la
-     * place d'un nom sur un petit écran.
+     * place d'un nom sur un petit écran. Elle s'ajoute au prix sans jamais le
+     * remplacer : les barmen tournent et ne connaissent pas la carte par cœur.
+     *
+     * Quand tout le stock est déjà dans le panier, le `+` se bloque sans rien
+     * dire : le barman sert ce qu'il voit au frigo, une étiquette n'y ajoutait rien.
      *
      * @return object{qty:int, isUnavailable:bool, isOut:bool, disablePlus:bool, note:?string}
      */
@@ -515,7 +519,6 @@ new class extends Component
         $note = match (true) {
             $isUnavailable => __('Unavailable'),
             $isOut => __('Sold out'),
-            $left === 0 => __('Stock maximum reached'),
             $stock <= $product->effective_low_stock_threshold => __('Only :count left', ['count' => $left]),
             default => null,
         };

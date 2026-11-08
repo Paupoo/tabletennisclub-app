@@ -273,3 +273,58 @@ it('suggests the teams playing tonight as tab names', function (): void {
         ->set('tabNameInput', 'brai')
         ->assertSee("Braine-L'Alleud B");
 });
+
+/**
+ * Un produit de la carte avec son stock ; renvoie le produit.
+ */
+function counterProduct(string $name, int $salePrice, int $stock, bool $isAvailable = true): BarProduct
+{
+    $product = BarProduct::create([
+        'name' => $name,
+        'sale_price' => $salePrice,
+        'is_available' => (int) $isAvailable,
+        'low_stock_threshold' => 3,
+        'category_id' => BarCategory::query()->firstOrFail()->id,
+    ]);
+
+    if ($stock > 0) {
+        BarStockMovement::create([
+            'product_id' => $product->id,
+            'quantity' => $stock,
+            'remaining_quantity' => $stock,
+            'movement_type' => BarStockMovement::TYPE_IN,
+            'created_by' => User::query()->firstOrFail()->id,
+        ]);
+    }
+
+    return $product;
+}
+
+it('keeps the price of every tile in sight, whatever the stock says', function (): void {
+    counterProduct('Orval', 450, 2);
+    counterProduct('Westmalle', 420, 0);
+    counterProduct('Chimay', 410, 10, isAvailable: false);
+
+    Livewire::actingAs($this->barman)
+        ->test('pages::bar.counter')
+        ->assertSeeInOrder(['Orval', __('Only :count left', ['count' => 2]), euros(450)])
+        ->assertSeeInOrder(['Westmalle', __('Sold out'), euros(420)])
+        ->assertSeeInOrder(['Chimay', __('Unavailable'), euros(410)]);
+});
+
+it('blocks the tile once the whole stock is in the cart, without a label for it', function (): void {
+    $orval = counterProduct('Orval', 450, 2);
+
+    $counter = Livewire::actingAs($this->barman)
+        ->test('pages::bar.counter')
+        ->call('add', $orval->id)
+        ->call('add', $orval->id);
+
+    $state = $counter->instance()->stateOf($orval->fresh());
+
+    expect($state->disablePlus)->toBeTrue()
+        ->and($state->qty)->toBe(2);
+
+    $counter->assertDontSee(__('Stock maximum reached'))
+        ->assertSee(euros(450));
+});

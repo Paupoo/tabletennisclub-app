@@ -77,12 +77,14 @@
                                     'border-base-300 bg-base-100' => $state->qty === 0,
                                     'opacity-50' => $state->isUnavailable || $state->isOut,
                                 ])>
-                                <span class="line-clamp-2 text-sm font-semibold leading-tight">{{ $product->name }}</span>
-                                @if ($state->note)
-                                    <span class="text-warning-content text-xs font-bold">{{ $state->note }}</span>
-                                @else
-                                    <span class="text-muted text-xs tabular-nums">{{ euros($product->sale_price) }}</span>
-                                @endif
+                                {{-- La note s'ajoute sous le nom ; le prix garde sa place en bas, quoi que dise le stock. --}}
+                                <span>
+                                    <span class="line-clamp-2 text-sm font-semibold leading-tight">{{ $product->name }}</span>
+                                    @if ($state->note)
+                                        <span class="text-warning-content block text-xs font-bold">{{ $state->note }}</span>
+                                    @endif
+                                </span>
+                                <span class="text-muted text-xs tabular-nums">{{ euros($product->sale_price) }}</span>
                             </button>
 
                             @if ($state->qty > 0)

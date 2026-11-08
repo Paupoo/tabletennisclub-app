@@ -20,10 +20,10 @@
                         <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-error opacity-75"></span>
                         <span class="relative inline-flex h-2 w-2 rounded-full bg-error"></span>
                     </span>
-                    {{ __('Live') }}
+                    {{ __('In progress') }}
                 </span>
             @elseif ($tournament->status === \App\Domains\Shared\Enums\TournamentStatusEnum::CLOSED)
-                <x-badge :value="__('Closed')" class="badge-neutral" icon="o-lock-closed" />
+                <x-badge :value="__('Finished')" class="badge-neutral" icon="o-lock-closed" />
             @endif
         </x-slot:actions>
     </x-header>

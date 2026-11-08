@@ -509,7 +509,7 @@ describe('my registrations once registrations are closed', function (): void {
 
         pairingMyRegistrations($anna)
             ->assertSee('Tournoi de doubles du club')
-            ->assertSee('Inscriptions fermées');
+            ->assertSee('Inscriptions closes');
 
         pairingMyRegistrations(User::factory()->create())->assertDontSee('Tournoi de doubles du club');
     });

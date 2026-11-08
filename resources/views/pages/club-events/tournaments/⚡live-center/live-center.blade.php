@@ -26,7 +26,7 @@
             @endif
 
             @if ($this->tournamentClosed)
-                <x-badge value="{{ __('Closed') }}" class="badge-neutral" icon="o-lock-closed" />
+                <x-badge value="{{ __('Finished') }}" class="badge-neutral" icon="o-lock-closed" />
             @elseif ($this->canManageTournament && $this->poolsPhaseComplete && ! $this->bracketExists)
                 <x-button :label="__('Create bracket')" icon="o-trophy"
                     class="btn-warning btn-sm animate-pulse"

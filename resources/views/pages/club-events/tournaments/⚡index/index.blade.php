@@ -57,9 +57,9 @@
     @php
         $phases = [
             ''         => ['label' => __('All'),      'count' => $stats['total']],
-            'live'     => ['label' => __('Live'),     'count' => $stats['live']],
+            'live'     => ['label' => __('In progress'),     'count' => $stats['live']],
             'upcoming' => ['label' => __('Upcoming'), 'count' => $stats['upcoming']],
-            'done'     => ['label' => __('Closed'),   'count' => $stats['closed']],
+            'done'     => ['label' => __('Finished'),   'count' => $stats['closed']],
         ];
     @endphp
     <div class="mb-6 flex flex-wrap gap-1.5" role="group" aria-label="{{ __('Filter by phase') }}">

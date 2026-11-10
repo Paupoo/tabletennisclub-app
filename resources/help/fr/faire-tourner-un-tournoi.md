@@ -5,16 +5,16 @@ audience: committee
 order: 13
 ---
 
-La journée commence dans l'**assistant** du tournoi (l'appel, les paires, le tirage, le lancement), puis tout se passe dans le **live center** : **les poules**, **le tableau final**, **la clôture**. L'application vous empêche de sauter une étape — c'est ce qui évite de générer un tableau final avec des poules inachevées.
+Le jour du tournoi, la fiche du tournoi s'ouvre sur la phase **Jour J**. Le bandeau en haut donne toujours le statut, les chiffres du moment et la prochaine action : « Lancer le tournoi », puis « Créer le tableau final », puis « Clôturer le tournoi ». Avant le lancement, le Jour J montre l'appel, les paires du jour et le lancement ; après, la régie, avec les poules, le tableau final et les classements dans des cartes au-dessus. La clôture se fait dans la phase **Bilan**. L'application vous empêche de sauter une étape — c'est ce qui évite de générer un tableau final avec des poules inachevées.
 
 ## Le matin : l'appel
 
-Dans l'étape **Inscriptions** de l'assistant, pointez chaque joueur présent. Cherchez un nom en tête de liste, et passez par les onglets **À pointer** et **Impayés** : ce sont les deux listes de l'accueil. Pour un absent :
+Dans la liste **Appel** de la phase Jour J, pointez chaque joueur présent. Cherchez un nom en tête de liste, et passez par les onglets **À pointer** et **Impayés** : ce sont les deux listes de l'accueil. Pour un absent :
 
 - s'il a **payé**, un seul bouton « Absent » — le trésorier verra la suite ;
 - s'il n'a **pas payé**, choisissez **absence excusée** (il avait prévenu : l'inscription est annulée) ou **absence injustifiée** (l'inscription reste due, et il reçoit un mail qui explique pourquoi, sans reproche).
 
-En double, l'absent libère son partenaire, qui retourne sur le **banc**. Recomposez une paire avec le banc dans l'étape **Paires** — elle existe pour tout tournoi de double, y compris quand les joueurs ont choisi leur partenaire. Le jour du tournoi, aucun mail de paire ne part : tout le monde est dans la salle. S'il reste un joueur seul, inscrivez quelqu'un de plus : le comité peut inscrire un membre **même inscriptions closes**, jusqu'au lancement, et même au-delà du plafond. Inscrit le jour même, il paie à l'accueil.
+En double, l'absent libère son partenaire, qui retourne sur le **banc**. Recomposez une paire avec le banc depuis la carte **Paires du jour** — elle existe pour tout tournoi de double, y compris quand les joueurs ont choisi leur partenaire. Le jour du tournoi, aucun mail de paire ne part : tout le monde est dans la salle. S'il reste un joueur seul, inscrivez quelqu'un de plus : le comité peut inscrire un membre **même inscriptions closes**, jusqu'au lancement, et même au-delà du plafond. Inscrit le jour même, il paie à l'accueil.
 
 Un absent qui arrive finalement se remet présent tant que les poules ne sont pas tirées.
 
@@ -24,7 +24,7 @@ Tirez les poules une fois tout le monde apparié : l'application refuse une poul
 
 **Modifier une paire après le tirage efface les poules et leurs matchs** — l'application vous le demande avant. Il suffit de les tirer à nouveau. Une fois le tournoi lancé, plus rien ne bouge.
 
-Avant de lancer, **cochez les tables montées** : les tables hors service sont exclues d'office, et celles que vous ne montez pas se décochent. D'autres pourront être ouvertes, ou fermées, depuis le live center.
+Le tirage et les tables se font depuis la carte **Lancement** (« Préparer le lancement »). Avant de lancer, **cochez les tables montées** : les tables hors service sont exclues d'office, et celles que vous ne montez pas se décochent. D'autres pourront être ouvertes, ou fermées, depuis la régie.
 
 ## Les poules
 
@@ -37,7 +37,7 @@ Les joueurs peuvent aussi encoder le score avec le **QR code de leur table**. Le
 ## Revenir en arrière
 
 - **Un match lancé par erreur** : ouvrez-le depuis sa table, « Lancé par erreur : remettre dans la file ». La table se libère.
-- **Un score faux en poule** : onglet Poules, « Matchs joués », le crayon. Possible tant que le **tableau final n'est pas tiré** — ensuite, il changerait les qualifiés.
+- **Un score faux en poule** : carte Poules (« Voir les poules »), « Matchs joués », le crayon. Possible tant que le **tableau final n'est pas tiré** — ensuite, il changerait les qualifiés.
 - **Un score faux dans le tableau final** : le bouton « Corriger le score » sous le match, tant que le **match suivant n'a pas commencé**. Le nouveau vainqueur prend la place de l'ancien, et en demi-finale le nouveau perdant va au match pour la 3e place.
 
 Chaque correction est gardée dans l'historique.
@@ -45,7 +45,7 @@ Chaque correction est gardée dans l'historique.
 ## Forfaits et abandons
 
 - **Une paire n'est pas à sa table** : dans le tiroir du match, « … absent ». L'adversaire gagne par forfait.
-- **Un joueur se blesse ou s'en va** : onglet Poules, le drapeau à côté de son nom. Tous les matchs qui lui restent sont perdus par forfait, ceux déjà joués restent acquis, et sa paire finit dernière de sa poule.
+- **Un joueur se blesse ou s'en va** : dans les poules, le drapeau à côté de son nom. Tous les matchs qui lui restent sont perdus par forfait, ceux déjà joués restent acquis, et sa paire finit dernière de sa poule.
 
 Un forfait compte comme une victoire, mais jamais dans les sets ni dans les points.
 
@@ -55,7 +55,7 @@ D'abord le nombre de victoires. Entre deux équipes à égalité, celle qui a ga
 
 ## Le tableau final
 
-Le bouton reste sans effet tant que **tous les matchs de poules ne sont pas encodés**.
+Le bandeau propose « Créer le tableau final » dès que **tous les matchs de poules sont encodés**.
 
 **La taille du tableau (4, 8 ou 16) se fixe à la configuration.** Les premiers de chaque poule y vont directement, selon le nombre de qualifiés par poule ; les places restantes vont aux **meilleurs du rang suivant**, comparés sur des **moyennes** (part de victoires, puis de sets, puis de points) — pour qu'un 3e d'une poule de trois ne soit pas désavantagé face à un 3e d'une poule de quatre. L'assistant n'accepte que des tailles que les poules peuvent remplir.
 
@@ -63,7 +63,7 @@ Si le tournoi se joue avec handicap, **tous les matchs** en ont un, tableau fina
 
 ## Les impayés
 
-L'onglet **Clôture** affiche **les participants qui n'ont pas payé**, avec un bouton **Espèces** et un bouton **QR** pour encaisser sur place. C'est le bon moment : les gens sont devant vous.
+La phase **Bilan** affiche **les participants qui n'ont pas payé**, avec un bouton **Espèces** et un bouton **QR** pour encaisser sur place. C'est le bon moment : les gens sont devant vous.
 
 ## La clôture
 
@@ -77,3 +77,9 @@ Au moment de clôturer, deux options — les deux facultatives, les deux à sais
 > ⚠️ **L'article créé à la clôture est marqué « réservé aux membres » dans les données, mais le site public l'affiche quand même.** Ce n'est pas ce que le club a voulu, c'est un défaut connu de l'application. **Considérez que tout ce que vous écrivez là est public**, et écrivez en conséquence — pas de montants, pas de noms de personnes qu'on ne voudrait pas voir sur Internet.
 
 Une fois clôturé, le tournoi ne se rouvre pas depuis cette page. Vérifiez les scores avant.
+
+## L'écran de salle
+
+Pour afficher le tournoi sur une télé, ouvrez **« ⋯ » → Ouvrir l'écran de salle** dans le bandeau de la régie, et diffusez la page qui s'ouvre. À gauche les tables et qui y joue, au centre les prochains matchs, à droite une poule à la fois qui change toutes les 15 secondes. La page se met à jour seule.
+
+Elle affiche les noms des joueurs, enfants compris : elle ne s'ouvre qu'avec ce lien, ne le partagez pas en dehors de la salle.

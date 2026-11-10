@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
 use App\Domains\Shared\Enums\Permission;
@@ -32,6 +33,16 @@ new class extends Component
     public string $activeTab = 'my-tournament';
 
     public Tournament $tournament;
+
+    /**
+     * Whether the tournament has started: before, the page tells where and
+     * when; after, it follows the play.
+     */
+    #[Computed]
+    public function hasStarted(): bool
+    {
+        return $this->tournament->state()->hasBeenLaunched();
+    }
 
     /**
      * Le joueur est-il inscrit à ce tournoi ?
@@ -95,6 +106,26 @@ new class extends Component
         ];
     }
 
+    /**
+     * The partner, once the players are allowed to know.
+     */
+    #[Computed]
+    public function myPartner(): ?User
+    {
+        $me = auth()->user();
+
+        if (! $me instanceof User || $this->tournament->match_type !== 'double' || ! $this->tournament->pairsAreKnownToPlayers()) {
+            return null;
+        }
+
+        $pair = $this->tournament->pairs()
+            ->where(fn ($query) => $query->where('player1_id', $me->id)->orWhere('player2_id', $me->id))
+            ->with(['player1', 'player2'])
+            ->first();
+
+        return $pair?->partnerOf($me);
+    }
+
     /** Les matchs du joueur déjà joués, pour qu'il retrouve ses résultats. */
     #[Computed]
     public function myPlayedMatches(): Collection
@@ -105,6 +136,43 @@ new class extends Component
             ->get()
             ->filter(fn (TournamentMatch $match): bool => $this->involvesMe($match))
             ->values();
+    }
+
+    /**
+     * The pool the visitor plays in, shown first: it is the one table of the
+     * standings a player reads.
+     */
+    #[Computed]
+    public function myPoolId(): ?int
+    {
+        $me = auth()->id();
+
+        foreach ($this->pools as $pool) {
+            foreach ($pool['players'] as $entry) {
+                $ids = isset($entry['pair'])
+                    ? [$entry['pair']->player1_id, $entry['pair']->player2_id]
+                    : [$entry['player']->id ?? null];
+
+                if (in_array($me, $ids, true)) {
+                    return $pool['id'];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The visitor's place on the waiting list, or null when they hold a spot.
+     */
+    #[Computed]
+    public function myWaitlistPosition(): ?int
+    {
+        $registration = $this->tournament->users()->whereKey(auth()->id())->first()?->pivot;
+
+        return $registration?->registration_status === 'waiting'
+            ? (int) $registration->waitlist_position
+            : null;
     }
 
     /**

@@ -295,6 +295,9 @@ class Tournament extends Model
         return $this->doubles_registration_mode === 'self' || $this->pairs_published_at !== null;
     }
 
+    /**
+     * @return HasMany<Pool, $this>
+     */
     public function pools(): HasMany
     {
         return $this->hasMany(Pool::class);
@@ -413,6 +416,9 @@ class Tournament extends Model
         return TournamentStateFactory::create($this->status);
     }
 
+    /**
+     * @return BelongsToMany<Table, $this, TableTournament>
+     */
     public function tables(): BelongsToMany
     {
         return $this->belongsToMany(Table::class)

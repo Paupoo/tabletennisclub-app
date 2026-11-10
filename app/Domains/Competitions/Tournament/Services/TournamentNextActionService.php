@@ -28,14 +28,14 @@ final class TournamentNextActionService
 
             TournamentStatusEnum::LOCKED => new NextAction(
                 label: __('Open registrations'),
-                url: route('admin.tournaments.wizard.edit', [$tournament, 'step' => 4]),
+                url: route('admin.tournaments.wizard.edit', [$tournament, 'step' => 1]),
             ),
 
             TournamentStatusEnum::PUBLISHED => $this->whileRegistrationsAreOpen($tournament),
 
             TournamentStatusEnum::SETUP => new NextAction(
                 label: __('Draw the pools'),
-                url: route('admin.tournaments.wizard.edit', [$tournament, 'step' => 6]),
+                url: route('admin.tournaments.wizard.edit', [$tournament, 'step' => 'launch']),
             ),
 
             TournamentStatusEnum::PENDING => new NextAction(

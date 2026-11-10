@@ -24,6 +24,7 @@ use App\Http\Controllers\ClubEvents\Meeting\MeetingPollController;
 use App\Http\Controllers\ClubEvents\Meeting\MeetingRsvpController;
 use App\Http\Controllers\ClubEvents\Tournament\TableScoreController;
 use App\Http\Controllers\ClubEvents\Tournament\TournamentController;
+use App\Http\Controllers\ClubEvents\Tournament\TournamentHallScreenController;
 use App\Http\Controllers\ClubEvents\Tournament\TournamentPrintController;
 use App\Http\Controllers\ClubPosts\PublicEventPostController;
 use App\Http\Controllers\ClubPosts\PublicNewsPostController;
@@ -488,6 +489,12 @@ Route::get('/meetings/{meeting}/rsvp/{user}', [MeetingRsvpController::class, 'sh
 Route::post('/meetings/{meeting}/rsvp/{user}', [MeetingRsvpController::class, 'submit'])
     ->name('meetings.rsvp.submit')
     ->middleware('signed');
+
+// Tournament hall screen: the television in the hall, opened with a signed
+// link copied from the tournament page. It shows minors' names: never public.
+Route::get('/tournament/{tournament}/screen', TournamentHallScreenController::class)
+    ->name('tournament.screen')
+    ->middleware(['signed', 'feature:tournaments']);
 
 // Tournament administration (events) — committee only.
 Route::prefix('admin/club-events/tournaments')

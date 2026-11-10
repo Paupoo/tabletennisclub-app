@@ -506,6 +506,7 @@ describe('bronze card reads its own match', function (): void {
 
         $html = Livewire::actingAs(User::factory()->isAdmin()->create())
             ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament])
+            ->set('activeTab', 'bracket')
             ->html();
 
         /*
@@ -522,6 +523,7 @@ describe('bronze card reads its own match', function (): void {
 
         $html = Livewire::actingAs(User::factory()->isAdmin()->create())
             ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament])
+            ->set('activeTab', 'bracket')
             ->html();
 
         /*
@@ -553,6 +555,7 @@ describe('bracket layout', function (): void {
 
         $html = Livewire::actingAs(User::factory()->isAdmin()->create())
             ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament->fresh()])
+            ->set('activeTab', 'bracket')
             ->html();
 
         // Le trait vertical d'une accolade, positionné en pourcentage : c'est
@@ -567,6 +570,7 @@ describe('bracket layout', function (): void {
 
         $html = Livewire::actingAs(User::factory()->isAdmin()->create())
             ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament->fresh()])
+            ->set('activeTab', 'bracket')
             ->html();
 
         // L'arbre demande de la largeur ; un défilement horizontal de six
@@ -581,6 +585,7 @@ describe('bracket layout', function (): void {
 
         $html = Livewire::actingAs(User::factory()->isAdmin()->create())
             ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament->fresh()])
+            ->set('activeTab', 'bracket')
             ->html();
 
         expect($html)->not->toContain('style="min-height: 600px;"')

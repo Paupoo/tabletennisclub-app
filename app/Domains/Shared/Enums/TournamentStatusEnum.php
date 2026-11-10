@@ -81,8 +81,8 @@ enum TournamentStatusEnum: string
             self::LOCKED => __('Ready to open'),
             self::PUBLISHED => __('Registrations open'),
             self::SETUP => __('Registrations closed'),
-            self::PENDING => __('Live'),
-            self::CLOSED => __('Closed'),
+            self::PENDING => __('In progress'),
+            self::CLOSED => __('Finished'),
             self::CANCELLED => __('Cancelled'),
         };
     }

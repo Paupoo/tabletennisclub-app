@@ -73,6 +73,24 @@ it('names a status the same way in the filter and on every row that shows it', f
     expect($wearing)->toHaveCount(2);
 })->with(TournamentStatusEnum::cases());
 
+/*
+ * « Fermé » et « Inscriptions fermées » se lisaient côte à côte dans la liste,
+ * l'un pour un tournoi fini, l'autre pour un tournoi pas encore joué.
+ */
+it('names the statuses in French without two kinds of "closed"', function (TournamentStatusEnum $status, string $label): void {
+    app()->setLocale('fr_BE');
+
+    expect($status->getLabel())->toBe($label);
+})->with([
+    [TournamentStatusEnum::DRAFT, 'Brouillon'],
+    [TournamentStatusEnum::LOCKED, 'Prêt à ouvrir'],
+    [TournamentStatusEnum::PUBLISHED, 'Inscriptions ouvertes'],
+    [TournamentStatusEnum::SETUP, 'Inscriptions closes'],
+    [TournamentStatusEnum::PENDING, 'En cours'],
+    [TournamentStatusEnum::CLOSED, 'Terminé'],
+    [TournamentStatusEnum::CANCELLED, 'Annulé'],
+]);
+
 it('hides the draft option from anyone who cannot manage tournaments', function (): void {
     $drafts = fn (bool $withDraft): array => array_column(
         TournamentStatusEnum::toOptions(withDraft: $withDraft),

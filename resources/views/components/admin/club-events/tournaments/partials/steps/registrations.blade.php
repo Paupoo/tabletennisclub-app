@@ -1,4 +1,13 @@
-<div class="mt-8 space-y-6 animate-in fade-in duration-500" wire:poll.30s="$refresh">
+{{--
+    La liste des inscrits, sous deux usages :
+    - $listMode = 'registrations' (phase Inscriptions) : qui est inscrit, qui doit payer ;
+    - $listMode = 'checkin' (phase Jour J) : l'appel, avec la présence de chacun.
+--}}
+@php
+    $listMode ??= 'registrations';
+    $checkin = $listMode === 'checkin';
+@endphp
+<div class="space-y-6 animate-in fade-in duration-500" wire:poll.30s="$refresh">
 
     @if ($this->isLaunched)
         <div class="flex items-center gap-3 p-4 rounded-xl bg-base-200 border border-base-300 text-sm">
@@ -7,16 +16,10 @@
         </div>
     @endif
 
-    <x-card :title="__('Registrated people')" shadow>
+    <x-card :title="$checkin ? __('Roll call') : __('Registered players')" shadow>
         <x-slot:menu>
             <div class="flex gap-2">
                 @if (! $this->isLaunched)
-                    <x-button
-                        :label="!$this->registrationClosed ? __('Close Registrations') : __('Open Registrations')"
-                        :icon="!$this->registrationClosed ? 'o-lock-closed' : 'o-lock-open'"
-                        class="btn-primary btn-sm"
-                        wire:click="openToggleRegistrationsModal"
-                        :disabled="!$tournamentId" />
                     {{-- Le comité inscrit jusqu'au lancement, inscriptions closes et plafond
                          atteint compris : un joueur de plus le matin complète une paire. --}}
                     @if (in_array($this->currentTournament?->status, [\App\Domains\Shared\Enums\TournamentStatusEnum::PUBLISHED, \App\Domains\Shared\Enums\TournamentStatusEnum::SETUP], true))
@@ -42,7 +45,7 @@
         $headers = [
             ['key' => 'name',          'label' => __('Player'),      'sortable' => true],
             ['key' => 'ranking',       'label' => __('Ranking'),     'sortable' => true],
-            ['key' => 'status',        'label' => __('Presence'),    'sortable' => true],
+            ['key' => 'status',        'label' => $checkin ? __('Presence') : __('Status'), 'sortable' => true],
             ['key' => 'registered_at', 'label' => __('Registered'),  'sortable' => true],
         ];
         if ($isPaidTournament) {
@@ -52,7 +55,9 @@
     {{-- Chercher un nom, et un onglet par question de l'accueil : qui pointer, qui doit encore payer. --}}
     @php
         $tabCounts = $this->registrationTabCounts;
-        $tabs = ['all' => __('All'), 'to_check' => __('To check in'), 'present' => __('Checked in'), 'absent' => __('No-shows')];
+        $tabs = $checkin
+            ? ['all' => __('All'), 'to_check' => __('To check in'), 'present' => __('Checked in'), 'absent' => __('No-shows')]
+            : ['all' => __('All')];
         if ($isPaidTournament) {
             $tabs['unpaid'] = __('Unpaid');
         }
@@ -60,6 +65,7 @@
     <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center" data-registration-filters>
         <x-input wire:model.live.debounce.300ms="registrationSearch" icon="o-magnifying-glass"
             :placeholder="__('Search a player…')" clearable class="lg:max-w-xs" />
+        @if (count($tabs) > 1)
         <div role="tablist" class="tabs tabs-box overflow-x-auto">
             @foreach ($tabs as $tabKey => $tabLabel)
                 <button type="button" role="tab" wire:click="$set('registrationTab', '{{ $tabKey }}')"
@@ -70,6 +76,7 @@
                 </button>
             @endforeach
         </div>
+        @endif
     </div>
 
     {{--
@@ -91,8 +98,12 @@
                         <p class="truncate text-sm font-semibold">{{ $row['name'] }}</p>
 
                         <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-base-content/55">
-                            <x-badge :value="$row['status_badge']['label']" :icon="$row['status_badge']['icon']"
-                                :class="$row['status_badge']['class'] . ' badge-xs'" />
+                            @if (! $checkin && in_array($row['status'], ['registered', 'spot_offered'], true))
+                                <x-badge :value="__('Registered')" class="badge-ghost badge-xs" />
+                            @else
+                                <x-badge :value="$row['status_badge']['label']" :icon="$row['status_badge']['icon']"
+                                    :class="$row['status_badge']['class'] . ' badge-xs'" />
+                            @endif
                             <span class="tabular-nums">{{ $row['ranking'] }}</span>
                             @if ($row['registered_at'])
                                 <span>{{ \Carbon\Carbon::parse($row['registered_at'])->format('d/m H:i') }}</span>
@@ -112,7 +123,8 @@
 
                 @if (! $this->isLaunched)
                     <div class="mt-2.5 flex flex-wrap gap-1.5">
-                        @if (in_array($row['status'], ['registered', 'spot_offered'], true))
+                        @if (! $checkin)
+                        @elseif (in_array($row['status'], ['registered', 'spot_offered'], true))
                             <x-button :aria-label="__('Confirm')" :tooltip="__('Confirm')" icon="o-check" class="btn-outline btn-xs btn-square text-success"
                                 wire:click="confirmPresence({{ $row['id'] }})" />
                         @endif
@@ -150,8 +162,13 @@
     <div class="hidden lg:block">
         <x-table wire:model.live="selectedPeople" :headers="$headers" :rows="$this->registrations"
             :sort-by="$sortBy" selectable>
-                @scope('cell_status', $row)
-                    @if (! $this->isLaunched && in_array($row['status'], ['registered', 'spot_offered']))
+                @scope('cell_status', $row, $checkin)
+                    @if (! $checkin && in_array($row['status'], ['registered', 'spot_offered'], true))
+                        <x-badge :value="__('Registered')" class="badge-ghost badge-sm" />
+                    @elseif (! $checkin)
+                        <x-badge :value="$row['status_badge']['label']" :icon="$row['status_badge']['icon']"
+                            :class="$row['status_badge']['class'] . ' badge-sm'" />
+                    @elseif (! $this->isLaunched && in_array($row['status'], ['registered', 'spot_offered']))
                         <div class="flex items-center gap-1">
                             <x-button
                                 icon="o-check"
@@ -240,16 +257,8 @@
         $waitlistCount = $this->waitlist->count();
     @endphp
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <x-stat :title="__('Registered players')" :value="$registrationCount . ($maxUsers > 0 ? ' / ' . $maxUsers : '')" icon="o-user-group" />
-        <x-stat :title="__('Spots left')" :value="$maxUsers > 0 ? max(0, $maxUsers - $registrationCount) : '∞'" icon="o-receipt-percent" />
-        <x-stat :title="__('Confirmed')"
-            :value="$this->registrationTabCounts['present']"
-            icon="o-check-badge" />
-    </div>
-
     {{-- Waiting list --}}
-    @if ($waitlistCount > 0)
+    @if ($waitlistCount > 0 && ! $checkin)
         <x-card :title="__('Waiting list')" shadow class="mt-6">
             <x-slot:menu>
                 <div class="flex gap-2">
@@ -336,34 +345,6 @@
         <x-button :label="__('Register')" icon="o-user-plus" class="btn-primary"
             wire:click="registerMember" spinner="registerMember"
             :disabled="!$memberToRegister" />
-    </x-slot:actions>
-</x-app-modal>
-
-{{-- ── Close registrations modal ─────────────────────────────── --}}
-<x-app-modal wire:model="showCloseRegistrationsModal" :title="__('Close registrations?')" class="backdrop-blur" :open="$showCloseRegistrationsModal">
-    <div class="space-y-4">
-        <div class="flex items-start gap-3 p-4 bg-error/10 border border-error/20 rounded-xl text-sm text-error">
-            <x-icon name="o-exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5" />
-            <div class="space-y-1">
-                <p class="font-semibold">{{ __('This action is irreversible.') }}</p>
-                <p>{{ __('All players currently on the waiting list will be removed and notified by email. They will not automatically regain their position if registrations are reopened.') }}</p>
-            </div>
-        </div>
-
-        @php $waitlistCount = collect($this->waitlist ?? [])->count(); @endphp
-        @if ($waitlistCount > 0)
-            <p class="text-sm text-muted">
-                {{ trans_choice('1 person will be removed from the waitlist.|:count people will be removed from the waitlist.', $waitlistCount, ['count' => $waitlistCount]) }}
-            </p>
-        @else
-            <p class="text-sm text-gray-500">{{ __('The waiting list is currently empty.') }}</p>
-        @endif
-    </div>
-
-    <x-slot:actions>
-        <x-button :label="__('Cancel')" wire:click="$set('showCloseRegistrationsModal', false)" />
-        <x-button :label="__('Close registrations')" icon="o-lock-closed" class="btn-error"
-            wire:click="confirmCloseRegistrations" />
     </x-slot:actions>
 </x-app-modal>
 

@@ -65,16 +65,16 @@ function pairsStepWizard(Tournament $tournament, string $step): Testable
 }
 
 describe('the pairs step', function (): void {
-    it('comes between the registrations and the launch of a doubles tournament', function (string $mode): void {
-        $keys = array_column(pairsStepWizard(pairsStepTournament(['doubles_registration_mode' => $mode]), '5')->instance()->wizardSteps(), 'key');
-
-        expect($keys)->toBe(['1', '2', '3', '4', '5', 'pairs', '6']);
+    it('is summed up in the registrations of a doubles tournament, and opens full screen', function (string $mode): void {
+        pairsStepWizard(pairsStepTournament(['doubles_registration_mode' => $mode]), '5')
+            ->assertSeeHtml('data-summary-card="pairs"')
+            ->call('$set', 'step', 'pairs')
+            ->assertSeeHtml('data-pair-board');
     })->with(['club', 'self']);
 
     it('does not exist in singles', function (): void {
-        $keys = array_column(pairsStepWizard(pairsStepTournament(['match_type' => 'single', 'doubles_registration_mode' => null]), '5')->instance()->wizardSteps(), 'key');
-
-        expect($keys)->toBe(['1', '2', '3', '4', '5', '6']);
+        pairsStepWizard(pairsStepTournament(['match_type' => 'single', 'doubles_registration_mode' => null]), '5')
+            ->assertDontSeeHtml('data-summary-card="pairs"');
     });
 
     it('holds the pair board, which the registrations step no longer does', function (): void {
@@ -99,7 +99,7 @@ describe('the pairs step', function (): void {
         pairsStepPair($tournament, 'Anna', 'Ben');
         pairsStepEntrant($tournament, 'Odd');
 
-        pairsStepWizard($tournament, '6')
+        pairsStepWizard($tournament, 'launch')
             ->assertSee(trans_choice(':count player still has no partner: compose the pairs first.|:count players still have no partner: compose the pairs first.', 1, ['count' => 1]));
     });
 });

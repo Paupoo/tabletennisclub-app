@@ -17,13 +17,13 @@ it('tournaments list page loads without JS errors', function (): void {
         ->assertSee('Tournois');
 });
 
-it('tournament wizard page loads and shows step 1', function (): void {
+it('tournament wizard page loads and shows the settings', function (): void {
     $this->actingAs($this->admin);
 
     visit(route('admin.tournaments.wizard'))
         ->assertNoJavaScriptErrors()
-        ->assertSee('Assistant de configuration du tournoi')
-        ->assertSee('Configuration');
+        ->assertSee('Nouveau tournoi')
+        ->assertSee('Détails');
 });
 
 it('tournament live-center loads for existing tournament', function (): void {

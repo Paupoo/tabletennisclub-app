@@ -1,4 +1,4 @@
-<div class="mt-8 space-y-6 animate-in fade-in duration-500">
+<div class="mt-4 space-y-6 animate-in fade-in duration-500">
 
     <x-admin.shared.event-post-form
         :event-post-id="$eventPostId"
@@ -8,12 +8,7 @@
 
     <div class="flex items-center justify-between">
 
-        <x-button
-            class="btn-ghost btn-sm"
-            icon="o-forward"
-            :label="__('Skip')"
-            wire:click="$set('step', '3')"
-        />
+        <span></span>
 
         <div class="flex items-center gap-2">
             <x-button

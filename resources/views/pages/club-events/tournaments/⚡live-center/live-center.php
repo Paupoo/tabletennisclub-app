@@ -19,6 +19,7 @@ use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\TableStateEnum;
+use App\Domains\Shared\Enums\TournamentPhaseEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Shared\States\Tournament\TournamentStateMachine;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -29,9 +30,11 @@ use App\Support\UploadLimits;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL as SignedUrl;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
@@ -45,7 +48,9 @@ new class extends Component
      *
      * Résolu dans mount() : le comité arrive sur la régie, qui est son écran de
      * travail, et un joueur -- pour qui l'onglet n'existe pas -- sur les poules.
+     * Dans l'URL : la phase Bilan de la fiche y pointe (`?activeTab=closure`).
      */
+    #[Url(except: '')]
     public string $activeTab = '';
 
     /**
@@ -142,6 +147,60 @@ new class extends Component
             ->get()
             ->map(fn (Table $table): array => ['id' => $table->id, 'name' => ($table->room?->name ?? '—') . ' · ' . __('Table') . ' ' . $table->name])
             ->all();
+    }
+
+    /**
+     * What the banner says during the match day and the wrap-up: where the
+     * play stands, and the one gesture it waits for.
+     *
+     * @return array{facts: string, alert: string|null, action: array{label: string, icon: string, wire: string}|null, menu: list<array{label: string, icon: string, wire?: string, href?: string, danger?: bool}>}
+     */
+    #[Computed]
+    public function banner(): array
+    {
+        $unpaid = $this->unpaidParticipants->count();
+        $unpaidAlert = $unpaid > 0
+            ? trans_choice(':count payment pending|:count payments pending', $unpaid, ['count' => $unpaid])
+            : null;
+        $alert = null;
+        $action = null;
+
+        if ($this->tournamentClosed) {
+            $facts = [
+                __('Played on :date', ['date' => $this->tournament->start_date?->isoFormat('dddd D MMMM') ?? '']),
+                trans_choice(':count player|:count players', $this->tournament->users()->wherePivot('registration_status', 'confirmed')->count()),
+            ];
+            $alert = $unpaidAlert;
+        } elseif (! $this->poolsPhaseComplete) {
+            $tables = $this->tables->flatten(1);
+            $poolMatches = TournamentMatch::where('tournament_id', $this->tournament->id)->whereNotNull('pool_id')->count();
+            $facts = [
+                __('Pools: :played matches out of :total', ['played' => $this->playedPoolMatches->flatten(1)->count(), 'total' => $poolMatches]),
+                __(':busy tables in use out of :total', ['busy' => $tables->where('is_free', false)->count(), 'total' => $tables->count()]),
+            ];
+        } elseif (! $this->bracketExists) {
+            $facts = [__('Pools finished')];
+            $action = ['label' => __('Create the bracket'), 'icon' => 'o-trophy', 'wire' => 'generateBracket'];
+        } elseif (! $this->bracketPhaseComplete) {
+            $facts = [__('Bracket in progress')];
+        } else {
+            $facts = [__('Bracket finished')];
+            $alert = $unpaidAlert;
+            $action = ['label' => __('Close the tournament'), 'icon' => 'o-lock-closed', 'wire' => "\$set('activeTab', 'closure')"];
+        }
+
+        if (! $this->canManageTournament) {
+            $action = null;
+        }
+
+        $menu = $this->canManageTournament ? [
+            ['label' => __('Print the draw'), 'icon' => 'o-printer', 'href' => route('admin.tournaments.print.pools', $this->tournament)],
+            ['label' => __('Print the match sheets'), 'icon' => 'o-scissors', 'href' => route('admin.tournaments.print.matches', $this->tournament)],
+            // Un lien signé : l'écran affiche des noms de mineurs, il n'est jamais public.
+            ['label' => __('Open the hall screen'), 'icon' => 'o-tv', 'href' => SignedUrl::signedRoute('tournament.screen', $this->tournament)],
+        ] : [];
+
+        return ['facts' => implode(' · ', $facts), 'alert' => $alert, 'action' => $action, 'menu' => $menu];
     }
 
     #[Computed]
@@ -677,6 +736,15 @@ new class extends Component
         return TournamentMatch::with(['player1', 'player2', 'pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2', 'sets'])->find($this->selectedMatchId);
     }
 
+    /**
+     * The match day, or the wrap-up when the closure is on screen.
+     */
+    #[Computed]
+    public function shownPhase(): TournamentPhaseEnum
+    {
+        return $this->activeTab === 'closure' ? TournamentPhaseEnum::REPORT : TournamentPhaseEnum::MATCH_DAY;
+    }
+
     public function startMatch(int $matchId): void
     {
         abort_unless($this->canManageTournament, 403);
@@ -874,7 +942,8 @@ new class extends Component
     {
         return Breadcrumb::make()
             ->home()
-            ->current(__('Live Center'));
+            ->tournaments()
+            ->current($this->tournament->name);
     }
 
     private function advanceFromBracket(?TournamentMatch $match): void

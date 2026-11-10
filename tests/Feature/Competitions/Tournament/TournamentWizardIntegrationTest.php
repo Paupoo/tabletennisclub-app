@@ -132,6 +132,7 @@ describe('sendInvitations', function (): void {
 
         Livewire::actingAs(wizardAdmin())
             ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('step', '4')
             ->call('toggleMember', $optedOut->id)
             ->assertSet('selectedMembers', [])
             ->set('selectedMembers', [$optedOut->id])
@@ -564,19 +565,19 @@ describe('opening registrations', function (): void {
 
         Livewire::actingAs(wizardAdmin())
             ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
-            ->assertSet('step', '4')
-            ->assertSee(__('Open registrations'))
-            ->assertSee(__('Registrations are closed'));
+            ->assertSet('step', '1')
+            ->assertSeeHtml('data-banner-action')
+            ->assertSee(__('Open registrations'));
     });
 
-    it('says so instead once they are open', function (): void {
+    it('offers to close them instead once they are open', function (): void {
         $tournament = wizardTournament(['status' => TournamentStatusEnum::PUBLISHED]);
 
         Livewire::actingAs(wizardAdmin())
             ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
-            ->assertSet('step', '4')
-            ->assertSee(__('Registrations are open — members can sign up.'))
-            ->assertDontSee(__('Members cannot see this tournament yet, and invitations would lead them nowhere.'));
+            ->assertSet('step', '5')
+            ->assertSee(__('Close registrations'))
+            ->assertDontSee(__('Open registrations'));
     });
 
     it('moves a locked tournament to published', function (): void {
@@ -850,16 +851,16 @@ describe('wizard step', function (): void {
 
         Livewire::actingAs(User::factory()->isAdmin()->create())
             ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
-            ->assertSet('step', '4');
+            ->assertSet('step', '5');
     });
 
     it('lets an explicit step win over the one derived from the status', function (): void {
         $tournament = wizardTournament(['status' => TournamentStatusEnum::SETUP]);
 
         Livewire::actingAs(User::factory()->isAdmin()->create())
-            ->withQueryParams(['step' => '3'])
+            ->withQueryParams(['step' => '4'])
             ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
-            ->assertSet('step', '3');
+            ->assertSet('step', '4');
     });
 
     it('opens the configuration when the settings icon asks for it', function (): void {
@@ -923,33 +924,44 @@ describe('feasibility panel placement', function (): void {
     });
 });
 
-// ── Le fil des six étapes sur téléphone ──────────────────────────────────────
+// ── Les quatre phases ────────────────────────────────────────────────────────
 
 /*
- * La ligne métro mesure ~825 px pour 335 disponibles sur un téléphone, sans
- * signaler son débordement ni amener l'étape active dans le champ de vision --
- * alors que mount() peut en choisir la cinquième.
+ * Sept étapes et une ligne métro de ~825 px ont laissé place à quatre phases :
+ * elles tiennent sur un téléphone, et celle affichée se reconnaît.
  */
-describe('mobile step selector', function (): void {
+describe('phase navigation', function (): void {
 
-    it('says where you are and how many steps there are', function (): void {
-        $tournament = wizardTournament(['status' => TournamentStatusEnum::SETUP]);
+    it('says which phase is on screen', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::SETUP, 'start_date' => now()->addDays(5)]);
 
-        Livewire::actingAs(User::factory()->isAdmin()->create())
+        $html = Livewire::actingAs(User::factory()->isAdmin()->create())
             ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
-            ->assertSee(__('Step :current of :total', ['current' => 5, 'total' => 6]));
+            ->html();
+
+        expect($html)->toMatch('/data-phase="registrations"\s+aria-current="page"/')
+            ->and(substr_count($html, 'aria-current="page"'))->toBe(1);
     });
 
-    it('keeps the metro line for wider screens', function (): void {
+    it('lists the four phases and no step', function (): void {
         $tournament = wizardTournament();
 
         $html = Livewire::actingAs(User::factory()->isAdmin()->create())
             ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
             ->html();
 
-        // Le sélecteur sous md, la ligne métro à partir de md : jamais les deux.
-        expect($html)->toContain('mb-8 md:hidden')
-            ->and($html)->toContain('mb-8 hidden items-center gap-0 overflow-x-auto md:flex');
+        expect(substr_count($html, 'data-phase="'))->toBe(4)
+            ->and($html)->not->toContain('data-step=');
+    });
+
+    it('shows one line instead of a phase not reached yet', function (): void {
+        $tournament = wizardTournament(['status' => TournamentStatusEnum::DRAFT]);
+
+        Livewire::actingAs(User::factory()->isAdmin()->create())
+            ->withQueryParams(['step' => '6'])
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->assertSeeHtml('data-phase-not-open')
+            ->assertSee(__('The match day opens once registrations are closed.'));
     });
 });
 

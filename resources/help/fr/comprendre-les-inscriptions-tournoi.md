@@ -9,7 +9,7 @@ Les inscriptions aux tournois se gèrent **toutes seules** : places libérées, 
 
 ## Prévenir les membres
 
-**Ouvrir les inscriptions ne prévient personne.** Le tournoi apparaît dans « Mes inscriptions », mais aucun mail ne part. C'est vous qui choisissez le moment : un mail d'annonce depuis **Communications** d'abord si vous le souhaitez, puis les invitations depuis l'étape **Invitations** de l'assistant, une fois les inscriptions ouvertes.
+**Ouvrir les inscriptions ne prévient personne.** Le tournoi apparaît dans « Mes inscriptions », mais aucun mail ne part. C'est vous qui choisissez le moment : un mail d'annonce depuis **Communications** d'abord si vous le souhaitez, puis les invitations depuis la carte **Invitations** de la phase Inscriptions de la fiche du tournoi, une fois les inscriptions ouvertes.
 
 Un membre qui a décoché **« Nouveaux tournois et événements »** dans ses paramètres ne reçoit pas les invitations. Il est signalé dans la liste et ne peut pas être coché ; le bouton **Tous** le laisse de côté.
 
@@ -50,7 +50,7 @@ Chacun ne part qu'une fois, et plus rien ne part dès que le paiement est enregi
 
 **Jusqu'à la date limite**, le membre se désinscrit seul depuis « Mes inscriptions ». La personne est prévenue, sa place est proposée à la liste d'attente, et s'il y avait un paiement en attente il est annulé avec. Un paiement **déjà réglé** n'est pas annulé automatiquement — le trésorier et le secrétaire sont prévenus pour traiter le remboursement à la main. En double, sa paire est défaite et son partenaire retourne sur le banc.
 
-**Après la clôture**, le bouton disparaît : « Mes inscriptions » affiche à la place les détenteurs de la délégation **Tournois**, à contacter. C'est à vous de le désinscrire, depuis l'assistant du tournoi.
+**Après la clôture**, le bouton disparaît : « Mes inscriptions » affiche à la place les détenteurs de la délégation **Tournois**, à contacter. C'est à vous de le désinscrire, depuis la phase Inscriptions de la fiche du tournoi.
 
 ## Ce que vous pouvez faire
 

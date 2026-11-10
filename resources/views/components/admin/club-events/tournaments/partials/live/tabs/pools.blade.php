@@ -10,7 +10,7 @@
     ajoutait un bandeau par poule et une pastille rouge clignotante ; ça noyait
     le classement, qui doit rester un classement.
 --}}
-<div @if($tournament->status === \App\Domains\Shared\Enums\TournamentStatusEnum::PENDING) wire:poll.5s @endif class="mt-6">
+<div @if($tournament->status === \App\Domains\Shared\Enums\TournamentStatusEnum::PENDING && ! isset($onlyPoolId)) wire:poll.5s @endif @class(['mt-6' => ! isset($onlyPoolId)])>
     @if ($this->pools->isEmpty())
         <div class="flex flex-col items-center py-20 text-muted">
             <x-icon name="o-user-group" class="w-12 h-12 mb-3" />
@@ -21,6 +21,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @foreach ($this->pools as $pool)
+                @continue(isset($onlyPoolId) && $pool['id'] !== $onlyPoolId)
                 <x-card wire:key="pool-{{ $pool['id'] }}"
                     title="{{ $pool['name'] }}"
                     shadow compact class="border-0">

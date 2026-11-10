@@ -162,9 +162,9 @@ new class extends Component
             $chips[] = [
                 'key' => 'phase',
                 'label' => match ($this->phase) {
-                    'live' => __('Live'),
+                    'live' => __('In progress'),
                     'upcoming' => __('Upcoming'),
-                    'done' => __('Closed'),
+                    'done' => __('Finished'),
                     default => $this->phase,
                 },
             ];

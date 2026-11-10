@@ -3,120 +3,136 @@
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header progress-indicator :title="__('Tournament Setup Assistant')"
-        :subtitle="__('Configure and manage your tournament')">
-        <x-slot:actions>
-            {{-- Cancel button — always accessible when tournament exists and not already cancelled --}}
-            @if ($tournamentId && !in_array($this->currentTournament?->status?->value, ['cancelled', null]))
-                <x-button
-                    :label="__('Cancel tournament')"
-                    icon="o-x-circle"
-                    class="btn-error btn-outline btn-sm"
-                    wire:click="$set('showCancelModal', true)" />
-            @endif
-        </x-slot:actions>
-    </x-header>
+    {{--
+        La fiche d'un tournoi, côté préparation : un bandeau qui dit où en est le
+        tournoi et ce qu'il attend, quatre phases, et dans chaque phase une
+        section principale avec les autres résumées en cartes au-dessus. Le jour J
+        lancé et le bilan vivent à la régie, sous le même bandeau.
 
-    <div class="max-w-6xl mx-auto pb-20">
+        Un tournoi pas encore enregistré n'a ni bandeau ni phases : seulement ses
+        réglages.
+    --}}
+    @php $tournament = $this->currentTournament; @endphp
 
-        {{-- ── Metro-line navigation ────────────────────────────────────────── --}}
+    <div class="mx-auto max-w-6xl pb-20">
+
+        @if ($tournament)
+            @include('components.admin.club-events.tournaments.partials.shared.tournament-header', [
+                'tournament' => $tournament,
+                'shownPhase' => $this->shownPhase,
+                'banner' => $this->banner,
+            ])
+        @else
+            <x-header progress-indicator :title="__('New tournament')" />
+        @endif
+
         @php
-            $wizardSteps = $this->wizardSteps();
-            $stepKeys = array_column($wizardSteps, 'key');
-            $currentIndex = (int) (array_search((string) $step, $stepKeys, true) ?: 0);
-            $maxReachableIndex = $this->maxReachableStepIndex();
-            $previousKey = $stepKeys[max(0, $currentIndex - 1)];
-            $nextKey = $stepKeys[min($maxReachableIndex, $currentIndex + 1)];
+            $isDouble = $tournament?->match_type === 'double';
+            $board = $isDouble ? $this->pairBoard : ['pairs' => [], 'bench' => []];
+            $benchCount = count($board['bench']);
+            $benchAlert = $benchCount > 0
+                ? trans_choice(':count player has no partner|:count players have no partner', $benchCount, ['count' => $benchCount])
+                : null;
+            $onMatchDay = $tournament && \App\Domains\Shared\Enums\TournamentPhaseEnum::activeFor($tournament) === \App\Domains\Shared\Enums\TournamentPhaseEnum::MATCH_DAY;
         @endphp
 
-        {{--
-            Sur téléphone, la ligne métro mesure ~825 px pour 335 disponibles : elle
-            partait en défilement horizontal, sans rien qui signale le débordement et
-            sans amener l'étape active dans le champ de vision -- or mount() peut en
-            choisir la cinquième. Le sélecteur ci-dessous répond en une ligne aux deux
-            questions, « où suis-je » et « combien reste-t-il », et apporte le geste
-            précédent/suivant qui manquait partout, y compris sur desktop.
-        --}}
-        <div class="mb-8 md:hidden">
-            <div class="rounded-xl border border-base-300 bg-base-100 px-3 py-2.5">
-                <div class="flex items-center gap-2.5">
-                    <x-button icon="o-chevron-left" class="btn-outline btn-sm btn-square shrink-0"
-                        :aria-label="__('Previous step')"
-                        :disabled="$currentIndex === 0"
-                        wire:click="$set('step', '{{ $previousKey }}')" />
-
-                    <div class="min-w-0 flex-1 text-center">
-                        <p class="text-xs font-bold uppercase tracking-widest text-base-content/45">
-                            {{ __('Step :current of :total', ['current' => $currentIndex + 1, 'total' => count($wizardSteps)]) }}
-                        </p>
-                        <p class="truncate text-sm font-bold">{{ $wizardSteps[$currentIndex]['label'] ?? '' }}</p>
-                    </div>
-
-                    <x-button icon="o-chevron-right" class="btn-outline btn-sm btn-square shrink-0"
-                        :aria-label="__('Next step')"
-                        :disabled="$currentIndex >= $maxReachableIndex"
-                        wire:click="$set('step', '{{ $nextKey }}')" />
-                </div>
-
-                {{-- La progression, une barre par étape : atteinte, courante, à venir. --}}
-                <div class="mt-2.5 flex gap-1" role="presentation">
-                    @foreach ($wizardSteps as $index => $info)
-                        <div @class([
-                            'h-1 flex-1 rounded-full',
-                            'bg-success'  => $index < $currentIndex,
-                            'bg-primary'  => $index === $currentIndex,
-                            'bg-base-300' => $index > $currentIndex,
-                        ])></div>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-
-        <div class="mb-8 hidden items-center gap-0 overflow-x-auto md:flex">
-            @foreach ($wizardSteps as $index => $info)
-                @php $reachable = $index <= $maxReachableIndex; @endphp
-
-                {{-- Step button --}}
-                <button
-                    data-step="{{ $info['key'] }}"
-                    wire:click="{{ $reachable ? "\$set('step', '{$info['key']}')" : 'null' }}"
-                    @class([
-                        'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap',
-                        'bg-primary text-primary-content shadow'                                         => $index === $currentIndex,
-                        'text-base-content/70 hover:bg-base-200 hover:text-base-content cursor-pointer' => $reachable && $index !== $currentIndex,
-                        'text-base-content/30 cursor-not-allowed'                                        => !$reachable,
-                    ])
-                >
-                    <x-icon name="{{ $info['icon'] }}" class="w-4 h-4 shrink-0" />
-                    <span>{{ $info['label'] }}</span>
-                    @if ($reachable && $index < $currentIndex)
-                        <x-icon name="o-check-circle" class="w-3.5 h-3.5 text-success shrink-0" />
-                    @endif
-                </button>
-
-                {{-- Separator --}}
-                @if (! $loop->last)
-                    <x-icon name="o-chevron-right" class="w-4 h-4 text-base-content/15 shrink-0 mx-0.5" />
-                @endif
-
-            @endforeach
-        </div>
-
-        {{-- ── Step content ──────────────────────────────────────────────────── --}}
-        @if ($step == '1')
+        @if (! $tournament)
             @include('admin.club-events.tournaments.partials.steps.setup')
-        @elseif ($step == '2')
+
+        @elseif (! $this->shownPhaseIsOpen)
+            <p class="rounded-xl border border-dashed border-base-300 py-12 text-center text-base-content/70" data-phase-not-open>
+                {{ $this->shownPhase->opensWhen() }}
+            </p>
+
+        {{-- ── Préparation ─────────────────────────────────────────────── --}}
+        @elseif ($step === '1')
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" data-summary-cards>
+                @include('components.admin.club-events.tournaments.partials.shared.summary-card', [
+                    'key' => 'web-page',
+                    'title' => __('Web page'),
+                    'value' => $eventPostId === null ? __('Not created yet') : ($eventStatus === 'PUBLISHED' ? __('Online') : __('Not online')),
+                    'caption' => null,
+                    'alert' => null,
+                    'button' => __('Edit the web page'),
+                    'wire' => "\$set('step', '2')",
+                ])
+            </div>
+            @include('admin.club-events.tournaments.partials.steps.setup')
+
+        @elseif ($step === '2')
+            <x-button :label="__('Back to the settings')" icon="o-arrow-left" class="btn-ghost btn-sm" wire:click="$set('step', '1')" data-back />
             @include('admin.club-events.tournaments.partials.steps.article')
-        @elseif ($step == '3')
-            @include('admin.club-events.tournaments.partials.steps.validate')
-        @elseif ($step == '4')
+
+        {{-- ── Inscriptions ────────────────────────────────────────────── --}}
+        @elseif ($step === '5')
+            @php $invited = collect($this->invitationHistory)->sum('count'); @endphp
+            <div class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" data-summary-cards>
+                @include('components.admin.club-events.tournaments.partials.shared.summary-card', [
+                    'key' => 'invitations',
+                    'title' => __('Invitations'),
+                    'value' => $invited,
+                    'caption' => trans_choice('invitation sent|invitations sent', $invited),
+                    'alert' => null,
+                    'button' => __('Invite members'),
+                    'wire' => "\$set('step', '4')",
+                ])
+                @if ($isDouble)
+                    @include('components.admin.club-events.tournaments.partials.shared.summary-card', [
+                        'key' => 'pairs',
+                        'title' => __('Pairs'),
+                        'value' => count($board['pairs']),
+                        'caption' => trans_choice('pair|pairs', count($board['pairs'])),
+                        'alert' => $benchAlert,
+                        'button' => __('Compose the pairs'),
+                        'wire' => "\$set('step', 'pairs')",
+                    ])
+                @endif
+            </div>
+            @include('admin.club-events.tournaments.partials.steps.registrations', ['listMode' => 'registrations'])
+
+        @elseif ($step === '4')
+            <x-button :label="__('Back to the registrations')" icon="o-arrow-left" class="btn-ghost btn-sm" wire:click="$set('step', '5')" data-back />
             @include('admin.club-events.tournaments.partials.steps.invitations')
-        @elseif ($step == '5')
-            @include('admin.club-events.tournaments.partials.steps.registrations')
-        @elseif ($step == 'pairs')
+
+        @elseif ($step === 'pairs')
+            <x-button :label="$onMatchDay ? __('Back to the roll call') : __('Back to the registrations')" icon="o-arrow-left"
+                class="btn-ghost btn-sm" wire:click="$set('step', '{{ $onMatchDay ? '6' : '5' }}')" data-back />
             @include('admin.club-events.tournaments.partials.steps.pairs')
-        @elseif ($step == '6')
+
+        {{-- ── Jour J, avant le lancement ──────────────────────────────── --}}
+        @elseif ($step === '6')
+            <div class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" data-summary-cards>
+                @if ($isDouble)
+                    @include('components.admin.club-events.tournaments.partials.shared.summary-card', [
+                        'key' => 'pairs',
+                        'title' => __('Pairs of the day'),
+                        'value' => count($board['pairs']),
+                        'caption' => trans_choice('pair|pairs', count($board['pairs'])),
+                        'alert' => $benchAlert,
+                        'button' => __('Rework the pairs'),
+                        'wire' => "\$set('step', 'pairs')",
+                    ])
+                @endif
+                @include('components.admin.club-events.tournaments.partials.shared.summary-card', [
+                    'key' => 'launch',
+                    'title' => __('Launch preparation'),
+                    'value' => $this->poolsGenerated ? __('Pools drawn') : __('Pools to draw'),
+                    'caption' => null,
+                    'alert' => $this->poolsStale ? __('Draw the pools again.') : null,
+                    'button' => __('Prepare the launch'),
+                    'wire' => "\$set('step', 'launch')",
+                ])
+            </div>
+            @include('admin.club-events.tournaments.partials.steps.registrations', ['listMode' => 'checkin'])
+
+        @elseif ($step === 'launch')
+            <x-button :label="__('Back to the roll call')" icon="o-arrow-left" class="btn-ghost btn-sm" wire:click="$set('step', '6')" data-back />
             @include('admin.club-events.tournaments.partials.steps.start')
+
+        @else
+            <p class="rounded-xl border border-dashed border-base-300 py-12 text-center text-base-content/70" data-phase-not-open>
+                {{ $this->shownPhase->opensWhen() }}
+            </p>
         @endif
 
     </div>
@@ -176,6 +192,52 @@
             <x-button :label="__('Cancel')" wire:click="$set('capacityModal', false)" />
             <x-button :label="__('Save and send the offers')" icon="o-paper-airplane" class="btn-primary"
                 wire:click="confirmCapacityChange" spinner="confirmCapacityChange" />
+        </x-slot:actions>
+    </x-app-modal>
+
+{{-- ── Close registrations modal ─────────────────────────────── --}}
+    <x-app-modal wire:model="showCloseRegistrationsModal" :title="__('Close registrations?')" class="backdrop-blur" :open="$showCloseRegistrationsModal">
+        <div class="space-y-4">
+            <div class="flex items-start gap-3 p-4 bg-error/10 border border-error/20 rounded-xl text-sm text-error">
+                <x-icon name="o-exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5" />
+                <div class="space-y-1">
+                    <p class="font-semibold">{{ __('This action is irreversible.') }}</p>
+                    <p>{{ __('All players currently on the waiting list will be removed and notified by email. They will not automatically regain their position if registrations are reopened.') }}</p>
+                </div>
+            </div>
+    
+            @php $waitlistCount = collect($this->waitlist ?? [])->count(); @endphp
+            @if ($waitlistCount > 0)
+                <p class="text-sm text-muted">
+                    {{ trans_choice('1 person will be removed from the waitlist.|:count people will be removed from the waitlist.', $waitlistCount, ['count' => $waitlistCount]) }}
+                </p>
+            @else
+                <p class="text-sm text-gray-500">{{ __('The waiting list is currently empty.') }}</p>
+            @endif
+        </div>
+    
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="$set('showCloseRegistrationsModal', false)" />
+            <x-button :label="__('Close registrations')" icon="o-lock-closed" class="btn-error"
+                wire:click="confirmCloseRegistrations" />
+        </x-slot:actions>
+    </x-app-modal>
+
+    {{-- Valider : le nom et le prix se figent. L'action du bandeau en Préparation. --}}
+    <x-app-modal wire:model="showValidateModal" :title="__('Validate the tournament?')" class="backdrop-blur" :open="$showValidateModal">
+        <div class="space-y-3 text-sm">
+            <p>{{ __('After validation: name and price cannot be changed') }}</p>
+            <ul class="space-y-1">
+                <li><span class="text-base-content/70">{{ __('Tournament') }} :</span> <b>{{ $name }}</b></li>
+                <li><span class="text-base-content/70">{{ __('Entry fee') }} :</span> <b>{{ $price > 0 ? number_format($price, 2, ',', ' ') . ' €' : __('Free') }}</b></li>
+                <li><span class="text-base-content/70">{{ __('Registration deadline') }} :</span>
+                    <b>{{ $registration_deadline !== '' ? \Carbon\Carbon::parse($registration_deadline)->isoFormat('dddd D MMMM') : __('Not set — required!') }}</b></li>
+            </ul>
+        </div>
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="$set('showValidateModal', false)" />
+            <x-button :label="__('Validate')" icon="o-lock-closed" class="btn-primary"
+                wire:click="saveAndValidate" spinner="saveAndValidate" :disabled="$registration_deadline === ''" />
         </x-slot:actions>
     </x-app-modal>
 
